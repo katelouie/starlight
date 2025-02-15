@@ -15,7 +15,7 @@ dev_experiments/
 # Ignore the dist for now
 dist/
 
-# Ignore virtual environments (if you use one
+# Ignore virtual environments
 venv/
 env/
 

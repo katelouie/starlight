@@ -8,6 +8,10 @@ steps to complete:
 - [x] can apply the house system (whole sign) and generate MC / Dsc / IC
 - [x] can apply the placidus house system too
 
+## input
+- [x] Allow inputting city name and state/country to get coordinates
+- [x] Allow inputting local time and converts it to UTC
+
 ## chart analysis
 
 - [x] generate calculated midpoints
@@ -33,17 +37,13 @@ steps to complete:
 ## output
 
 - [ ] draw basic chart with planets / signs / houses / angles
-<<<<<<< HEAD
-- [x] output table for planet positions
-=======
 - [ ] allow multiple house systems in single chart (?)
 - [x] output table for planet positions
-  - [ ] add cusps
-  - [ ] add angles
-  - [ ] add houses to position chart
+  - [x] add cusps
+  - [x] add angles
+  - [x] add houses to position chart
 - [x] output table for aspects (row-based)
   - [ ] output table with selected ordering: by orb, by other object, by aspect type
->>>>>>> master
 - [ ] output table for aspects (triangle)
 - [ ] draw chart with aspects
 
