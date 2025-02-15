@@ -5,8 +5,7 @@ import timezonefinder
 from geopy.geocoders import Nominatim
 from rich.console import Console
 
-from starlight.chart import create_table_midpoints  # format_long,
-from starlight.chart import Chart, print_chart_summary
+from starlight.chart import Chart, create_table_midpoints, print_chart_summary
 
 people = {
     "Me": {
@@ -34,17 +33,17 @@ people = {
 person = "Me"
 
 chart = Chart(
-    birthdate=people[person]["birthdate"], "Whole Sign", loc_name=city_name
+    date=people[person]["birthdate"], houses="Whole Sign", loc_name=city_name
 )  # Todo: Multiple house systems at once
 
 # Set up console
 console = Console()
 
 # Print chart placements and aspects
+print_chart_summary(chart, console, plain=True)
+
 console.print(create_table_midpoints(chart, plain=True))
-# print_chart_summary(chart, console, plain=True)
-# print(chart.cusps)
-# print([x.long for x in chart.planets if x.name == "Moon"])
+
 ## WIP SVG - drawing the chart
 
 

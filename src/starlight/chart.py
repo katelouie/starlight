@@ -63,7 +63,7 @@ class Chart:
         self,
         date: dict[str, int],
         houses: str,
-        loc: tuple[(float, float)] = None,
+        loc: Union[tuple[(float, float)], None] = None,
         loc_name: str = "",
     ) -> None:
         if loc is None and loc_name == "":
