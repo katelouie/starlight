@@ -5,8 +5,6 @@ import swisseph as swe
 from starlight import signs
 
 
-<<<<<<< HEAD
-=======
 def format_long(long: float) -> str:
     # Format longitude for printing in degrees - minutes - seconds: D°M'S".
     degree = long % 30
@@ -21,7 +19,6 @@ def format_long_sign(long: float) -> str:
     return signs.sign_names[int(long // 30)]
 
 
->>>>>>> master
 class Object:
     """Generic chart object. Planets, Angles, etc. inherit from this."""
 
@@ -172,12 +169,9 @@ class Angle(Object):
     def is_retro(self) -> bool:
         return False
 
-<<<<<<< HEAD
-=======
     def __str__(self) -> str:
         return f"name: {self.name} id={self.swe} long={self.long}"
 
->>>>>>> master
 
 class FixedStar(Object): ...
 
@@ -192,14 +186,11 @@ class Midpoint(Object):
         self.long1 = object_1.long
         self.long2 = object_2.long
 
-<<<<<<< HEAD
-=======
         self.long = (self.long1 + self.long2) / 2
 
     def __repr__(self) -> str:
         return f"{self.obj1.name}-{self.obj2.name} Midpoint: {self.long}"
 
->>>>>>> master
     @property
     def has_speed(self) -> bool:
         return False
@@ -208,20 +199,6 @@ class Midpoint(Object):
     def is_retro(self) -> bool:
         return False
 
-<<<<<<< HEAD
-    @property
-    def long(self) -> float:
-        return (self.long1 + self.long2) / 2
-
-
-aspects = {
-    "Conjunct": {"degree": 0, "orb": 10},
-    "Sextile": {"degree": 60, "orb": 10},
-    "Square": {"degree": 90, "orb": 10},
-    "Trine": {"degree": 120, "orb": 10},
-    "Opposition": {"degree": 180, "orb": 10},
-}
-=======
 
 ASPECTS = {
     "Conjunct": {"degree": 0, "orb": 8},
@@ -276,10 +253,3 @@ def get_ephemeris_object(identifier):
     - dict: A dictionary containing "name" and "alias" keys.
     """
     return SWISS_EPHEMERIS_OBJECTS.get(identifier, {"name": "Unknown", "alias": "?"})
-
-
-# Example usage
-example_objects = [0, 1, 10, "mean_apogee", "MC"]
-example_results = {obj: get_ephemeris_object(obj) for obj in example_objects}
-example_results
->>>>>>> master

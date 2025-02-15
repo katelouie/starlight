@@ -1,15 +1,9 @@
 # Get ephemeris data for a date + time + location
 
 import calendar as cal
-<<<<<<< HEAD
 from enum import Flag
 import os
 import pprint
-=======
-import os
-import pprint
-from enum import Flag
->>>>>>> master
 
 import swisseph as swe
 
@@ -69,11 +63,7 @@ def calc_houses(jd, lat: float, long: float, hsys=b"P") -> dict[str, dict]:
 
 def calc_planet_pos(jd, planet, flag=swe.FLG_SPEED, is_planet: bool = True):
     if is_planet:
-<<<<<<< HEAD
         xx: tuple, flgret: Flag() = swe.calc_ut(jd, planet, flag)
-=======
-        xx, flgret = swe.calc_ut(jd, planet, flag)
->>>>>>> master
         planet_name: str = swe.get_planet_name(planet)
 
         labels = ["long", "lat", "dist", "speed long", "speed declin", "speed dist"]
@@ -120,13 +110,8 @@ def calc_conjunct(planet1, planet2, orb):
 
 
 def calc_aspect(planet1, planet2, degrees, orb):
-<<<<<<< HEAD
     long1 = planet1["long"]
     long2 = planet2["long"]
-=======
-    long1 = planet1.long
-    long2 = planet2.long
->>>>>>> master
 
     dist_1_to_2 = long2 - long1
     dist_2_to_1 = long1 - long2
@@ -247,11 +232,7 @@ def print_aspects(planets, midpoints):
             [0, 60, 90, 120, 180],
         )
     )
-<<<<<<< HEAD
     ORB = [10, 10, 10, 10, 10]
-=======
-    ORB = [8, 8, 8, 8, 8]
->>>>>>> master
 
     for base_name, base_planet in planets.items():
         for planet, values in {**planets, **midpoints}.items():
@@ -270,51 +251,3 @@ def print_aspects(planets, midpoints):
                             f"{base_name}{just1}{planet}{just2}"
                             f"{aspect}{justas}{orb:.1f} {movement}"
                         )
-
-
-def main():
-    YEAR = 1994
-    MONTH = 1
-    DAY = 6
-    HOUR = 19  # 11 am Pacific -> UTC time
-    MINUTE = 47
-
-    LAT = 37.386051
-    LONG = -122.083855
-
-    set_ephe_path()
-
-    isvalid, jd, dt = calc_julian(YEAR, MONTH, DAY, HOUR, MINUTE)
-
-    print(type(isvalid), type(jd), type(dt))
-    planets = get_planets(jd, (swe.SUN, 20))
-    houses = calc_houses(jd, LAT, LONG, hsys=b"P")
-    midpoints = calc_midpoints(planets, [("Sun", "Moon")])
-
-    for k, v in midpoints.items():
-        midpoints[k] = calc_planet_pos(None, v, is_planet=False)
-
-    ######## PRINTING AREA
-
-    print_date(YEAR, MONTH, DAY, HOUR, MINUTE)
-
-    print()
-    print_planets(planets, houses)
-
-    # print()
-    # pprint.pprint(midpoints)
-
-    # print()
-    # print_houses(houses)
-
-    # print()
-    # print_angles(houses)
-
-    # print()
-    # print_aspects(planets, midpoints)
-
-
-if __name__ == "__main__":
-    print()
-    main()
-    print()

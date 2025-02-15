@@ -1,18 +1,5 @@
 """Define a chart (birth chart) object that contains objects and analysis."""
 
-<<<<<<< HEAD
-import os
-from calendar import month_name
-
-import rich
-import svg
-import svgwrite
-import swisseph as swe
-from rich.console import Console
-from rich.table import Table
-
-from starlight.objects import Angle, Object, Planet, aspects
-=======
 import copy
 import os
 from calendar import month_name
@@ -29,17 +16,9 @@ from rich.console import Console
 from rich.table import Table
 
 # from starlight.ephemeris import calc_aspect
-from starlight.objects import (
-    ASPECTS,
-    Angle,
-    Midpoint,
-    Object,
-    Planet,
-    format_long,
-    format_long_sign,
-    get_ephemeris_object,
-)
->>>>>>> master
+from starlight.objects import (ASPECTS, Angle, Midpoint, Object, Planet,
+                               format_long, format_long_sign,
+                               get_ephemeris_object)
 
 
 class Date:
@@ -81,15 +60,6 @@ class Date:
 
 class Chart:
     def __init__(
-<<<<<<< HEAD
-        self, date: dict[str, int], loc: tuple[(float, float)], houses: str
-    ) -> None:
-        self.date = Date(**date)
-        self.loc = loc
-        self.house_system = houses
-
-        self.objects: list[Object] = []
-=======
         self,
         date: dict[str, int],
         houses: str,
@@ -113,7 +83,6 @@ class Chart:
 
         self.objects: list[Object] = []
         self.objects_dict: dict[str, Object] = {}
->>>>>>> master
         self.planets: list[Planet] = []
         self.angles: list[Angle] = []
 
@@ -122,10 +91,7 @@ class Chart:
         self._make_houses_and_angles()
         self._make_lunar_parts()
         self._make_asteroids()
-<<<<<<< HEAD
-=======
         self._make_midpoints()
->>>>>>> master
 
     @property
     def lat(self) -> float:
@@ -164,10 +130,7 @@ class Chart:
             try:
                 planet = Planet(swe.get_planet_name(id), id, self.julian)
                 self.objects.append(planet)
-<<<<<<< HEAD
-=======
                 self.objects_dict[planet.name] = planet
->>>>>>> master
                 self.planets.append(planet)
             except swe.Error as e:
                 print(e)
@@ -197,15 +160,6 @@ class Chart:
         for ix, value in enumerate(angles):
             angle = Angle(angle_labels[ix], value)
             self.objects.append(angle)
-<<<<<<< HEAD
-            self.angles.append(angle)
-
-    def _make_lunar_parts(self) -> None:
-        for swe_id in [10, 11, 12, 13]:
-            lunar_obj = Planet(swe.get_planet_name(swe_id), swe_id, self.julian)
-            self.objects.append(lunar_obj)
-            self.planets.append(lunar_obj)
-=======
             self.objects_dict[angle.name] = angle
             self.angles.append(angle)
 
@@ -221,16 +175,12 @@ class Chart:
                 self.objects.append(south_node)
                 self.objects_dict[south_node.name] = south_node
                 self.planets.append(south_node)
->>>>>>> master
 
     def _make_asteroids(self) -> None:
         for swe_id in [15, 16, 17, 18, 19, 20]:
             asteroid = Planet(swe.get_planet_name(swe_id), swe_id, self.julian)
             self.objects.append(asteroid)
-<<<<<<< HEAD
-=======
             self.objects_dict[asteroid.name] = asteroid
->>>>>>> master
             self.planets.append(asteroid)
 
     def calc_arabic_part(self, part_name: str) -> float | None:
@@ -239,109 +189,6 @@ class Chart:
         else:
             return None
 
-<<<<<<< HEAD
-    def print_date(self) -> None:
-        print(self.date)
-
-
-## Testing Example
-
-birthdate = {"year": 1994, "month": 1, "day": 6, "hour": 19, "minute": 47}
-location = (37.386051, -122.083855)  # Todo: City -> Coordinates
-
-chart = Chart(birthdate, location, "Placidus")
-chart.print_date()
-
-table_planets = Table(title="Planet Placement")
-
-for column in ["Planet", "ID", "Sign", "Longitude", "Speed", "Sign Degrees"]:
-    table_planets.add_column(column)
-
-for p in chart.planets:
-    row = [
-        p.name,
-        str(p.swe),
-        p.sign,
-        f"{round(p.long, 2)}°",
-        f"{round(p.speed_long, 2)}",
-        p.sign_deg_str,
-    ]
-    table_planets.add_row(*row)
-console = Console()
-console.print()
-console.print(table_planets)
-
-# for p in chart.planets:
-#     print(
-#         p.name,
-#         p.swe,
-#         p.sign,
-#         f"Longitude: {round(p.long, 2)}°",
-#         f"Speed: {round(p.speed_long, 2)}",
-#         f"Sign Degrees: {p.sign_deg_str}",
-#     )
-#     if p.swe == 1:
-#         print(p.phase_angle, p.phase_frac, p.phase_para)
-# print()
-# print()
-
-table_aspects = Table(title="Planet Aspects")
-
-for col in ["Planet A", "Planet B", "Aspect", "Orb", "Movement"]:
-    table_aspects.add_column(col)
-
-for p in chart.planets:
-    # if p.swe in [0, 1]:
-    if True:
-        for other_obj in [*chart.planets, *chart.angles]:
-            if other_obj.name != p.name:
-                for a, v in aspects.items():
-                    aspect = p.aspect(other_obj, v["degree"], v["orb"])
-                    if aspect[0]:
-                        # print(p.name, other_obj.name, a, aspect)
-                        row_list = [
-                            p.name,
-                            other_obj.name,
-                            a,
-                            f"{round(aspect[1])}°",
-                            aspect[3] if aspect[3] is not None else "-",
-                        ]
-                        table_aspects.add_row(*row_list)
-
-console.print(table_aspects)
-# print(
-#     chart.planets[0].long,
-#     chart.angles[0].long,
-#     chart.planets[0].long - chart.angles[0].long,
-#     chart.angles[0].long - chart.planets[0].long,
-# )
-
-
-def svg_example():
-    canvas = svg.SVG(
-        width=120,
-        height=120,
-        elements=[
-            svg.Circle(
-                cx=60,
-                cy=50,
-                r=20,
-                stroke="black",
-                fill="white",
-                stroke_width=2,
-            ),
-            svg.Line(x1=60, y1=30, x2=60, y2=70, stroke="red", stroke_width=2),
-        ],
-    )
-    return canvas
-
-
-im = svg_example()
-
-with open("svg_example_circle.svg", "w") as file:
-    file.write(str(im))
-    file.write(str(im))
-=======
     def _make_midpoints(self):
         self.midpoints = []
         common_midpoints = [
@@ -640,4 +487,3 @@ def print_chart_summary(chart: Chart, console: Console, plain: bool = False) -> 
     console.print(create_table_angles(chart, plain=plain))
     console.print()
     console.print(create_table_aspects(chart, plain=plain))
->>>>>>> master
