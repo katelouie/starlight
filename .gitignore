@@ -1,0 +1,23 @@
+# Ignore compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore the data folder (since it's huge)
+data/
+
+# Ignore experimentation area
+dev_experiments/
+
+# Ignore the dist for now
+dist/
+
+# Ignore virtual environments (if you use one
+venv/
+env/
+
+# Ignore logs & temp files
+*.log
