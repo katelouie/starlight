@@ -1,3 +1,10 @@
+# Usage Notes
+
+Check out `usage.py` to see the outputs and breakdown of a given chart. 
+They can be formatted either plaintext or using `rich` tables.
+
+The `data` folder should exist within `src/starlight` as a directory at the same level as the main function files (`chart.py`, etc.). It holds a large number of files you can download from the Swiss Ephemeris resource FTP.
+
 # Development Plan
 
 steps to complete:
@@ -15,6 +22,7 @@ steps to complete:
 ## chart analysis
 
 - [x] generate calculated midpoints
+- [ ] Note when a body is retrograde
 - [x] generate aspect calculations for main planets (lights + personal + impersonal + generational)
   - [x] major
   - [x] minor

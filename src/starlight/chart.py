@@ -19,6 +19,7 @@ from rich.table import Table
 from starlight.objects import (ASPECTS, Angle, Midpoint, Object, Planet,
                                format_long, format_long_sign,
                                get_ephemeris_object)
+from starlight.signs import DIGNITIES
 
 
 class Date:
@@ -170,8 +171,11 @@ class Chart:
             self.objects_dict[lunar_obj.name] = lunar_obj
             self.planets.append(lunar_obj)
             if swe_id == 11:  # add south node
-                south_node = Object("South Node", "southnode")
+                south_node = copy.deepcopy(lunar_obj)
+                south_node.name = 'South Node'
+                south_node.swe = 'southnode'
                 south_node.long = (lunar_obj.long + 180) % 360
+                south_node._make_sign_pos()
                 self.objects.append(south_node)
                 self.objects_dict[south_node.name] = south_node
                 self.planets.append(south_node)
@@ -274,6 +278,36 @@ def get_planet_house(chart: Chart, p: Planet) -> int:
             if p.long >= c and p.long < second_cusp:
                 return i + 1
 
+def create_table_sect(chart: Chart, plain: bool) -> Union[Table, str]:
+    # determine day or night chart
+    asc = chart.objects_dict["ASC"]
+    sun = chart.objects_dict["Sun"]
+
+    desc_long = (asc.long + 180) % 360
+
+    if (asc.long < desc_long):
+        if (sun.long >= desc_long):
+            sect = "Day"
+        else:
+            sect = "Night"
+    elif (asc.long > desc_long):
+        if (sun.long >= desc_long) and (sun.long < asc.long):
+            sect = "Day"
+        else:
+            sect = "Night"
+
+    return f"{sect} Chart"
+
+
+def create_table_dignities(chart: Chart, plain: bool) -> Union[Table, str]:
+    # Create dignity scoring for each core planet.
+    output = "Planetary Dignities\n"
+    output += '-' * 40 + "\n"
+
+    core_planets = [x for x in chart.planets if x.swe ]
+
+    return output
+
 
 def create_table_planets(chart: Chart, plain: bool) -> Union[Table, str]:
     # Create a rich table of all planet placements for console printing.
@@ -284,7 +318,8 @@ def create_table_planets(chart: Chart, plain: bool) -> Union[Table, str]:
         for p in chart.planets:
             house = get_planet_house(chart, p)
             display_name = get_ephemeris_object(p.swe)["alias"]
-            output += f"{display_name:>13} | {p.sign:<12} | {p.sign_deg_str:<10} | House {house}\n"
+            retro = 'Rtg.' if p.is_retro is True else ''
+            output += f"{display_name:>13} | {p.sign:<12} | {p.sign_deg_str:<10} | {retro:4} | House {house}\n"
             # if p.swe = 11 # North Node:
             #     # calculate south node and display
             #     output += f"{display_name.replace('North', 'South'):>13}" |
