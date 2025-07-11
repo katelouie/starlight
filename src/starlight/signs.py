@@ -30,16 +30,6 @@ rulers = [
     {"trad": "Jupiter", "modern": "Neptune"},
 ]
 
-dignities_planet = {
-    "Sun": {
-        "ruler_traditional": "Leo",
-        "ruler_modern": "Leo",
-        "exhalted": "Aries",
-        "detriment": "Aquarius",
-        "fall": "Libra"
-    }
-}
-
 DIGNITIES = {
     "Aries": {
         "symbol": "♈︎",
@@ -48,30 +38,26 @@ DIGNITIES = {
             "ruler": "Mars",
             "exhalt": "Sun",
             "detriment": "Venus",
-            "fall": "Saturn"
+            "fall": "Saturn",
         },
         "modern": {
             "ruler": "Mars",
             "exhalt": "Sun",
             "detriment": "Venus",
-            "fall": "Saturn"
+            "fall": "Saturn",
         },
         "decan_trip": ["Mars", "Sun", "Jupiter"],
         "decan_chaldean": ["Mars", "Sun", "Venus"],
-        "bound_egypt": { # key is start of the planet's domicile degrees.
+        "bound_egypt": {  # key is start of the planet's domicile degrees.
             0: "Jupiter",
             6: "Venus",
             12: "Mercury",
             20: "Mars",
             25: "Saturn",
         },
-        "triplicity": {
-            "day": "Sun",
-            "night": "Jupiter",
-            "coop": "Saturn"
-        }
+        "triplicity": {"day": "Sun", "night": "Jupiter", "coop": "Saturn"},
     },
-"Taurus": {
+    "Taurus": {
         "symbol": "♉︎",
         "exhalt_degree": 3,
         "traditional": {
@@ -84,52 +70,44 @@ DIGNITIES = {
             "ruler": "Venus",
             "exhalt": "Moon",
             "detriment": "Pluto",
-            "fall": "Uranus"
+            "fall": "Uranus",
         },
         "decan_trip": ["Venus", "Mercury", "Saturn"],
         "decan_chaldean": ["Mecury", "Moon", "Saturn"],
-        "bound_egypt": { # key is start of the planet's domicile degrees.
+        "bound_egypt": {  # key is start of the planet's domicile degrees.
             0: "Venus",
             8: "Mercury",
             14: "Jupiter",
             22: "Saturn",
-            27: "Mars"
+            27: "Mars",
         },
-        "triplicity": {
-            "day": "Venus",
-            "night": "Moon",
-            "coop": "Mars"
-        }
+        "triplicity": {"day": "Venus", "night": "Moon", "coop": "Mars"},
     },
-"Gemini": {
+    "Gemini": {
         "symbol": "♊︎",
         "exhalt_degree": 3,
         "traditional": {
             "ruler": "Mercury",
             "exhalt": "North Node",
             "detriment": "Jupiter",
-            "fall": "South Node"
+            "fall": "South Node",
         },
         "modern": {
             "ruler": "Mercury",
             "exhalt": "Mercury",
             "detriment": "Jupiter",
-            "fall": "Venus"
+            "fall": "Venus",
         },
         "decan_trip": ["Mercury", "Venus", "Saturn"],
         "decan_chaldean": ["Jupiter", "Mars", "Sun"],
-        "bound_egypt": { # key is start of the planet's domicile degrees.
+        "bound_egypt": {  # key is start of the planet's domicile degrees.
             0: "Mercury",
             6: "Jupiter",
             12: "Venus",
             17: "Mars",
             24: "Saturn",
         },
-        "triplicity": {
-            "day": "Saturn",
-            "night": "Mercury",
-            "coop": "Jupiter"
-        }
+        "triplicity": {"day": "Saturn", "night": "Mercury", "coop": "Jupiter"},
     },
     "Cancer": {
         "symbol": "♋︎",
@@ -138,13 +116,13 @@ DIGNITIES = {
             "ruler": "Moon",
             "exhalt": "Jupiter",
             "detriment": "Saturn",
-            "fall": "Mars"
+            "fall": "Mars",
         },
         "modern": {
             "ruler": "Moon",
             "exhalt": "Jupiter",
             "detriment": "Saturn",
-            "fall": "Pluto"
+            "fall": "Pluto",
         },
         "decan_trip": ["Moon", "Mars", "Jupiter"],
         "decan_chaldean": ["Venus", "Mercury", "Moon"],
@@ -155,11 +133,7 @@ DIGNITIES = {
             19: "Jupiter",
             26: "Saturn",
         },
-        "triplicity": {
-            "day": "Mars",
-            "night": "Venus",
-            "coop": "Moon"
-        }
+        "triplicity": {"day": "Mars", "night": "Venus", "coop": "Moon"},
     },
     "Leo": {
         "symbol": "♌︎",
@@ -168,13 +142,13 @@ DIGNITIES = {
             "ruler": "Sun",
             "exhalt": "None",
             "detriment": "Saturn",
-            "fall": "None"
+            "fall": "None",
         },
         "modern": {
             "ruler": "Sun",
             "exhalt": "Neptune",
             "detriment": "Uranus",
-            "fall": "Pluto"
+            "fall": "Pluto",
         },
         "decan_trip": ["Sun", "Jupiter", "Mars"],
         "decan_chaldean": ["Saturn", "Jupiter", "Mars"],
@@ -185,11 +159,7 @@ DIGNITIES = {
             18: "Mercury",
             24: "Mars",
         },
-        "triplicity": {
-            "day": "Sun",
-            "night": "Jupiter",
-            "coop": "Saturn"
-        }
+        "triplicity": {"day": "Sun", "night": "Jupiter", "coop": "Saturn"},
     },
     "Virgo": {
         "symbol": "♍︎",
@@ -198,13 +168,13 @@ DIGNITIES = {
             "ruler": "Mercury",
             "exhalt": "Mercury",
             "detriment": "Jupiter",
-            "fall": "Venus"
+            "fall": "Venus",
         },
         "modern": {
             "ruler": "Mercury",
             "exhalt": "Mercury",
             "detriment": "Neptune",
-            "fall": "Venus"
+            "fall": "Venus",
         },
         "decan_trip": ["Mercury", "Saturn", "Venus"],
         "decan_chaldean": ["Sun", "Venus", "Mercury"],
@@ -215,11 +185,7 @@ DIGNITIES = {
             21: "Mars",
             28: "Saturn",
         },
-        "triplicity": {
-            "day": "Venus",
-            "night": "Moon",
-            "coop": "Mars"
-        }
+        "triplicity": {"day": "Venus", "night": "Moon", "coop": "Mars"},
     },
     "Libra": {
         "symbol": "♎︎",
@@ -228,13 +194,13 @@ DIGNITIES = {
             "ruler": "Venus",
             "exhalt": "Saturn",
             "detriment": "Mars",
-            "fall": "Sun"
+            "fall": "Sun",
         },
         "modern": {
             "ruler": "Venus",
             "exhalt": "Saturn",
             "detriment": "Mars",
-            "fall": "Sun"
+            "fall": "Sun",
         },
         "decan_trip": ["Venus", "Saturn", "Jupiter"],
         "decan_chaldean": ["Moon", "Saturn", "Jupiter"],
@@ -245,11 +211,7 @@ DIGNITIES = {
             21: "Venus",
             28: "Mars",
         },
-        "triplicity": {
-            "day": "Saturn",
-            "night": "Mercury",
-            "coop": "Jupiter"
-        }
+        "triplicity": {"day": "Saturn", "night": "Mercury", "coop": "Jupiter"},
     },
     "Scorpio": {
         "symbol": "♏︎",
@@ -258,13 +220,13 @@ DIGNITIES = {
             "ruler": "Mars",
             "exhalt": "None",
             "detriment": "Venus",
-            "fall": "Moon"
+            "fall": "Moon",
         },
         "modern": {
             "ruler": "Pluto",
             "exhalt": "Uranus",
             "detriment": "Venus",
-            "fall": "Moon"
+            "fall": "Moon",
         },
         "decan_trip": ["Mars", "Sun", "Venus"],
         "decan_chaldean": ["Mars", "Sun", "Venus"],
@@ -275,11 +237,7 @@ DIGNITIES = {
             19: "Jupiter",
             24: "Saturn",
         },
-        "triplicity": {
-            "day": "Mars",
-            "night": "Venus",
-            "coop": "Moon"
-        }
+        "triplicity": {"day": "Mars", "night": "Venus", "coop": "Moon"},
     },
     "Sagittarius": {
         "symbol": "♐︎",
@@ -288,13 +246,13 @@ DIGNITIES = {
             "ruler": "Jupiter",
             "exhalt": "South Node",
             "detriment": "Mercury",
-            "fall": "North Node"
+            "fall": "North Node",
         },
         "modern": {
             "ruler": "Jupiter",
             "exhalt": "Venus",
             "detriment": "Mercury",
-            "fall": "Ceres"
+            "fall": "Ceres",
         },
         "decan_trip": ["Jupiter", "Mars", "Sun"],
         "decan_chaldean": ["Mercury", "Moon", "Saturn"],
@@ -305,11 +263,7 @@ DIGNITIES = {
             21: "Mars",
             26: "Saturn",
         },
-        "triplicity": {
-            "day": "Sun",
-            "night": "Jupiter",
-            "coop": "Saturn"
-        }
+        "triplicity": {"day": "Sun", "night": "Jupiter", "coop": "Saturn"},
     },
     "Capricorn": {
         "symbol": "♑︎",
@@ -318,13 +272,13 @@ DIGNITIES = {
             "ruler": "Saturn",
             "exhalt": "Mars",
             "detriment": "Moon",
-            "fall": "Jupiter"
+            "fall": "Jupiter",
         },
         "modern": {
             "ruler": "Saturn",
             "exhalt": "Mars",
             "detriment": "Moon",
-            "fall": "Jupiter"
+            "fall": "Jupiter",
         },
         "decan_trip": ["Saturn", "Venus", "Mercury"],
         "decan_chaldean": ["Jupiter", "Mars", "Sun"],
@@ -335,11 +289,7 @@ DIGNITIES = {
             22: "Saturn",
             26: "Mars",
         },
-        "triplicity": {
-            "day": "Venus",
-            "night": "Moon",
-            "coop": "Mars"
-        }
+        "triplicity": {"day": "Venus", "night": "Moon", "coop": "Mars"},
     },
     "Aquarius": {
         "symbol": "♒︎",
@@ -348,13 +298,13 @@ DIGNITIES = {
             "ruler": "Saturn",
             "exhalt": "None",
             "detriment": "Sun",
-            "fall": "None"
+            "fall": "None",
         },
         "modern": {
             "ruler": "Uranus",
             "exhalt": "Pluto",
             "detriment": "Sun",
-            "fall": "Neptune"
+            "fall": "Neptune",
         },
         "decan_trip": ["Saturn", "Mercury", "Venus"],
         "decan_chaldean": ["Mars", "Sun", "Venus"],
@@ -365,11 +315,7 @@ DIGNITIES = {
             20: "Saturn",
             25: "Mars",
         },
-        "triplicity": {
-            "day": "Saturn",
-            "night": "Mercury",
-            "coop": "Jupiter"
-        }
+        "triplicity": {"day": "Saturn", "night": "Mercury", "coop": "Jupiter"},
     },
     "Pisces": {
         "symbol": "♓︎",
@@ -378,13 +324,13 @@ DIGNITIES = {
             "ruler": "Jupiter",
             "exhalt": "Venus",
             "detriment": "Mercury",
-            "fall": "Ceres"
+            "fall": "Ceres",
         },
         "modern": {
             "ruler": "Neptune",
             "exhalt": "Venus",
             "detriment": "Mercury",
-            "fall": "Ceres"
+            "fall": "Ceres",
         },
         "decan_trip": ["Jupiter", "Mars", "Moon"],
         "decan_chaldean": ["Saturn", "Jupiter", "Mars"],
@@ -395,11 +341,7 @@ DIGNITIES = {
             19: "Mars",
             28: "Saturn",
         },
-        "triplicity": {
-            "day": "Mars",
-            "night": "Venus",
-            "coop": "Moon"
-        }
+        "triplicity": {"day": "Mars", "night": "Venus", "coop": "Moon"},
     },
 }
 
@@ -477,5 +419,4 @@ class Sign:
         return values[self.index % 2]
 
     @property
-    def decan1(self) -> str:
-        ...
+    def decan1(self) -> str: ...

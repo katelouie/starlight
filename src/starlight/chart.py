@@ -7,19 +7,16 @@ from datetime import datetime as dt
 from typing import Union
 
 import pytz
-import svg
-import svgwrite
 import swisseph as swe
 import timezonefinder
 from geopy.geocoders import Nominatim
-from rich.console import Console
-from rich.table import Table
 
-# from starlight.ephemeris import calc_aspect
-from starlight.objects import (ASPECTS, Angle, Midpoint, Object, Planet,
-                               format_long, format_long_sign,
-                               get_ephemeris_object)
-from starlight.signs import DIGNITIES
+from starlight.objects import (
+    Angle,
+    Midpoint,
+    Object,
+    Planet,
+)
 
 
 class Date:
@@ -66,6 +63,7 @@ class Chart:
         houses: str,
         loc: Union[tuple[(float, float)], None] = None,
         loc_name: str = "",
+        time_known: bool = True,
     ) -> None:
         if loc is None and loc_name == "":
             raise ValueError("Need either coordinates or place name.")
@@ -75,10 +73,11 @@ class Chart:
         else:
             self.loc = loc
 
-        self.date = Date(**date)  # Date defaults to input local time
+        self.date = Date(**date)  # Date defaults to input local time as UTC
         self.date_raw = date
         self.house_system = houses
         self.loc_name = loc_name
+        self.is_time_known = time_known
 
         self.convert_time()
 
@@ -172,8 +171,8 @@ class Chart:
             self.planets.append(lunar_obj)
             if swe_id == 11:  # add south node
                 south_node = copy.deepcopy(lunar_obj)
-                south_node.name = 'South Node'
-                south_node.swe = 'southnode'
+                south_node.name = "South Node"
+                south_node.swe = "southnode"
                 south_node.long = (lunar_obj.long + 180) % 360
                 south_node._make_sign_pos()
                 self.objects.append(south_node)
@@ -221,7 +220,8 @@ class Chart:
             self.midpoints.append(Midpoint(object1, object2))
 
     def print_date(self) -> None:
-        print(f"{self.date} (Local {Date(**self.date_raw)})")
+        tz = pytz.timezone(self.timezone)
+        print(f"{self.date} (Local: {tz.localize(dt(**self.date_raw))})")
 
     def get_lat_long(self) -> None:
         # Get lat/long from geopy
@@ -233,6 +233,25 @@ class Chart:
             print(f"{location} ({self.loc[0]}, {self.loc[1]})")
         else:
             raise ValueError("Location not found.")
+        
+    def get_timezone(self) -> None:
+        # Get timezone from timezonefinder
+        tf = timezonefinder.TimezoneFinder()
+        timezone = tf.certain_timezone_at(lat=self.lat, lng=self.long)
+        if timezone is None:
+            print("Could not determine the time zone")
+            self.timezone = None
+        else:
+            self.timezone = timezone
+            print(f"Timezone: {self.timezone}")
+
+    def attach_timezone(self) -> None:
+        tz = pytz.timezone(self.timezone)
+        self.date_local = tz.localize(datetime.datetime(**self.date))
+        self.date_utc = self.date_local.astimezone(pytz.utc)
+        self.date_julian = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day,
+                     utc_dt.hour + utc_dt.minute / 60 + utc_dt.second / 3600,
+                     swe.GREG_CAL)
 
     def convert_time(self) -> None:
         # Convert local time to UTC for swisseph
@@ -240,10 +259,11 @@ class Chart:
         timezone = tf.certain_timezone_at(lat=self.lat, lng=self.long)
         if timezone is None:
             print("Could not determine the time zone")
+            self.timezone = None
         else:
+            self.timezone = timezone
             tz = pytz.timezone(timezone)
             utc_timezone = pytz.utc
-            print("Timezone:", tz)
             timestamp = dt(**self.date_raw)
             utc_time = timestamp.astimezone(utc_timezone)
             self.date = Date(
@@ -255,6 +275,128 @@ class Chart:
                     "minute": utc_time.minute,
                 }
             )
+    
+    def get_planet_house(self, p: Planet) -> int:
+        """Calculate which house a planet is in based on house cusps."""
+        cusp_list = list(self.cusps)
+        for i, c in enumerate(cusp_list):
+            if (i == len(cusp_list) - 1) and (p.long >= c):
+                return i + 1
+            else:
+                second_cusp = cusp_list[i + 1]
+                if second_cusp < c:  # hit the end of the circle
+                    second_cusp += 360
+                if p.long >= c and p.long < second_cusp:
+                    return i + 1
+        return 1  # fallback
+    
+    def get_sect(self) -> str:
+        """Determine if chart is a day or night chart."""
+        asc = self.objects_dict["ASC"]
+        sun = self.objects_dict["Sun"]
+        
+        desc_long = (asc.long + 180) % 360
+        sect = "Night"  # Default
+        
+        if asc.long < desc_long:
+            if sun.long >= desc_long:
+                sect = "Day"
+        elif asc.long > desc_long:
+            if (sun.long >= desc_long) and (sun.long < asc.long):
+                sect = "Day"
+        
+        return sect
+    
+    def get_planetary_dignities(self) -> dict:
+        """Calculate planetary dignity scores."""
+        from starlight.signs import DIGNITIES
+        from starlight.objects import format_long
+        
+        core_names = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
+        
+        scores = {
+            "ruler": 5,
+            "exhalt": 4,
+            "triplicity": 3,
+            "bound": 2,
+            "decan": 1,
+            "detriment": -5,
+            "fall": -4,
+        }
+        
+        planet_scores = {}
+        core_planets = [self.objects_dict[name] for name in core_names]
+        
+        for p in core_planets:
+            planet_scores[p.name] = 0
+            sign_dict = DIGNITIES[p.sign]
+            sign_pos = int(format_long(p.long).split("°")[0])
+            essential_dict = sign_dict["traditional"]
+            # TODO: Complete dignity calculation
+        
+        return planet_scores
+    
+    def get_all_aspects(self) -> list[dict]:
+        """Get all aspects in the chart as a list of dictionaries."""
+        from starlight.objects import ASPECTS
+        
+        aspects = []
+        pairs = []
+        
+        for p in self.planets:
+            for other_obj in [*self.planets, *self.angles]:
+                if (
+                    (other_obj.name != p.name)
+                    and (
+                        other_obj.swe in list(range(12))
+                        or other_obj.name in ["ASC", "MC", "DSC", "IC"]
+                    )
+                    and ((p, other_obj) not in pairs)
+                ):
+                    for aspect_name, aspect_data in ASPECTS.items():
+                        aspect_result = p.aspect(other_obj, aspect_data["degree"], aspect_data["orb"])
+                        if aspect_result[0]:
+                            aspects.append({
+                                "planet1": p,
+                                "planet2": other_obj,
+                                "aspect_name": aspect_name,
+                                "orb": aspect_result[1],
+                                "distance": aspect_result[2],
+                                "movement": aspect_result[3],
+                            })
+                            pairs.append((other_obj, p))
+        
+        return aspects
+    
+    def get_midpoint_aspects(self) -> list[dict]:
+        """Get all midpoint aspects in the chart."""
+        from starlight.objects import ASPECTS
+        
+        midpoint_aspects = []
+        
+        for mp in self.midpoints:
+            for p in self.planets:
+                # use closer midpoint
+                mp_2 = copy.deepcopy(mp)
+                mp_2.long = (mp.long + 180) % 360
+                if abs(p.long - mp.long) < abs(p.long - mp_2.long):
+                    mp_close = mp
+                else:
+                    mp_close = mp_2
+                
+                for aspect_name, aspect_data in ASPECTS.items():
+                    aspect_result = mp_close.aspect(p, aspect_data["degree"], aspect_data["orb"])
+                    if aspect_result[0]:
+                        midpoint_aspects.append({
+                            "midpoint": mp,
+                            "planet": p,
+                            "aspect_name": aspect_name,
+                            "orb": aspect_result[1],
+                            "distance": aspect_result[2],
+                            "movement": aspect_result[3],
+                        })
+        
+        return midpoint_aspects
 
 
 # def format_long(long: float) -> str:
@@ -266,259 +408,3 @@ class Chart:
 #     return f"{round(degree)}°{round(min)}'" + f'{round(sec)}"'
 
 
-def get_planet_house(chart: Chart, p: Planet) -> int:
-    cusp_list = list(chart.cusps)
-    for i, c in enumerate(cusp_list):
-        if (i == len(cusp_list) - 1) and (p.long >= c):
-            return i + 1
-        else:
-            second_cusp = cusp_list[i + 1]
-            if second_cusp < c:  # hit the end of the circle
-                second_cusp += 360
-            if p.long >= c and p.long < second_cusp:
-                return i + 1
-
-def create_table_sect(chart: Chart, plain: bool) -> Union[Table, str]:
-    # determine day or night chart
-    asc = chart.objects_dict["ASC"]
-    sun = chart.objects_dict["Sun"]
-
-    desc_long = (asc.long + 180) % 360
-
-    if (asc.long < desc_long):
-        if (sun.long >= desc_long):
-            sect = "Day"
-        else:
-            sect = "Night"
-    elif (asc.long > desc_long):
-        if (sun.long >= desc_long) and (sun.long < asc.long):
-            sect = "Day"
-        else:
-            sect = "Night"
-
-    return f"{sect} Chart"
-
-
-def create_table_dignities(chart: Chart, plain: bool) -> Union[Table, str]:
-    # Create dignity scoring for each core planet.
-    output = "Planetary Dignities\n"
-    output += '-' * 40 + "\n"
-
-    core_planets = [x for x in chart.planets if x.swe ]
-
-    return output
-
-
-def create_table_planets(chart: Chart, plain: bool) -> Union[Table, str]:
-    # Create a rich table of all planet placements for console printing.
-
-    if plain is True:
-        output = "Planet Placements\n"
-        output += "-" * 60 + "\n"
-        for p in chart.planets:
-            house = get_planet_house(chart, p)
-            display_name = get_ephemeris_object(p.swe)["alias"]
-            retro = 'Rtg.' if p.is_retro is True else ''
-            output += f"{display_name:>13} | {p.sign:<12} | {p.sign_deg_str:<10} | {retro:4} | House {house}\n"
-            # if p.swe = 11 # North Node:
-            #     # calculate south node and display
-            #     output += f"{display_name.replace('North', 'South'):>13}" |
-        return output
-
-    else:
-        table_planets = Table(title="Planet Placements")
-
-        for column in ["Planet", "ID", "Sign", "Longitude", "Speed", "Sign Degrees"]:
-            table_planets.add_column(column)
-
-        for p in chart.planets:
-            row = [
-                p.name,
-                str(p.swe),
-                p.sign,
-                f"{round(p.long, 2)}°",
-                f"{round(p.speed_long, 2)}",
-                p.sign_deg_str,
-            ]
-            table_planets.add_row(*row)
-
-        return table_planets
-
-
-def create_table_houses(chart: Chart, plain: bool) -> Union[Table, str]:
-    # Create a rich table of house cusps.
-    if plain is True:
-        output = "House Cusps\n"
-        output += "-" * 30 + "\n"
-        for i, c in enumerate(chart.cusps):
-            output += f"{i+1:>3} | {format_long_sign(c):<12} | {format_long(c):<10}\n"
-        return output
-
-    else:
-        table_cusps = Table(title="House Cusps")
-        for col in ["House", "Cusp Sign", "Cusp Degrees"]:
-            table_cusps.add_column(col)
-
-        for i, c in enumerate(chart.cusps):
-            table_cusps.add_row(str(i + 1), format_long_sign(c), format_long(c))
-
-        return table_cusps
-
-
-def create_table_angles(chart: Chart, plain: bool) -> Union[Table, str]:
-    # Create a rich table of chart angles.
-    if plain is True:
-        ...
-        output = "Chart Angles\n"
-        output += "-" * 30 + "\n"
-        for angle in chart.angles:
-            display_name = get_ephemeris_object(angle.name)["alias"]
-            if angle.name in ["ASC", "MC", "VERTEX"]:
-                output += f"{display_name:<6} | {format_long_sign(angle.long):<12} | {format_long(angle.long):<10}\n"
-                if angle.name in ["ASC", "MC"]:
-                    new_long = (angle.long + 180) % 360
-                    if angle.name == "ASC":
-                        new_name = "DSC"
-                    if angle.name == "MC":
-                        new_name = "IC"
-                    new_dname = get_ephemeris_object(new_name)["alias"]
-                    output += f"{new_dname:<6} | {format_long_sign(new_long):<12} | {format_long(new_long):<10}\n"
-        return output
-    else:
-
-        table_angles = Table(title="Chart Angles")
-        for col in ["Name", "ID", "Sign", "Degrees"]:
-            table_angles.add_column(col)
-
-        for angle in chart.angles:
-            table_angles.add_row(
-                angle.name,
-                str(angle.swe),
-                format_long_sign(angle.long),
-                format_long(angle.long),
-            )
-            if angle.name in ["ASC", "MC"]:
-                new_long = (angle.long + 180) % 360
-                if angle.name == "ASC":
-                    new_name = "DSC"
-                if angle.name == "MC":
-                    new_name = "IC"
-                table_angles.add_row(
-                    new_name,
-                    str(angle.swe),
-                    format_long_sign(new_long),
-                    format_long(new_long),
-                )
-
-        return table_angles
-
-
-ASPECT_COLORS = {
-    "Conjunct": "white",
-    "Square": "red",
-    "Opposition": "red",
-    "Sextile": "green",
-    "Trine": "green",
-}
-
-
-def create_table_aspects(chart: Chart, plain: bool) -> Union[Table, str]:
-    # Create a rich table of all planet aspects for console printing.
-    if plain is True:
-        output = "Planet Aspects\n"
-        output += "-" * 60 + "\n"
-        pairs = []
-        for p in chart.planets:
-            for other_obj in [*chart.planets, *chart.angles]:
-                if (
-                    (other_obj.name != p.name)
-                    and (
-                        other_obj.swe in list(range(12))
-                        or other_obj.name in ["ASC", "MC", "DSC", "IC"]
-                    )
-                    and ((p, other_obj) not in pairs)
-                ):
-                    for a, v in ASPECTS.items():
-                        aspect = p.aspect(other_obj, v["degree"], v["orb"])
-                        if aspect[0]:
-                            name1 = get_ephemeris_object(p.swe)["alias"]
-                            if other_obj.swe is not None:
-                                name2 = get_ephemeris_object(other_obj.swe)["alias"]
-                            else:
-                                name2 = get_ephemeris_object(other_obj.name)["alias"]
-                            color = ASPECT_COLORS.get(a, "white")  # use white otherwise
-                            output += f"{name1:>13} | {name2:<13} | [{color}]{a:<10}[/{color}] | {round(aspect[1]):>2}° | {aspect[3]}\n"
-                            pairs.append((other_obj, p))
-            output += "\n"
-
-        return output
-    else:
-        table_aspects = Table(title="Planet Aspects")
-        for col in ["Planet A", "Planet B", "Aspect", "Orb", "Movement"]:
-            table_aspects.add_column(col)
-
-        for p in chart.planets:
-            if p.swe in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
-                # if True:
-                for other_obj in [*chart.planets, *chart.angles]:
-                    if (other_obj.name != p.name) and other_obj.swe in list(range(13)):
-                        for a, v in ASPECTS.items():
-                            aspect = p.aspect(other_obj, v["degree"], v["orb"])
-                            if aspect[0]:
-                                # print(p.name, other_obj.name, a, aspect)
-                                row_list = [
-                                    p.name,
-                                    other_obj.name,
-                                    a,
-                                    f"{round(aspect[1])}°",
-                                    aspect[3] if aspect[3] is not None else "-",
-                                ]
-                                table_aspects.add_row(*row_list)
-
-        return table_aspects
-
-
-def create_table_midpoints(chart: Chart, plain: bool) -> Union[Table, str]:
-    if plain:
-        output = "Chart Midpoints\n"
-        output += "-" * 42 + "\n"
-        for mp in chart.midpoints:
-            name = f"{mp.obj1.name}-{mp.obj2.name}"
-            output += f"{name:14} | {format_long_sign(mp.long):<12} | {format_long(mp.long):<10}\n"
-
-        output += "\nMidpoint Aspects\n"
-        output += "-" * 60 + "\n"
-        for mp in chart.midpoints:
-            name = f"{mp.obj1.name}-{mp.obj2.name}"
-            for p in chart.planets:
-                # use closer midpoint
-                mp_2 = copy.deepcopy(mp)
-                mp_2.long = (mp.long + 180) % 360
-                if abs(p.long - mp.long) < abs(p.long - mp_2.long):
-                    mp_close = mp
-                else:
-                    mp_close = mp_2
-                for a, v in ASPECTS.items():
-                    aspect = mp_close.aspect(p, v["degree"], v["orb"])
-                    if aspect[0]:
-                        color = ASPECT_COLORS.get(a, "white")  # use white otherwise
-                        pname = get_ephemeris_object(p.swe)["alias"]
-                        output += f"{name:>14} | {pname:<12} | [{color}]{a:<10}[/{color}] | {round(aspect[1]):>2}° | {aspect[3]}\n"
-            output += "\n"
-        return output
-
-    else:
-        ...
-
-
-def print_chart_summary(chart: Chart, console: Console, plain: bool = False) -> None:
-    # Prints birthdate, location (coord), planet table and aspect table to console.
-    chart.print_date()
-    console.print()
-    console.print(create_table_planets(chart, plain=plain))
-    console.print()
-    console.print(create_table_houses(chart, plain=plain))
-    console.print()
-    console.print(create_table_angles(chart, plain=plain))
-    console.print()
-    console.print(create_table_aspects(chart, plain=plain))
