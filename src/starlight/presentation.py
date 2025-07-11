@@ -9,8 +9,12 @@ from typing import Union
 from rich.console import Console
 from rich.table import Table
 
-from starlight.objects import ASPECTS, get_ephemeris_object, format_long, format_long_sign
-
+from starlight.objects import (
+    ASPECTS,
+    format_long,
+    format_long_sign,
+    get_ephemeris_object,
+)
 
 ASPECT_COLORS = {
     "Conjunct": "white",
@@ -29,21 +33,21 @@ def create_table_sect(chart, plain: bool = True) -> str:
 
 def create_table_dignities(chart, plain: bool) -> Union[Table, str]:
     """Create dignity scoring for each core planet."""
-    
+
     output = "Planetary Dignities\n"
     output += "-" * 40 + "\n"
 
     dignity_scores = chart.get_planetary_dignities()
-    
+
     for planet_name, score in dignity_scores.items():
         output += f"{planet_name:<12} | {score:>3}\n"
-    
+
     return output
 
 
 def create_table_planets(chart, plain: bool, fmt: str = "plain") -> Union[Table, str]:
     """Create a table of all planet placements for display."""
-    
+
     if fmt == "word":
         output = ""
         output += "Planet Placements:\n"
@@ -258,7 +262,9 @@ def create_table_midpoints(chart, plain: bool) -> str:
     return output
 
 
-def print_chart_summary(chart, console: Console, plain: bool = False, fmt: str = "plain") -> None:
+def print_chart_summary(
+    chart, console: Console, plain: bool = False, fmt: str = "plain"
+) -> None:
     """Print a complete chart summary with all tables."""
     chart.print_date()
     console.print()

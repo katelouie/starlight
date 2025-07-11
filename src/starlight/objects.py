@@ -3,6 +3,7 @@
 import swisseph as swe
 
 from starlight import signs
+from starlight.cache import cached
 
 
 def format_long(long: float) -> str:
@@ -43,7 +44,7 @@ class Object:
         return self.speed_long < 0
 
     def _get_eph(self, julian_day: float) -> None:
-        eph = swe.calc_ut(julian_day, self.swe)[0]
+        eph = _cached_calc_ut(julian_day, self.swe)[0]
 
         self.long, self.lat = eph[0], eph[1]
         self.dist = eph[2]
@@ -128,7 +129,7 @@ class Planet(Object):
             self._get_phase()
 
     def _get_phase(self) -> None:
-        phase_data = swe.pheno_ut(self.julian, self.swe)
+        phase_data = _cached_pheno_ut(self.julian, self.swe)
         self.phase_angle = phase_data[0]
         self.phase_frac = phase_data[1]  # illuminated fraction of disc
         self.phase_para = phase_data[5]  # geocentric horizontal parallax (Moon)
@@ -240,6 +241,28 @@ SWISS_EPHEMERIS_OBJECTS = {
     "VERTEX": {"name": "Vertex", "alias": "Vertex"},
     "southnode": {"name": "South Node", "alias": "South Node ☋"},
 }
+
+
+# Cached Swiss Ephemeris functions
+@cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
+def _cached_calc_ut(julian_day: float, planet_id: int):
+    """Cached wrapper for swe.calc_ut."""
+    return swe.calc_ut(julian_day, planet_id)
+
+@cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours  
+def _cached_pheno_ut(julian_day: float, planet_id: int):
+    """Cached wrapper for swe.pheno_ut."""
+    return swe.pheno_ut(julian_day, planet_id)
+
+@cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
+def _cached_houses(julian_day: float, lat: float, long: float, hsys: bytes):
+    """Cached wrapper for swe.houses."""
+    return swe.houses(julian_day, lat, long, hsys=hsys)
+
+@cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
+def _cached_date_conversion(year: int, month: int, day: int, hour: float):
+    """Cached wrapper for swe.date_conversion."""
+    return swe.date_conversion(year, month, day, hour)
 
 
 def get_ephemeris_object(identifier):

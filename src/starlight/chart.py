@@ -2,9 +2,8 @@
 
 import copy
 import os
-from calendar import month_name
-from datetime import datetime as dt
-from typing import Union
+from datetime import datetime
+from typing import Union, Optional
 
 import pytz
 import swisseph as swe
@@ -16,77 +15,60 @@ from starlight.objects import (
     Midpoint,
     Object,
     Planet,
+    _cached_date_conversion,
+    _cached_houses,
 )
+from starlight.cache import cached
 
 
-class Date:
-    def __init__(
-        self, year: int, month: int, day: int, hour: int = 12, minute: int = 00
-    ) -> None:
-        self.set_ephe_path()
-        self.year = year
-        self.month = month
-        self.day = day
-        self.hour = hour
-        self.minute = minute
-
-        self._calc_julian_day()
-
-    def set_ephe_path(self):
-        PATH_LIB = os.path.dirname(__file__) + os.sep
-        PATH_DATA = PATH_LIB + "data" + os.sep
-
-        swe.set_ephe_path(PATH_DATA + "swisseph" + os.sep + "ephe" + os.sep)
-
-    def __str__(self) -> str:
-        return (
-            f"Date: {month_name[self.month]} {self.day}, {self.year}"
-            f" at {self.hour}:{self.minute} Universal Time"
-        )
-
-    @property
-    def has_time(self) -> bool:
-        return self.hour is not None
-
-    def _calc_julian_day(self) -> None:
-        hour_decimal: float = self.minute / 60
-
-        self.julian: float = swe.date_conversion(
-            self.year, self.month, self.day, self.hour + hour_decimal
-        )[1]
+def _set_ephemeris_path():
+    """Set the path to Swiss Ephemeris data files."""
+    PATH_LIB = os.path.dirname(__file__) + os.sep
+    PATH_DATA = PATH_LIB + "data" + os.sep
+    swe.set_ephe_path(PATH_DATA + "swisseph" + os.sep + "ephe" + os.sep)
 
 
 class Chart:
     def __init__(
         self,
-        date: dict[str, int],
+        datetime_utc: datetime,
         houses: str,
-        loc: Union[tuple[(float, float)], None] = None,
+        loc: Union[tuple[float, float], None] = None,
         loc_name: str = "",
         time_known: bool = True,
     ) -> None:
+        # Set ephemeris path
+        _set_ephemeris_path()
+        
+        # Validate inputs
         if loc is None and loc_name == "":
             raise ValueError("Need either coordinates or place name.")
-        elif loc_name != "":
-            self.loc_name = loc_name
-            self.get_lat_long()
-        else:
-            self.loc = loc
-
-        self.date = Date(**date)  # Date defaults to input local time as UTC
-        self.date_raw = date
+        
+        # Store datetime (must be UTC)
+        if datetime_utc.tzinfo is None:
+            raise ValueError("datetime must be timezone-aware (preferably UTC)")
+        
+        self.datetime_utc = datetime_utc.astimezone(pytz.UTC) if datetime_utc.tzinfo != pytz.UTC else datetime_utc
         self.house_system = houses
         self.loc_name = loc_name
         self.is_time_known = time_known
 
-        self.convert_time()
+        # Handle location
+        if loc_name:
+            self.get_lat_long()
+        else:
+            self.loc = loc
 
+        # Calculate Julian day
+        self.julian = self._calc_julian_day()
+
+        # Initialize collections
         self.objects: list[Object] = []
         self.objects_dict: dict[str, Object] = {}
         self.planets: list[Planet] = []
         self.angles: list[Angle] = []
 
-        self.calc_julian()
+        # Build chart
         self._make_planets()
         self._make_houses_and_angles()
         self._make_lunar_parts()
@@ -103,26 +85,31 @@ class Chart:
 
     @property
     def year(self) -> int:
-        return self.date.year
+        return self.datetime_utc.year
 
     @property
     def month(self) -> int:
-        return self.date.month
+        return self.datetime_utc.month
 
     @property
     def day(self) -> int:
-        return self.date.day
+        return self.datetime_utc.day
 
     @property
     def hour(self) -> int:
-        return self.date.hour
+        return self.datetime_utc.hour
 
     @property
     def minute(self) -> int:
-        return self.date.minute
+        return self.datetime_utc.minute
 
-    def calc_julian(self) -> None:
-        self.julian = self.date.julian
+    def _calc_julian_day(self) -> float:
+        """Calculate Julian day from datetime."""
+        dt = self.datetime_utc
+        hour_decimal = dt.minute / 60.0 + dt.second / 3600.0
+        return _cached_date_conversion(
+            dt.year, dt.month, dt.day, dt.hour + hour_decimal
+        )[1]
 
     def _make_planets(self) -> None:
         # Main 10 Planets
@@ -143,7 +130,7 @@ class Chart:
         else:
             return
 
-        cusps, angles = swe.houses(self.julian, self.lat, self.long, hsys=system)
+        cusps, angles = _cached_houses(self.julian, self.lat, self.long, hsys=system)
         self.cusps = cusps
 
         angle_labels = [
@@ -220,17 +207,17 @@ class Chart:
             self.midpoints.append(Midpoint(object1, object2))
 
     def print_date(self) -> None:
-        tz = pytz.timezone(self.timezone)
-        print(f"{self.date} (Local: {tz.localize(dt(**self.date_raw))})")
+        """Print the chart date in a human-readable format."""
+        utc_str = self.datetime_utc.strftime("%B %d, %Y at %H:%M Universal Time")
+        print(f"Date: {utc_str}")
 
     def get_lat_long(self) -> None:
-        # Get lat/long from geopy
-        geolocator = Nominatim(user_agent="my_geocoder")
-        location = geolocator.geocode(self.loc_name, language="en")
-
-        if location:
-            self.loc = (location.latitude, location.longitude)
-            print(f"{location} ({self.loc[0]}, {self.loc[1]})")
+        # Get lat/long from cached geocoding
+        location_data = _cached_geocode(self.loc_name)
+        
+        if location_data:
+            self.loc = (location_data['latitude'], location_data['longitude'])
+            print(f"{location_data['address']} ({self.loc[0]}, {self.loc[1]})")
         else:
             raise ValueError("Location not found.")
         
@@ -245,36 +232,20 @@ class Chart:
             self.timezone = timezone
             print(f"Timezone: {self.timezone}")
 
-    def attach_timezone(self) -> None:
-        tz = pytz.timezone(self.timezone)
-        self.date_local = tz.localize(datetime.datetime(**self.date))
-        self.date_utc = self.date_local.astimezone(pytz.utc)
-        self.date_julian = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day,
-                     utc_dt.hour + utc_dt.minute / 60 + utc_dt.second / 3600,
-                     swe.GREG_CAL)
-
-    def convert_time(self) -> None:
-        # Convert local time to UTC for swisseph
+    def get_local_datetime(self) -> Optional[datetime]:
+        """Get the local datetime for this chart's location."""
+        if not hasattr(self, 'loc') or self.loc is None:
+            return None
+        
         tf = timezonefinder.TimezoneFinder()
-        timezone = tf.certain_timezone_at(lat=self.lat, lng=self.long)
-        if timezone is None:
+        timezone_name = tf.certain_timezone_at(lat=self.lat, lng=self.long)
+        
+        if timezone_name is None:
             print("Could not determine the time zone")
-            self.timezone = None
-        else:
-            self.timezone = timezone
-            tz = pytz.timezone(timezone)
-            utc_timezone = pytz.utc
-            timestamp = dt(**self.date_raw)
-            utc_time = timestamp.astimezone(utc_timezone)
-            self.date = Date(
-                **{
-                    "year": utc_time.year,
-                    "month": utc_time.month,
-                    "day": utc_time.day,
-                    "hour": utc_time.hour,
-                    "minute": utc_time.minute,
-                }
-            )
+            return None
+        
+        local_tz = pytz.timezone(timezone_name)
+        return self.datetime_utc.astimezone(local_tz)
     
     def get_planet_house(self, p: Planet) -> int:
         """Calculate which house a planet is in based on house cusps."""
@@ -397,6 +368,27 @@ class Chart:
                         })
         
         return midpoint_aspects
+
+
+# Cached geocoding function
+@cached(cache_type="geocoding", max_age_seconds=604800)  # Cache for 1 week
+def _cached_geocode(location_name: str) -> dict:
+    """Cached wrapper for geocoding API calls."""
+    try:
+        geolocator = Nominatim(user_agent="starlight_geocoder")
+        location = geolocator.geocode(location_name)
+        
+        if location:
+            return {
+                'latitude': location.latitude,
+                'longitude': location.longitude,
+                'address': str(location)
+            }
+        else:
+            return {}
+    except Exception as e:
+        print(f"Geocoding error: {e}")
+        return {}
 
 
 # def format_long(long: float) -> str:

@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 import pytz
 import timezonefinder
@@ -19,62 +19,71 @@ from starlight.drawing import (
     draw_svg_chart,
 )
 
+def create_datetime_utc(year: int, month: int, day: int, hour: int, minute: int, timezone_name: str) -> datetime:
+    """Create a UTC datetime from local time and timezone."""
+    # Create naive datetime (local time)
+    local_dt = datetime(year, month, day, hour, minute)
+    
+    # Get timezone and localize
+    tz = pytz.timezone(timezone_name)
+    local_dt_aware = tz.localize(local_dt)
+    
+    # Convert to UTC
+    return local_dt_aware.astimezone(pytz.UTC)
+
+
 people = {
     "Me": {
-        "birthdate": {"year": 1994, "month": 1, "day": 6, "hour": 11, "minute": 47},
+        "datetime_utc": create_datetime_utc(1994, 1, 6, 11, 47, "America/Los_Angeles"),
         "city_name": "San Francisco, CA",
     },
     "Hussam": {
-        "birthdate": {"year": 1982, "month": 2, "day": 9, "hour": 2, "minute": 0},
+        "datetime_utc": create_datetime_utc(1982, 2, 9, 2, 0, "Asia/Damascus"),
         "city_name": "Damascus, Syria",
     },
     "Nac": {
-        "birthdate": {"year": 1985, "month": 1, "day": 29, "hour": 14, "minute": 0},
+        "datetime_utc": create_datetime_utc(1985, 1, 29, 14, 0, "America/Los_Angeles"),
         "city_name": "Portland, OR",
     },
     "Ann": {
-        "birthdate": {"year": 1991, "month": 9, "day": 23, "hour": 13, "minute": 35},
+        "datetime_utc": create_datetime_utc(1991, 9, 23, 13, 35, "America/Los_Angeles"),
         "city_name": "Los Angeles, CA",
     },
     "Nova": {
-        "birthdate": {"year": 2025, "month": 2, "day": 1, "hour": 8, "minute": 1},
-        "city_name": "Seattle, WA",
-    },
-    "Nova": {
-        "birthdate": {"year": 2025, "month": 2, "day": 1, "hour": 8, "minute": 1},
+        "datetime_utc": create_datetime_utc(2025, 2, 1, 8, 1, "America/Los_Angeles"),
         "city_name": "Seattle, WA",
     },
     "Nova2": {
-        "birthdate": {"year": 2025, "month": 1, "day": 30, "hour": 11, "minute": 21},
+        "datetime_utc": create_datetime_utc(2025, 1, 30, 11, 21, "America/Los_Angeles"),
         "city_name": "Seattle, WA",
     },
     "Jules": {
-        "birthdate": {"year": 1992, "month": 11, "day": 20, "hour": 16, "minute": 45},
+        "datetime_utc": create_datetime_utc(1992, 11, 20, 16, 45, "Asia/Taipei"),
         "city_name": "Taipei, Taiwan",
     },
     "Person1": {
-        "birthdate": {"year": 2004, "month": 1, "day": 28, "hour": 13, "minute": 23},
+        "datetime_utc": create_datetime_utc(2004, 1, 28, 13, 23, "America/Sao_Paulo"),
         "city_name": "Petropolis, BR",
     },
     "Person2": {
-        "birthdate": {"year": 1996, "month": 4, "day": 24, "hour": 10, "minute": 45},
-        "city_name": "Perth, AU",  # Unknown, Cancer 18 asc
+        "datetime_utc": create_datetime_utc(1996, 4, 24, 10, 45, "Australia/Perth"),
+        "city_name": "Perth, AU",
     },
     "Person3": {
-        "birthdate": {"year": 1997, "month": 12, "day": 3, "hour": 21, "minute": 50},
-        "city_name": "Quezon City, PH",  # Unknown, Cancer 18 asc
+        "datetime_utc": create_datetime_utc(1997, 12, 3, 21, 50, "Asia/Manila"),
+        "city_name": "Quezon City, PH",
     },
     "Kwame": {
-        "birthdate": {"year": 1989, "month": 3, "day": 31, "hour": 12, "minute": 00},
-        "city_name": "Tema, Ghana",  # Unknown birth time
+        "datetime_utc": create_datetime_utc(1989, 3, 31, 12, 0, "Africa/Accra"),
+        "city_name": "Tema, Ghana",
     },
     "Chelsea": {
-        "birthdate": {"year": 1991, "month": 5, "day": 2, "hour": 12, "minute": 00},
-        "city_name": "Seattle, WA",  # Unknown birth time and location
+        "datetime_utc": create_datetime_utc(1991, 5, 2, 12, 0, "America/Los_Angeles"),
+        "city_name": "Seattle, WA",
     },
     "Micah": {
-        "birthdate": {"year": 1996, "month": 3, "day": 7, "hour": 12, "minute": 00},
-        "city_name": "Phoenix, AZ",  # Unknown birth time and location
+        "datetime_utc": create_datetime_utc(1996, 3, 7, 12, 0, "America/Phoenix"),
+        "city_name": "Phoenix, AZ",
     },
 }
 
@@ -83,10 +92,10 @@ person = "Me"
 
 def generate_chart(person: str, people: dict, houses: str = "Whole Sign"):
     chart = Chart(
-        date=people[person]["birthdate"],
-        houses="Whole Sign",
+        datetime_utc=people[person]["datetime_utc"],
+        houses=houses,
         loc_name=people[person]["city_name"],
-    )  # Todo: Multiple house systems at once
+    )
 
     # Set up console
     console = Console()
@@ -102,8 +111,8 @@ def generate_chart(person: str, people: dict, houses: str = "Whole Sign"):
 
 def generate_drawing(person: str, people: dict, houses: str = "Whole Sign"):
     chart = Chart(
-        date=people[person]["birthdate"],
-        houses="Whole Sign",
+        datetime_utc=people[person]["datetime_utc"],
+        houses=houses,
         loc_name=people[person]["city_name"],
     )
     draw_svg_chart(chart, filename="nova_chart.svg")
