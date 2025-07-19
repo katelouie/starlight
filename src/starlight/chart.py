@@ -278,10 +278,16 @@ class Chart:
         
         return sect
     
-    def get_planetary_dignities(self) -> dict:
-        """Calculate planetary dignity scores."""
+    def get_planetary_dignities(self, traditional: bool = True) -> dict:
+        """Calculate planetary dignity scores.
+        
+        Args:
+            traditional: If True, use traditional rulerships. If False, use modern.
+            
+        Returns:
+            Dictionary with planet names as keys and dignity info as values.
+        """
         from starlight.signs import DIGNITIES
-        from starlight.objects import format_long
         
         core_names = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
         
@@ -295,17 +301,85 @@ class Chart:
             "fall": -4,
         }
         
-        planet_scores = {}
+        planet_dignities = {}
         core_planets = [self.objects_dict[name] for name in core_names]
+        sect = self.get_sect()  # Day or Night chart
         
         for p in core_planets:
-            planet_scores[p.name] = 0
             sign_dict = DIGNITIES[p.sign]
-            sign_pos = int(format_long(p.long).split("°")[0])
-            essential_dict = sign_dict["traditional"]
-            # TODO: Complete dignity calculation
+            sign_pos = p.sign_deg  # Degree within the sign (0-29)
+            dignity_system = "traditional" if traditional else "modern"
+            essential_dict = sign_dict[dignity_system]
+            
+            dignities = []
+            total_score = 0
+            
+            # Check rulership
+            if essential_dict["ruler"] == p.name:
+                dignities.append("ruler")
+                total_score += scores["ruler"]
+            
+            # Check exaltation
+            if essential_dict["exhalt"] == p.name:
+                dignities.append("exhalt")
+                total_score += scores["exhalt"]
+                
+            # Check detriment
+            if essential_dict["detriment"] == p.name:
+                dignities.append("detriment")
+                total_score += scores["detriment"]
+                
+            # Check fall
+            if essential_dict["fall"] == p.name:
+                dignities.append("fall")
+                total_score += scores["fall"]
+            
+            # Check triplicity (based on sect)
+            triplicity_dict = sign_dict["triplicity"]
+            if sect == "Day" and triplicity_dict["day"] == p.name:
+                dignities.append("triplicity")
+                total_score += scores["triplicity"]
+            elif sect == "Night" and triplicity_dict["night"] == p.name:
+                dignities.append("triplicity")
+                total_score += scores["triplicity"]
+            elif triplicity_dict["coop"] == p.name:
+                dignities.append("triplicity")
+                total_score += scores["triplicity"] - 1  # Cooperating triplicity is slightly less
+            
+            # Check bounds (Egyptian system)
+            bound_planet = self._get_bound_ruler(sign_dict["bound_egypt"], sign_pos)
+            if bound_planet == p.name:
+                dignities.append("bound")
+                total_score += scores["bound"]
+            
+            # Check decan (using Triplicity system)
+            decan_planet = self._get_decan_ruler(sign_dict["decan_trip"], sign_pos)
+            if decan_planet == p.name:
+                dignities.append("decan")
+                total_score += scores["decan"]
+            
+            planet_dignities[p.name] = {
+                "sign": p.sign,
+                "degree": round(sign_pos, 2),
+                "dignities": dignities,
+                "total_score": total_score,
+                "bound_ruler": bound_planet,
+                "decan_ruler": decan_planet,
+            }
         
-        return planet_scores
+        return planet_dignities
+    
+    def _get_bound_ruler(self, bounds_dict: dict, degree: float) -> str:
+        """Get the ruler of Egyptian bounds for a given degree."""
+        for start_degree in sorted(bounds_dict.keys(), reverse=True):
+            if degree >= start_degree:
+                return bounds_dict[start_degree]
+        return list(bounds_dict.values())[0]  # Fallback to first ruler
+    
+    def _get_decan_ruler(self, decan_list: list, degree: float) -> str:
+        """Get the decan ruler for a given degree (0-9.99, 10-19.99, 20-29.99)."""
+        decan_index = int(degree // 10)
+        return decan_list[min(decan_index, len(decan_list) - 1)]
     
     def get_all_aspects(self) -> list[dict]:
         """Get all aspects in the chart as a list of dictionaries."""

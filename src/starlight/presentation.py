@@ -31,16 +31,31 @@ def create_table_sect(chart, plain: bool = True) -> str:
     return f"{sect} Chart"
 
 
-def create_table_dignities(chart, plain: bool) -> Union[Table, str]:
+def create_table_dignities(chart, plain: bool, traditional: bool = True) -> Union[Table, str]:
     """Create dignity scoring for each core planet."""
 
-    output = "Planetary Dignities\n"
-    output += "-" * 40 + "\n"
+    dignity_type = "Traditional" if traditional else "Modern"
+    output = f"Planetary Dignities ({dignity_type})\n"
+    output += "-" * 70 + "\n"
+    output += f"Chart Sect: {chart.get_sect()}\n"
+    output += "-" * 70 + "\n"
+    output += f"{'Planet':<10} | {'Sign':<12} | {'Deg':<6} | {'Dignities':<25} | Score\n"
+    output += "-" * 70 + "\n"
 
-    dignity_scores = chart.get_planetary_dignities()
+    dignity_data = chart.get_planetary_dignities(traditional=traditional)
 
-    for planet_name, score in dignity_scores.items():
-        output += f"{planet_name:<12} | {score:>3}\n"
+    # Sort planets by total score (highest first)
+    sorted_planets = sorted(dignity_data.items(), key=lambda x: x[1]['total_score'], reverse=True)
+
+    for planet_name, data in sorted_planets:
+        dignities_str = ", ".join(data['dignities']) if data['dignities'] else "None"
+        output += f"{planet_name:<10} | {data['sign']:<12} | {data['degree']:>5.1f}° | {dignities_str:<25} | {data['total_score']:>3}\n"
+    
+    # Also show bounds and decan rulers
+    output += "\nBounds & Decan Rulers\n"
+    output += "-" * 50 + "\n"
+    for planet_name, data in dignity_data.items():
+        output += f"{planet_name:<10} | Bound: {data['bound_ruler']:<10} | Decan: {data['decan_ruler']}\n"
 
     return output
 

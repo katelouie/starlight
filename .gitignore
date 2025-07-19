@@ -21,3 +21,6 @@ env/
 
 # Ignore logs & temp files
 *.log
+
+# Ignore the caching system
+.cache/
