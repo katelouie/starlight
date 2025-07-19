@@ -18,6 +18,8 @@ from starlight.objects import (
     ArabicPart,
     _cached_date_conversion,
     _cached_houses,
+    ARABIC_PARTS_CATALOG,
+    HOUSE_SYSTEMS,
 )
 from starlight.cache import cached
 
@@ -131,12 +133,13 @@ class Chart:
                 print(e)
 
     def _make_houses_and_angles(self) -> None:
-        if self.house_system == "Placidus":
-            system = b"P"
-        elif self.house_system == "Whole Sign":
-            system = b"W"
-        else:
-            return
+        # Get house system code from catalog
+        system = HOUSE_SYSTEMS.get(self.house_system)
+        if system is None:
+            raise ValueError(
+                f"Unsupported house system: {self.house_system}. "
+                f"Supported systems: {list(HOUSE_SYSTEMS.keys())}"
+            )
 
         cusps, angles = _cached_houses(self.julian, self.lat, self.long, hsys=system)
         self.cusps = cusps
@@ -183,8 +186,6 @@ class Chart:
 
     def _make_arabic_parts(self) -> None:
         """Calculate common Arabic Parts."""
-        from starlight.objects import ARABIC_PARTS_CATALOG
-
         self.arabic_parts = []
         sect = self.get_sect()
 

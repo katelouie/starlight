@@ -288,6 +288,32 @@ ARABIC_PARTS_CATALOG = {
     "Part of Profession": {"points": ["ASC", "MC", "Sun"], "sect_flip": False},
 }
 
+HOUSE_SYSTEMS = {
+    "Placidus": b"P",
+    "Koch": b"K", 
+    "Porphyry": b"O",
+    "Regiomontanus": b"R",
+    "Campanus": b"C",
+    "Equal": b"A",
+    "Equal (MC)": b"D",
+    "Vehlow Equal": b"V",
+    "Whole Sign": b"W",
+    "Whole Sign (Aries=1st)": b"N",
+    "Alcabitius": b"B",
+    "Topocentric": b"T",
+    "Morinus": b"M",
+    "Sripati": b"S",
+    "Azimuthal": b"H",
+    "Axial Rotation": b"X",
+    "Carter Poli-Equatorial": b"F",
+    "Sunshine": b"I",
+    "Pullen S-delta": b"L",
+    "Pullen S-ratio": b"Q",
+    "Krusinski-Pisa-Goelzer": b"U",
+    "APC Houses": b"Y",
+    "Gauquelin": b"G",
+}
+
 
 # Cached Swiss Ephemeris functions
 @cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
