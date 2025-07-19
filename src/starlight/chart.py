@@ -15,6 +15,7 @@ from starlight.objects import (
     Midpoint,
     Object,
     Planet,
+    ArabicPart,
     _cached_date_conversion,
     _cached_houses,
 )
@@ -50,7 +51,11 @@ class Chart:
         if datetime_utc.tzinfo is None:
             raise ValueError("datetime must be timezone-aware (preferably UTC)")
 
-        self.datetime_utc = datetime_utc.astimezone(pytz.UTC) if datetime_utc.tzinfo != pytz.UTC else datetime_utc
+        self.datetime_utc = (
+            datetime_utc.astimezone(pytz.UTC)
+            if datetime_utc.tzinfo != pytz.UTC
+            else datetime_utc
+        )
         self.house_system = houses
         self.loc_name = loc_name
         self.is_time_known = time_known
@@ -75,6 +80,7 @@ class Chart:
         self._make_houses_and_angles()
         self._make_lunar_parts()
         self._make_asteroids()
+        self._make_arabic_parts()
         self._make_midpoints()
 
     @property
@@ -175,11 +181,21 @@ class Chart:
             self.objects_dict[asteroid.name] = asteroid
             self.planets.append(asteroid)
 
-    def calc_arabic_part(self, part_name: str) -> float | None:
-        if part_name.lower() == "fortune":
-            return self.angles[0].long + self.planets[0].long - self.planets[1].long
-        else:
-            return None
+    def _make_arabic_parts(self) -> None:
+        """Calculate common Arabic Parts."""
+        from starlight.objects import ARABIC_PARTS_CATALOG
+
+        self.arabic_parts = []
+        sect = self.get_sect()
+
+        for part_name, part_data in ARABIC_PARTS_CATALOG.items():
+            points = [self.objects_dict[p] for p in part_data["points"]]
+            part = ArabicPart(
+                part_name, points[0], points[1], points[2], sect, part_data["sect_flip"]
+            )
+            self.objects.append(part)
+            self.objects_dict[part.name] = part
+            self.arabic_parts.append(part)
 
     def _make_midpoints(self):
         self.midpoints = []
@@ -218,7 +234,7 @@ class Chart:
         location_data = _cached_geocode(self.loc_name)
 
         if location_data:
-            self.loc = (location_data['latitude'], location_data['longitude'])
+            self.loc = (location_data["latitude"], location_data["longitude"])
             print(f"{location_data['address']} ({self.loc[0]}, {self.loc[1]})")
         else:
             raise ValueError("Location not found.")
@@ -236,7 +252,7 @@ class Chart:
 
     def get_local_datetime(self) -> Optional[datetime]:
         """Get the local datetime for this chart's location."""
-        if not hasattr(self, 'loc') or self.loc is None:
+        if not hasattr(self, "loc") or self.loc is None:
             return None
 
         tf = timezonefinder.TimezoneFinder()
@@ -346,7 +362,9 @@ class Chart:
                 total_score += scores["triplicity"]
             elif triplicity_dict["coop"] == p.name:
                 dignities.append("triplicity")
-                total_score += scores["triplicity"] - 1  # Cooperating triplicity is slightly less
+                total_score += (
+                    scores["triplicity"] - 1
+                )  # Cooperating triplicity is slightly less
 
             # Check bounds (Egyptian system)
             bound_planet = self._get_bound_ruler(sign_dict["bound_egypt"], sign_pos)
@@ -401,16 +419,20 @@ class Chart:
                     and ((p, other_obj) not in pairs)
                 ):
                     for aspect_name, aspect_data in ASPECTS.items():
-                        aspect_result = p.aspect(other_obj, aspect_data["degree"], aspect_data["orb"])
+                        aspect_result = p.aspect(
+                            other_obj, aspect_data["degree"], aspect_data["orb"]
+                        )
                         if aspect_result[0]:
-                            aspects.append({
-                                "planet1": p,
-                                "planet2": other_obj,
-                                "aspect_name": aspect_name,
-                                "orb": aspect_result[1],
-                                "distance": aspect_result[2],
-                                "movement": aspect_result[3],
-                            })
+                            aspects.append(
+                                {
+                                    "planet1": p,
+                                    "planet2": other_obj,
+                                    "aspect_name": aspect_name,
+                                    "orb": aspect_result[1],
+                                    "distance": aspect_result[2],
+                                    "movement": aspect_result[3],
+                                }
+                            )
                             pairs.append((other_obj, p))
 
         return aspects
@@ -432,16 +454,20 @@ class Chart:
                     mp_close = mp_2
 
                 for aspect_name, aspect_data in ASPECTS.items():
-                    aspect_result = mp_close.aspect(p, aspect_data["degree"], aspect_data["orb"])
+                    aspect_result = mp_close.aspect(
+                        p, aspect_data["degree"], aspect_data["orb"]
+                    )
                     if aspect_result[0]:
-                        midpoint_aspects.append({
-                            "midpoint": mp,
-                            "planet": p,
-                            "aspect_name": aspect_name,
-                            "orb": aspect_result[1],
-                            "distance": aspect_result[2],
-                            "movement": aspect_result[3],
-                        })
+                        midpoint_aspects.append(
+                            {
+                                "midpoint": mp,
+                                "planet": p,
+                                "aspect_name": aspect_name,
+                                "orb": aspect_result[1],
+                                "distance": aspect_result[2],
+                                "movement": aspect_result[3],
+                            }
+                        )
 
         return midpoint_aspects
 
@@ -456,9 +482,9 @@ def _cached_geocode(location_name: str) -> dict:
 
         if location:
             return {
-                'latitude': location.latitude,
-                'longitude': location.longitude,
-                'address': str(location)
+                "latitude": location.latitude,
+                "longitude": location.longitude,
+                "address": str(location),
             }
         else:
             return {}
@@ -474,5 +500,3 @@ def _cached_geocode(location_name: str) -> dict:
 #     sec = (min % 1) * 60
 
 #     return f"{round(degree)}°{round(min)}'" + f'{round(sec)}"'
-
-

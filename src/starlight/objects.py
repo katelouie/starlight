@@ -201,6 +201,34 @@ class Midpoint(Object):
         return False
 
 
+class ArabicPart(Object):
+    def __init__(
+        self,
+        name: str,
+        point1: Object,
+        point2: Object,
+        point3: Object,
+        sect: str,
+        sect_flip: bool = False,
+    ) -> None:
+        self.name = name
+        self.point1 = point1
+        self.point2 = point2
+        self.point3 = point3
+        self.sect = sect
+
+        # Calculate based on sect
+
+        if (sect == "Day") or (not sect_flip):
+            self.long = self.point1.long + self.point2.long - self.point3.long
+        elif sect == "Night":
+            self.long = self.point1.long - self.point2.long + self.point3.long
+
+        self.long = self.long % 360  # Normalize to 0-360 range
+
+        self._make_sign_pos()  # Add sign positioning
+
+
 ASPECTS = {
     "Conjunct": {"degree": 0, "orb": 8},
     "Sextile": {"degree": 60, "orb": 8},
@@ -242,6 +270,24 @@ SWISS_EPHEMERIS_OBJECTS = {
     "southnode": {"name": "South Node", "alias": "South Node ☋"},
 }
 
+ARABIC_PARTS_CATALOG = {
+    "Part of Fortune": {"points": ["ASC", "Moon", "Sun"], "sect_flip": True},
+    "Part of Spirit": {"points": ["ASC", "Sun", "Moon"], "sect_flip": True},
+    "Part of Love": {"points": ["ASC", "Venus", "Sun"], "sect_flip": False},
+    "Part of Marriage": {"points": ["ASC", "Venus", "Jupiter"], "sect_flip": False},
+    "Part of Eros": {"points": ["ASC", "Venus", "Mars"], "sect_flip": False},
+    "Part of Increase": {"points": ["ASC", "Jupiter", "Sun"], "sect_flip": False},
+    "Part of Catastrophe": {"points": ["ASC", "Mars", "Saturn"], "sect_flip": False},
+    "Part of Death": {"points": ["ASC", "Saturn", "Moon"], "sect_flip": False},
+    "Part of Sickness": {"points": ["ASC", "Mars", "Moon"], "sect_flip": False},
+    "Part of Siblings": {"points": ["ASC", "Jupiter", "Saturn"], "sect_flip": False},
+    "Part of Father": {"points": ["ASC", "Sun", "Saturn"], "sect_flip": False},
+    "Part of Mother": {"points": ["ASC", "Venus", "Moon"], "sect_flip": False},
+    "Part of Children": {"points": ["ASC", "Jupiter", "Moon"], "sect_flip": False},
+    "Part of Travel": {"points": ["ASC", "Mars", "Mercury"], "sect_flip": False},
+    "Part of Profession": {"points": ["ASC", "MC", "Sun"], "sect_flip": False},
+}
+
 
 # Cached Swiss Ephemeris functions
 @cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
@@ -249,15 +295,18 @@ def _cached_calc_ut(julian_day: float, planet_id: int):
     """Cached wrapper for swe.calc_ut."""
     return swe.calc_ut(julian_day, planet_id)
 
-@cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours  
+
+@cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
 def _cached_pheno_ut(julian_day: float, planet_id: int):
     """Cached wrapper for swe.pheno_ut."""
     return swe.pheno_ut(julian_day, planet_id)
+
 
 @cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
 def _cached_houses(julian_day: float, lat: float, long: float, hsys: bytes):
     """Cached wrapper for swe.houses."""
     return swe.houses(julian_day, lat, long, hsys=hsys)
+
 
 @cached(cache_type="ephemeris", max_age_seconds=86400)  # Cache for 24 hours
 def _cached_date_conversion(year: int, month: int, day: int, hour: float):
