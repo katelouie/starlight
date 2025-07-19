@@ -166,7 +166,17 @@ All test outputs are organized in `tests/output/`:
 ## ⚙️ Configuration
 
 ### Swiss Ephemeris Data
-The `data/` directory contains Swiss Ephemeris files for astronomical calculations. Download additional data files from the [Swiss Ephemeris FTP](https://www.astro.com/swisseph/ephe/) as needed.
+Starlight includes **essential ephemeris files** covering 1800-2400 CE (~7.8MB) for immediate functionality. For extended date ranges, use the download script:
+
+```bash
+# Download full dataset (~334MB) for 13201 BCE - 17191 CE
+python scripts/download_ephemeris.py
+
+# Download specific year range
+python scripts/download_ephemeris.py --years 1000-3000
+```
+
+See [`data/README.md`](data/README.md) for complete documentation.
 
 ### House Systems
 Supported house systems:

@@ -23,9 +23,11 @@ from starlight.cache import cached
 
 def _set_ephemeris_path():
     """Set the path to Swiss Ephemeris data files."""
-    PATH_LIB = os.path.dirname(__file__) + os.sep
-    PATH_DATA = PATH_LIB + "data" + os.sep
-    swe.set_ephe_path(PATH_DATA + "swisseph" + os.sep + "ephe" + os.sep)
+    # Get project root directory (two levels up from src/starlight/)
+    PATH_LIB = os.path.dirname(__file__)  # src/starlight/
+    PATH_PROJECT = os.path.dirname(os.path.dirname(PATH_LIB))  # project root
+    PATH_DATA = os.path.join(PATH_PROJECT, "data", "swisseph", "ephe") + os.sep
+    swe.set_ephe_path(PATH_DATA)
 
 
 class Chart:
@@ -39,15 +41,15 @@ class Chart:
     ) -> None:
         # Set ephemeris path
         _set_ephemeris_path()
-        
+
         # Validate inputs
         if loc is None and loc_name == "":
             raise ValueError("Need either coordinates or place name.")
-        
+
         # Store datetime (must be UTC)
         if datetime_utc.tzinfo is None:
             raise ValueError("datetime must be timezone-aware (preferably UTC)")
-        
+
         self.datetime_utc = datetime_utc.astimezone(pytz.UTC) if datetime_utc.tzinfo != pytz.UTC else datetime_utc
         self.house_system = houses
         self.loc_name = loc_name
@@ -214,13 +216,13 @@ class Chart:
     def get_lat_long(self) -> None:
         # Get lat/long from cached geocoding
         location_data = _cached_geocode(self.loc_name)
-        
+
         if location_data:
             self.loc = (location_data['latitude'], location_data['longitude'])
             print(f"{location_data['address']} ({self.loc[0]}, {self.loc[1]})")
         else:
             raise ValueError("Location not found.")
-        
+
     def get_timezone(self) -> None:
         # Get timezone from timezonefinder
         tf = timezonefinder.TimezoneFinder()
@@ -236,17 +238,17 @@ class Chart:
         """Get the local datetime for this chart's location."""
         if not hasattr(self, 'loc') or self.loc is None:
             return None
-        
+
         tf = timezonefinder.TimezoneFinder()
         timezone_name = tf.certain_timezone_at(lat=self.lat, lng=self.long)
-        
+
         if timezone_name is None:
             print("Could not determine the time zone")
             return None
-        
+
         local_tz = pytz.timezone(timezone_name)
         return self.datetime_utc.astimezone(local_tz)
-    
+
     def get_planet_house(self, p: Planet) -> int:
         """Calculate which house a planet is in based on house cusps."""
         cusp_list = list(self.cusps)
@@ -260,37 +262,37 @@ class Chart:
                 if p.long >= c and p.long < second_cusp:
                     return i + 1
         return 1  # fallback
-    
+
     def get_sect(self) -> str:
         """Determine if chart is a day or night chart."""
         asc = self.objects_dict["ASC"]
         sun = self.objects_dict["Sun"]
-        
+
         desc_long = (asc.long + 180) % 360
         sect = "Night"  # Default
-        
+
         if asc.long < desc_long:
             if sun.long >= desc_long:
                 sect = "Day"
         elif asc.long > desc_long:
             if (sun.long >= desc_long) and (sun.long < asc.long):
                 sect = "Day"
-        
+
         return sect
-    
+
     def get_planetary_dignities(self, traditional: bool = True) -> dict:
         """Calculate planetary dignity scores.
-        
+
         Args:
             traditional: If True, use traditional rulerships. If False, use modern.
-            
+
         Returns:
             Dictionary with planet names as keys and dignity info as values.
         """
         from starlight.signs import DIGNITIES
-        
+
         core_names = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
-        
+
         scores = {
             "ruler": 5,
             "exhalt": 4,
@@ -300,40 +302,40 @@ class Chart:
             "detriment": -5,
             "fall": -4,
         }
-        
+
         planet_dignities = {}
         core_planets = [self.objects_dict[name] for name in core_names]
         sect = self.get_sect()  # Day or Night chart
-        
+
         for p in core_planets:
             sign_dict = DIGNITIES[p.sign]
             sign_pos = p.sign_deg  # Degree within the sign (0-29)
             dignity_system = "traditional" if traditional else "modern"
             essential_dict = sign_dict[dignity_system]
-            
+
             dignities = []
             total_score = 0
-            
+
             # Check rulership
             if essential_dict["ruler"] == p.name:
                 dignities.append("ruler")
                 total_score += scores["ruler"]
-            
+
             # Check exaltation
             if essential_dict["exhalt"] == p.name:
                 dignities.append("exhalt")
                 total_score += scores["exhalt"]
-                
+
             # Check detriment
             if essential_dict["detriment"] == p.name:
                 dignities.append("detriment")
                 total_score += scores["detriment"]
-                
+
             # Check fall
             if essential_dict["fall"] == p.name:
                 dignities.append("fall")
                 total_score += scores["fall"]
-            
+
             # Check triplicity (based on sect)
             triplicity_dict = sign_dict["triplicity"]
             if sect == "Day" and triplicity_dict["day"] == p.name:
@@ -345,19 +347,19 @@ class Chart:
             elif triplicity_dict["coop"] == p.name:
                 dignities.append("triplicity")
                 total_score += scores["triplicity"] - 1  # Cooperating triplicity is slightly less
-            
+
             # Check bounds (Egyptian system)
             bound_planet = self._get_bound_ruler(sign_dict["bound_egypt"], sign_pos)
             if bound_planet == p.name:
                 dignities.append("bound")
                 total_score += scores["bound"]
-            
+
             # Check decan (using Triplicity system)
             decan_planet = self._get_decan_ruler(sign_dict["decan_trip"], sign_pos)
             if decan_planet == p.name:
                 dignities.append("decan")
                 total_score += scores["decan"]
-            
+
             planet_dignities[p.name] = {
                 "sign": p.sign,
                 "degree": round(sign_pos, 2),
@@ -366,28 +368,28 @@ class Chart:
                 "bound_ruler": bound_planet,
                 "decan_ruler": decan_planet,
             }
-        
+
         return planet_dignities
-    
+
     def _get_bound_ruler(self, bounds_dict: dict, degree: float) -> str:
         """Get the ruler of Egyptian bounds for a given degree."""
         for start_degree in sorted(bounds_dict.keys(), reverse=True):
             if degree >= start_degree:
                 return bounds_dict[start_degree]
         return list(bounds_dict.values())[0]  # Fallback to first ruler
-    
+
     def _get_decan_ruler(self, decan_list: list, degree: float) -> str:
         """Get the decan ruler for a given degree (0-9.99, 10-19.99, 20-29.99)."""
         decan_index = int(degree // 10)
         return decan_list[min(decan_index, len(decan_list) - 1)]
-    
+
     def get_all_aspects(self) -> list[dict]:
         """Get all aspects in the chart as a list of dictionaries."""
         from starlight.objects import ASPECTS
-        
+
         aspects = []
         pairs = []
-        
+
         for p in self.planets:
             for other_obj in [*self.planets, *self.angles]:
                 if (
@@ -410,15 +412,15 @@ class Chart:
                                 "movement": aspect_result[3],
                             })
                             pairs.append((other_obj, p))
-        
+
         return aspects
-    
+
     def get_midpoint_aspects(self) -> list[dict]:
         """Get all midpoint aspects in the chart."""
         from starlight.objects import ASPECTS
-        
+
         midpoint_aspects = []
-        
+
         for mp in self.midpoints:
             for p in self.planets:
                 # use closer midpoint
@@ -428,7 +430,7 @@ class Chart:
                     mp_close = mp
                 else:
                     mp_close = mp_2
-                
+
                 for aspect_name, aspect_data in ASPECTS.items():
                     aspect_result = mp_close.aspect(p, aspect_data["degree"], aspect_data["orb"])
                     if aspect_result[0]:
@@ -440,7 +442,7 @@ class Chart:
                             "distance": aspect_result[2],
                             "movement": aspect_result[3],
                         })
-        
+
         return midpoint_aspects
 
 
@@ -451,7 +453,7 @@ def _cached_geocode(location_name: str) -> dict:
     try:
         geolocator = Nominatim(user_agent="starlight_geocoder")
         location = geolocator.geocode(location_name)
-        
+
         if location:
             return {
                 'latitude': location.latitude,
