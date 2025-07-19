@@ -3,10 +3,11 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
-
 from datetime import datetime
 import pytz
+
+# Add parent src directory to path so we can import starlight
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 
 def demo_dignities_calculator():
@@ -31,8 +32,6 @@ def demo_dignities_calculator():
     
     example_code = '''
 from starlight.chart import Chart
-from datetime import datetime
-import pytz
 
 # Create a chart
 chart = Chart(
@@ -48,9 +47,9 @@ traditional_dignities = chart.get_planetary_dignities(traditional=True)
 # Get modern dignities  
 modern_dignities = chart.get_planetary_dignities(traditional=False)
 
-# Print dignities table
-from starlight.presentation import create_table_dignities
-print(create_table_dignities(chart, plain=True, traditional=True))
+# Print dignities table (import at top of your script)
+# from starlight.presentation import create_table_dignities
+# print(create_table_dignities(chart, plain=True, traditional=True))
 '''
     
     print(example_code)

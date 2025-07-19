@@ -9,7 +9,7 @@ This directory contains example scripts showing how to use the Starlight astrolo
 from datetime import datetime
 import pytz
 from starlight.chart import Chart
-from starlight.drawing_new import draw_chart
+from starlight.drawing import draw_chart
 
 # Create a chart for a specific date/time/location
 dt = datetime(1994, 1, 6, 19, 47, tzinfo=pytz.UTC)
@@ -25,7 +25,7 @@ draw_chart(chart, "my_chart.svg", size=600)
 
 ### Moon Phase Visualization
 ```python
-from starlight.drawing_new import draw_moon_phase_standalone
+from starlight.drawing import draw_moon_phase_standalone
 
 # Create individual moon phase visualizations
 draw_moon_phase_standalone(0.25, True, "waxing_crescent.svg")   # 25% illuminated, waxing
