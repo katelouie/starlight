@@ -87,10 +87,14 @@ class Chart:
 
     @property
     def lat(self) -> float:
+        if self.loc is None:
+            raise ValueError("Location not set")
         return self.loc[0]
 
     @property
     def long(self) -> float:
+        if self.loc is None:
+            raise ValueError("Location not set")
         return self.loc[1]
 
     @property
@@ -170,7 +174,7 @@ class Chart:
             if swe_id == 11:  # add south node
                 south_node = copy.deepcopy(lunar_obj)
                 south_node.name = "South Node"
-                south_node.swe = "southnode"
+                south_node.swe = -1  # Special ID for calculated South Node
                 south_node.long = (lunar_obj.long + 180) % 360
                 south_node._make_sign_pos()
                 self.objects.append(south_node)
