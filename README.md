@@ -5,7 +5,8 @@ A modern Python library for astrological chart calculation and visualization, bu
 ## ✨ Features
 
 - **Accurate Calculations**: Built on Swiss Ephemeris for precise planetary positions
-- **Multiple House Systems**: Placidus, Whole Sign, and more
+- **Multiple House Systems**: 23+ house systems including Placidus, Koch, Whole Sign, Equal, and more
+- **Arabic Parts Calculator**: 15+ traditional Arabic Parts including Part of Fortune and Spirit
 - **Beautiful Visualizations**: SVG chart generation with customizable styling
 - **Comprehensive Aspects**: Major and minor aspects with configurable orbs
 - **Moon Phases**: Accurate lunar phase calculations and artistic visualizations
@@ -52,8 +53,12 @@ for planet in chart.planets:
     print(f"{planet.name}: {planet.long:.1f}° in {planet.sign}")
 
 # Access aspects
-for aspect in chart.aspects:
-    print(f"{aspect.planet1.name} {aspect.aspect_name} {aspect.planet2.name} (orb: {aspect.orb:.1f}°)")
+for aspect in chart.get_all_aspects():
+    print(f"{aspect['planet1'].name} {aspect['aspect_name']} {aspect['planet2'].name} (orb: {aspect['orb']:.1f}°)")
+
+# Access Arabic Parts
+for part in chart.arabic_parts:
+    print(f"{part.name}: {part.long:.1f}° in {part.sign}")
 ```
 
 ## 📁 Project Structure
@@ -179,12 +184,36 @@ python scripts/download_ephemeris.py --years 1000-3000
 See [`data/README.md`](data/README.md) for complete documentation.
 
 ### House Systems
-Supported house systems:
-- **Placidus** (default)
-- **Whole Sign**
-- **Equal House**
-- **Koch**
-- **Campanus**
+Supported house systems (23+ total):
+- **Placidus** (default), **Koch**, **Porphyry**, **Regiomontanus**, **Campanus**
+- **Whole Sign**, **Equal House**, **Vehlow Equal**, **Equal (MC)**
+- **Alcabitius**, **Topocentric**, **Morinus**, **Sripati**
+- **Azimuthal**, **Axial Rotation**, **APC Houses**, and more
+
+```python
+# Use any supported house system
+chart = Chart(
+    datetime_utc=dt,
+    loc_name="San Francisco, CA", 
+    houses="Koch"  # or "Whole Sign", "Equal", etc.
+)
+```
+
+### Arabic Parts
+Starlight calculates 15+ traditional Arabic Parts automatically with proper day/night sect handling:
+
+```python
+# Access calculated Arabic Parts
+for part in chart.arabic_parts:
+    print(f"{part.name}: {part.long:.1f}° in {part.sign} (House {part.house})")
+
+# Major Arabic Parts included:
+# - Part of Fortune & Spirit (sect-dependent formulas)
+# - Part of Love, Marriage, Eros
+# - Part of Death, Sickness, Travel
+# - Part of Children, Father, Mother
+# - Part of Profession, Siblings, and more
+```
 
 ### Aspect Configuration
 ```python
