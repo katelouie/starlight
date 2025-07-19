@@ -17,6 +17,7 @@ data/
 !data/swisseph/ephe/semo_18.se1
 !data/swisseph/ephe/semo_24.se1
 !data/swisseph/ephe/seas_18.se1
+!data/README.md
 
 # Ignore experimentation area
 dev_experiments/
