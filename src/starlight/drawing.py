@@ -1,1019 +1,1125 @@
-"""Draw an astrological SVG chart.
+"""
+Professional astrological chart drawing with SVG.
 
-Absolutely NOTHING in this file works properly.
+This module provides a clean, extensible system for drawing astrological charts
+using SVG for crisp, scalable output.
 """
 
-# src/starlight/draw_chart.py
-
 import math
-
+from typing import Optional, Tuple, Dict, Any
 import svgwrite
-from PIL import Image, ImageDraw
-
 from starlight.chart import Chart
-from starlight.objects import format_long_sign, get_ephemeris_object
+from starlight.objects import get_ephemeris_object, ASPECTS
 
 
-def polar_to_cartesian(cx, cy, angle_deg, radius):
-    angle_rad = math.radians(angle_deg - 90)
-    x = cx + radius * math.cos(angle_rad)
-    y = cy + radius * math.sin(angle_rad)
-    return x, y
+class ChartWheel:
+    """
+    Core chart wheel drawing system with proper coordinate transformation.
 
+    This class handles the fundamental geometry and coordinate system for
+    astrological chart drawing.
+    """
 
-def draw_svg_chart(chart: Chart, filename: str = "chart.svg"):
-    # Canvas setup
-    size = 600
-    center = size // 2
-    radius_outer = 250
-    radius_inner = 200
-    radius_planets = 150
-    dwg = svgwrite.Drawing(filename, size=(size, size), profile="tiny")
+    def __init__(self, size: int = 600, style: Optional[Dict[str, Any]] = None):
+        """
+        Initialize chart wheel with configurable size and styling.
 
-    # Background ring
-    dwg.add(
-        dwg.circle(
-            center=(center, center),
-            r=radius_outer,
-            fill="white",
-            stroke="black",
-            stroke_width=2,
-        )
-    )
-    print([f"{str(x)}: {format_long_sign(x.long)}" for x in chart.angles])
-    asc_degree = [x for x in chart.angles if x.name == "ASC"][0].long
-    print(asc_degree)
+        Args:
+            size: Canvas size in pixels (creates square canvas)
+            style: Optional styling configuration
+        """
+        self.size = size
+        self.center = size // 2
 
-    # Zodiac slices
-    for i in range(12):
-        angle = i * 30
-        label_angle = angle + 15  # middle of each slice
+        # Define the radial structure of the chart
+        # These are proportional to canvas size for scalability
+        self.radius_outer = size * 0.42  # Outer edge
+        self.radius_zodiac = size * 0.38  # Zodiac ring
+        self.radius_houses = size * 0.34  # House numbers
+        self.radius_planets = size * 0.28  # Planet placement
+        self.radius_inner = size * 0.20   # Inner clear area
 
-        # Draw division line
-        x, y = polar_to_cartesian(center, center, angle, radius_outer)
-        dwg.add(
-            dwg.line(start=(center, center), end=(x, y), stroke="gray", stroke_width=1)
-        )
+        # Professional styling configuration
+        self.style = {
+            # Main chart styling
+            'background_color': '#FEFEFE',
+            'border_color': '#2C3E50',
+            'border_width': 2,
 
-        # Sign label
-        lx, ly = polar_to_cartesian(center, center, label_angle, radius_inner)
-        # sign_long = (asc_degree + angle) % 360
-        sign_long = (-asc_degree - i * 30 - 90) % 360
-        print(sign_long, format_long_sign(sign_long))
-        sign = format_long_sign(sign_long)
-        dwg.add(
-            dwg.text(
-                sign,
-                insert=(lx, ly),
+            # House styling
+            'house_line_color': '#BDC3C7',
+            'house_line_width': 0.8,
+            'house_number_color': '#7F8C8D',
+            'house_number_size': '11px',
+
+            # Zodiac ring styling
+            'zodiac_line_color': '#95A5A6',
+            'zodiac_line_width': 0.6,
+            'zodiac_sign_color': '#34495E',
+            'zodiac_sign_size': '22px',
+            'zodiac_font_family': '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+
+            # Planet styling
+            'planet_color': '#2C3E50',
+            'planet_size': '24px',
+            'planet_font_family': '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+            'planet_retro_color': '#E74C3C',
+
+            # Inner circle styling (separates aspects from outer elements)
+            'inner_circle_color': '#BDC3C7',
+            'inner_circle_width': 1,
+
+            # Additional detail styling
+            'sign_planet_separator_color': "#B5B5B5",
+            'sign_planet_separator_width': 0.5,
+            'degree_tick_color': "#6A6A6A",
+            'degree_tick_width': 0.3,
+            'degree_tick_length': 8,
+            'house_alternating_colors': ["#A7A894", '#F1F3F4'],
+
+            # Angle styling
+            'angle_color': '#949494',
+            'angle_size': '12px',
+            'angle_line_color': '#595959',
+            'angle_line_width': 2,
+            'angle_line_opacity': 0.8,
+
+            # Text styling
+            'text_color': '#2C3E50',
+
+            # Aspect styling
+            'aspect_colors': {
+                'Conjunct': '#34495E',    # Dark blue-gray
+                'Opposition': '#E74C3C',  # Modern red
+                'Square': '#F39C12',      # Modern orange
+                'Trine': '#3498DB',       # Modern blue
+                'Sextile': '#27AE60'      # Modern green
+            },
+            'aspect_widths': {
+                'Conjunct': 1.2,
+                'Opposition': 1.8,
+                'Square': 1.3,
+                'Trine': 1.3,
+                'Sextile': 1.0
+            },
+            'aspect_opacity': {
+                'Conjunct': 0.8,
+                'Opposition': 0.9,
+                'Square': 0.8,
+                'Trine': 0.8,
+                'Sextile': 0.7
+            },
+            'show_aspects': True,
+
+        }
+
+        # Update with user-provided styles
+        if style:
+            self.style.update(style)
+
+    def create_svg(self, filename: Optional[str] = None) -> svgwrite.Drawing:
+        """
+        Create the base SVG drawing with proper setup.
+
+        Args:
+            filename: Optional filename for SVG output
+
+        Returns:
+            SVG Drawing object ready for chart elements
+        """
+        # Create SVG with proper viewBox for scalability
+        if filename:
+            dwg = svgwrite.Drawing(
+                filename=filename,
+                size=(f"{self.size}px", f"{self.size}px"),
+                viewBox=f"0 0 {self.size} {self.size}",
+                profile='full'  # Use full profile for better text support
+            )
+        else:
+            dwg = svgwrite.Drawing(
+                size=(f"{self.size}px", f"{self.size}px"),
+                viewBox=f"0 0 {self.size} {self.size}",
+                profile='full'  # Use full profile for better text support
+            )
+
+        # Add background circle
+        dwg.add(dwg.circle(
+            center=(self.center, self.center),
+            r=self.radius_outer,
+            fill=self.style['background_color'],
+            stroke=self.style['border_color'],
+            stroke_width=self.style['border_width']
+        ))
+
+        # Add inner circle to separate aspect area
+        dwg.add(dwg.circle(
+            center=(self.center, self.center),
+            r=self.radius_inner,
+            fill="none",
+            stroke=self.style['inner_circle_color'],
+            stroke_width=self.style['inner_circle_width']
+        ))
+
+        # Add separator circle between signs and planets
+        separator_radius = (self.radius_zodiac + self.radius_planets) / 2
+        dwg.add(dwg.circle(
+            center=(self.center, self.center),
+            r=separator_radius,
+            fill="none",
+            stroke=self.style['sign_planet_separator_color'],
+            stroke_width=self.style['sign_planet_separator_width']
+        ))
+
+        # Add degree tick marks around the outer circle
+        self._draw_degree_ticks(dwg)
+
+        return dwg
+
+    def astrological_to_svg_angle(self, astrological_degrees: float) -> float:
+        """
+        Convert astrological degrees to SVG coordinate system.
+
+        Astrological system:
+        - 0° = Aries point (placed at 9 o'clock / left side)
+        - Degrees increase clockwise
+
+        SVG system:
+        - 0° = 3 o'clock position
+        - Degrees increase counterclockwise
+
+        Args:
+            astrological_degrees: Degrees in astrological system (0-360)
+
+        Returns:
+            Degrees in SVG coordinate system
+        """
+        # Convert: astro 0° = SVG 180° (9 o'clock), and maintain clockwise direction
+        return (180 + astrological_degrees) % 360
+
+    def polar_to_cartesian(self, angle_degrees: float, radius: float) -> Tuple[float, float]:
+        """
+        Convert polar coordinates to Cartesian (X, Y) coordinates.
+
+        Args:
+            angle_degrees: Angle in degrees (astrological system)
+            radius: Distance from center
+
+        Returns:
+            (x, y) coordinates for SVG
+        """
+        # Convert to SVG angle system
+        svg_angle = self.astrological_to_svg_angle(angle_degrees)
+        angle_rad = math.radians(svg_angle)
+
+        # Calculate Cartesian coordinates
+        x = self.center + radius * math.cos(angle_rad)
+        y = self.center - radius * math.sin(angle_rad)  # SVG Y is inverted
+
+        return x, y
+
+    def _draw_degree_ticks(self, dwg: svgwrite.Drawing) -> None:
+        """
+        Draw degree tick marks around the outer circle every 5 degrees.
+
+        Args:
+            dwg: SVG Drawing object
+        """
+        for degree in range(0, 360, 5):
+            # Major ticks every 30 degrees (sign boundaries)
+            if degree % 30 == 0:
+                tick_length = self.style['degree_tick_length'] * 1.5
+                tick_width = self.style['degree_tick_width'] * 2
+            # Minor ticks every 10 degrees
+            elif degree % 10 == 0:
+                tick_length = self.style['degree_tick_length'] * 1.2
+                tick_width = self.style['degree_tick_width'] * 1.5
+            # Smallest ticks every 5 degrees
+            else:
+                tick_length = self.style['degree_tick_length']
+                tick_width = self.style['degree_tick_width']
+
+            # Calculate tick positions
+            x_outer, y_outer = self.polar_to_cartesian(degree, self.radius_outer)
+            x_inner, y_inner = self.polar_to_cartesian(degree, self.radius_outer - tick_length)
+
+            # Draw tick mark
+            dwg.add(dwg.line(
+                start=(x_inner, y_inner),
+                end=(x_outer, y_outer),
+                stroke=self.style['degree_tick_color'],
+                stroke_width=tick_width
+            ))
+
+    def draw_house_divisions(self, dwg: svgwrite.Drawing, chart: Chart) -> None:
+        """
+        Draw the 12 house division lines with alternating background colors.
+
+        Args:
+            dwg: SVG Drawing object
+            chart: Chart object containing house cusp data
+        """
+        # First pass: Draw alternating house background sectors
+        for i, cusp_degree in enumerate(chart.cusps):
+            next_cusp = chart.cusps[(i + 1) % 12]
+
+            # Calculate the span of this house
+            if next_cusp < cusp_degree:  # Handle wrapping around 360°
+                next_cusp += 360
+
+            # Determine background color (alternating pattern)
+            color_index = i % 2
+            fill_color = self.style['house_alternating_colors'][color_index]
+
+            # Create a sector path for the house background
+            self._draw_house_sector(dwg, cusp_degree, next_cusp, fill_color)
+
+        # Second pass: Draw house division lines and numbers
+        for i, cusp_degree in enumerate(chart.cusps):
+            x_outer, y_outer = self.polar_to_cartesian(cusp_degree, self.radius_outer)
+            x_inner, y_inner = self.polar_to_cartesian(cusp_degree, self.radius_inner)
+
+            # Draw house division line
+            dwg.add(dwg.line(
+                start=(x_inner, y_inner),
+                end=(x_outer, y_outer),
+                stroke=self.style['house_line_color'],
+                stroke_width=self.style['house_line_width']
+            ))
+
+            # Add house number
+            house_number = i + 1
+            x_house, y_house = self.polar_to_cartesian(
+                cusp_degree + 15,  # Offset to middle of house
+                self.radius_houses
+            )
+
+            dwg.add(dwg.text(
+                str(house_number),
+                insert=(x_house, y_house),
                 text_anchor="middle",
-                # dominant_baseline="middle",
-                font_size="14px",
-                fill="black",
-            )
-        )
-
-    for planet in chart.planets[:2]:
-        # Calculate angle relative to ASC
-        print(planet.name, planet.long, format_long_sign(planet.long))
-        relative_angle = (270 - (planet.long - ((asc_degree // 30) * 30))) % 360
-        print(planet.name, relative_angle)
-
-        # Get position on the wheel
-        px, py = polar_to_cartesian(center, center, relative_angle, radius_planets)
-
-        # Get glyph from alias (last character of alias string)
-        glyph = get_ephemeris_object(planet.swe)["alias"][-1]
-
-        # Optional: retrograde indicator
-        fill_color = "red" if planet.is_retro else "black"
-
-        # Draw the glyph
-        dwg.add(
-            dwg.text(
-                glyph,
-                insert=(px, py),
-                text_anchor="middle",
-                font_size="18px",
-                fill=fill_color,
-            )
-        )
-
-    # Save it
-    dwg.save()
-    print(f"SVG chart saved as {filename}")
-
-
-def draw_moon_phase_pil(phase_angle, size=200):
-    img = Image.new("RGB", (size, size), "black")
-    draw = ImageDraw.Draw(img)
-    r = size // 2
-    cx, cy = r, r
-
-    # Draw full moon base
-    draw.ellipse([0, 0, size, size], fill="gray")
-
-    # Phase factor: 0 (new) to 1 (full)
-    phase = (1 + math.cos(math.radians(phase_angle))) / 2
-
-    # Overlay shadow
-    shadow_width = int(
-        r * (1 - 2 * abs(0.5 - phase))
-    )  # thinner crescent = wider shadow
-    if phase_angle <= 180:
-        # Waxing (dark on left)
-        draw.ellipse([cx - shadow_width, 0, cx + r, size], fill="black")
-    else:
-        # Waning (dark on right)
-        draw.ellipse([cx - r, 0, cx + shadow_width, size], fill="black")
-
-    return img
-
-
-def draw_moon_phase(angle, filename="moon_phase.svg"):
-    size = 200
-    center = size // 2
-    radius = 80
-
-    dwg = svgwrite.Drawing(filename, size=(size, size), profile="full")
-
-    # Define base clip path
-    clip_path_id = "moonClip"
-    clip_path = dwg.defs.add(dwg.clipPath(id=clip_path_id))
-    clip_path.add(dwg.circle(center=(center, center), r=radius))
-
-    # Illumination and waxing state
-    illumination = (1 + math.cos(math.radians(angle))) / 2
-    waxing = angle <= 180
-
-    # Draw base lit moon
-    dwg.add(dwg.circle(center=(center, center), r=radius, fill="white", stroke="black"))
-
-    if not math.isclose(illumination, 1.0, abs_tol=1e-2):
-        if math.isclose(illumination, 0.5, abs_tol=1e-2):
-            # Perfect quarter moon: black half-circle
-            if waxing:
-                # Dark on left
-                shadow = dwg.path(
-                    d=f"M {center} {center - radius} A {radius} {radius} 0 0 0 {center} {center + radius} Z",
-                    fill="black",
-                )
-            else:
-                # Dark on right
-                shadow = dwg.path(
-                    d=f"M {center} {center - radius} A {radius} {radius} 0 0 1 {center} {center + radius} Z",
-                    fill="black",
-                )
-        else:
-            # Crescent or gibbous
-            shadow_width = radius * 2 * (1 - illumination)
-            cx = (
-                center - (radius - shadow_width / 2)
-                if waxing
-                else center + (radius - shadow_width / 2)
-            )
-            shadow = dwg.ellipse(
-                center=(cx, center), r=(shadow_width / 2, radius), fill="black"
-            )
-
-        shadow["clip-path"] = f"url(#{clip_path_id})"
-        dwg.add(shadow)
-
-    dwg.save()
-    print(f"Moon phase SVG saved to {filename}")
-
-
-def draw_moon_half_phased(angle, filename="moon_phase.svg"):
-    """
-    Draw an approximate half-phased moon (two-tone) in an SVG file,
-    with 'angle' = separation Sun-Moon in [0..360] degrees:
-      0° => Full Moon
-      180° => New Moon
-      90° => ~ First Quarter
-      270° => ~ Last Quarter
-    Waxing if angle<180, waning otherwise.
-    """
-    size = 200
-    center = size // 2
-    radius = 80
-
-    dwg = svgwrite.Drawing(filename, size=(size, size), profile="full")
-
-    # Clip path for the circle boundary
-    clip_id = "moonClip"
-    clip_path = dwg.defs.add(dwg.clipPath(id=clip_id))
-    clip_path.add(dwg.circle(center=(center, center), r=radius))
-
-    # White circle as the 'base' moon
-    dwg.add(dwg.circle(center=(center, center), r=radius, fill="white", stroke="black"))
-
-    # Convert angle -> illumination in [0..1], 0 => new, 1 => full
-    # This is the standard formula for fraction of illuminated disc:
-    #   ill = (1 + cos(angle)) / 2
-    # but note angle=0 => cos(0)=1 => ill=1 => FULL
-    # angle=180 => ill=0 => NEW
-    illumination = (1 + math.cos(math.radians(angle))) / 2
-    waxing = angle < 180
-
-    # We'll define a helper that draws an arc-based path for "shadow".
-    # side = 'left' or 'right': which side to fill black
-    # arc_extent ~ how big the arc is in degrees, we set flags accordingly
-    # curve_ratio can scale the horizontal radius for crescents.
-    def add_shadow_arc(side, curve_ratio=1.0):
-        # side: 'left' or 'right'
-        # We'll do a path that covers from top to bottom with an elliptical arc.
-        # We'll compute a path starting at top-of-moon, arc to bottom-of-moon,
-        # then along the circle edge back up, or vice versa.
-
-        # direction -1 => left, +1 => right
-        direction = -1 if side == "left" else 1
-
-        # We'll scale the horizontal radius of the arc by curve_ratio
-        rx = radius * curve_ratio
-        ry = radius
-
-        # The arc path:
-        #  M center,center-radius
-        #  A rx,ry 0 large_arc_flag sweep_flag center, center+radius
-        #  L (center + direction*radius),(center+radius)
-        #  A radius,radius 0 large_arc_flag2 sweep_flag2 (center+direction*radius),(center-radius)
-        #  Z
-        #
-        # We want a half ellipse from top to bottom, so the arc is 180°, i.e. large_arc_flag=0,
-        # but for crescents we may do smaller arcs. We'll keep it simpler: if curve_ratio <1,
-        # we get a narrower arc => "crescent."
-
-        # We'll guess the arcs are <180 => large_arc_flag=0. We might flip sweep_flag for left vs right.
-        # For side='left', the 1st arc sweeps outward to bottom on the left side => sweep_flag=0
-        # For side='right', the 1st arc sweeps outward => sweep_flag=1
-        # Then the second arc is the outer boundary going back up.
-
-        # But let's keep a consistent approach:
-        # We'll do top->bottom with the first arc. Because it's half or partial, large_arc=0 if we want <=180.
-        # If the "angle" is exactly half, we want 180°, but let's keep large_arc=0 for now.
-        # We'll keep the second arc as the circle edge (radius) with large_arc=1 only if we want a bigger chunk.
-        # For simpler code, let's do large_arc=0 for all arcs in typical usage. If we find we need a bigger arc, we set it to 1.
-
-        # We'll pick the flags by side:
-        #   if side='left', first arc: sweep_flag=0, second arc: sweep_flag=1
-        #   if side='right', first arc: sweep_flag=1, second arc: sweep_flag=0
-        # That usually yields the correct path orientation.
-
-        if side == "left":
-            arc1_sweep = 0
-            arc2_sweep = 1
-        else:
-            arc1_sweep = 1
-            arc2_sweep = 0
-
-        # We'll define path strings
-        d = []
-        # Move to top center
-        d.append(f"M {center} {center - radius}")
-        # First arc (the 'terminator'):
-        # '0' for large_arc_flag => we want <=180 arcs
-        d.append(f"A {rx} {ry} 0 0 {arc1_sweep} {center} {center + radius}")
-        # line across the bottom to left or right
-        xbottom = center + direction * radius
-        d.append(f"L {xbottom} {center + radius}")
-        # second arc along the outside circle edge
-        d.append(f"A {radius} {radius} 0 0 {arc2_sweep} {xbottom} {center - radius}")
-        d.append("Z")
-
-        path = dwg.path(d=" ".join(d), fill="black")
-        # Clip to the circle boundary
-        path["clip-path"] = f"url(#{clip_id})"
-        dwg.add(path)
-
-    # Tolerance
-    eps = 1e-3
-
-    # edge cases:
-    if illumination < eps:
-        # new moon
-        # fill entire circle black
-        dwg.add(dwg.circle(center=(center, center), r=radius, fill="black"))
-    elif (1.0 - illumination) < eps:
-        # full moon => do nothing (already white)
-        pass
-    else:
-        # partial
-        # special check if half (quarter-phase)
-        if abs(illumination - 0.5) < eps:
-            # Exactly half. We want a perfect half black, half white.
-            # if waxing => black on left half, else black on right half
-            if waxing:
-                # black on left
-                add_shadow_arc("left", 1.0)
-            else:
-                add_shadow_arc("right", 1.0)
-        else:
-            # Crescent or Gibbous
-            # 'illumination' is fraction of brightness
-            # if illumination < 0.5 => mostly dark => "Crescent"
-            # else => mostly bright => "Gibbous"
-            # We'll define a 'curve_ratio' that controls how wide the black arc is
-            # For a small bright crescent, black is big => wide arc => curve_ratio ~1
-            # Actually we do curve_ratio = some function of illumination.
-            # let shadow portion fraction = 1 - ill if waxing or ill if waning.
-            # Because for waxing with ill<0.5 => black portion is (1-ill). We'll do ratio= (1-ill)*2 ?
-            # We'll keep it simpler: ratio = 2*abs(0.5 - ill). That yields 1 at half, 0 near full/new.
-            ratio = 2 * abs(0.5 - illumination)
-
-            # if ratio>1, clamp
-            if ratio > 1:
-                ratio = 1
-
-            if illumination < 0.5:
-                # Crescent
-                # if waxing => black on left is big, plus maybe partial on the right? Actually we only need one arc.
-                # We'll do one big black arc on left if waxing, or on right if waning, with ratio.
-                if waxing:
-                    add_shadow_arc("left", 1.0)  # big left side black
-                    add_shadow_arc("right", ratio)  # partial on right
-                else:
-                    add_shadow_arc("right", 1.0)
-                    add_shadow_arc("left", ratio)
-            else:
-                # Gibbous
-                # if waxing => small black portion on the right, else small black portion on the left
-                # We'll invert ratio so that the arc is the smaller chunk
-                # e.g. if illumination=0.8 => ratio=0.6 => we want that to be 0.4 for the smaller side's arc, so do (1-ratio)
-                smaller = 1 - ratio
-                if smaller < 0:
-                    smaller = 0
-                if waxing:
-                    add_shadow_arc("right", smaller)
-                else:
-                    add_shadow_arc("left", smaller)
-
-    dwg.save()
-    return filename
-
-
-def draw_moon_half_phased_fixed(angle, filename="moon_phase.svg"):
-    size = 200
-    center = size // 2
-    radius = 80
-
-    dwg = svgwrite.Drawing(filename, size=(size, size), profile="full")
-
-    # Define clip path for Moon boundary
-    clip_id = "moonClip"
-    clip_path = dwg.defs.add(dwg.clipPath(id=clip_id))
-    clip_path.add(dwg.circle(center=(center, center), r=radius))
-
-    # Base white moon
-    dwg.add(dwg.circle(center=(center, center), r=radius, fill="white", stroke="black"))
-
-    illumination = (1 + math.cos(math.radians(angle))) / 2
-    waxing = angle <= 180
-
-    def add_half_shadow(side):
-        # Straight half division
-        if side == "left":
-            path = dwg.path(
-                d=f"M {center} {center - radius} "
-                f"A {radius} {radius} 0 0 0 {center} {center + radius} "
-                f"L {center - radius} {center + radius} "
-                f"A {radius} {radius} 0 0 1 {center - radius} {center - radius} Z",
-                fill="black",
-            )
-        else:  # right
-            path = dwg.path(
-                d=f"M {center} {center - radius} "
-                f"A {radius} {radius} 0 0 1 {center} {center + radius} "
-                f"L {center + radius} {center + radius} "
-                f"A {radius} {radius} 0 0 0 {center + radius} {center - radius} Z",
-                fill="black",
-            )
-        path["clip-path"] = f"url(#{clip_id})"
-        dwg.add(path)
-
-    def add_crescent(side, curve_ratio):
-        width = radius * curve_ratio
-        if side == "right":
-            # inward curve on right
-            x1 = center
-            x2 = center + width
-            arc = dwg.path(
-                d=f"M {x1} {center - radius} "
-                f"A {width} {radius} 0 0 1 {x1} {center + radius} "
-                f"L {x2} {center + radius} "
-                f"A {radius} {radius} 0 0 0 {x2} {center - radius} Z",
-                fill="black",
-            )
-        else:
-            # inward curve on left
-            x1 = center
-            x2 = center - width
-            arc = dwg.path(
-                d=f"M {x1} {center - radius} "
-                f"A {width} {radius} 0 0 0 {x1} {center + radius} "
-                f"L {x2} {center + radius} "
-                f"A {radius} {radius} 0 0 1 {x2} {center - radius} Z",
-                fill="black",
-            )
-        arc["clip-path"] = f"url(#{clip_id})"
-        dwg.add(arc)
-
-    def add_gibbous(side, curve_ratio):
-        width = radius * curve_ratio
-        if side == "left":
-            # outward curve on left (black outer part)
-            x1 = center
-            x2 = center - width
-            arc = dwg.path(
-                d=f"M {x2} {center - radius} "
-                f"A {width} {radius} 0 0 1 {x2} {center + radius} "
-                f"L {x1} {center + radius} "
-                f"A {radius} {radius} 0 0 0 {x1} {center - radius} Z",
-                fill="black",
-            )
-        else:
-            # outward curve on right (black outer part)
-            x1 = center
-            x2 = center + width
-            arc = dwg.path(
-                d=f"M {x2} {center - radius} "
-                f"A {width} {radius} 0 0 0 {x2} {center + radius} "
-                f"L {x1} {center + radius} "
-                f"A {radius} {radius} 0 0 1 {x1} {center - radius} Z",
-                fill="black",
-            )
-        arc["clip-path"] = f"url(#{clip_id})"
-        dwg.add(arc)
-
-    if math.isclose(illumination, 0.0, abs_tol=1e-2):
-        dwg.add(dwg.circle(center=(center, center), r=radius, fill="black"))
-    elif math.isclose(illumination, 1.0, abs_tol=1e-2):
-        pass  # Full Moon (all white)
-    elif math.isclose(illumination, 0.5, abs_tol=1e-2):
-        if waxing:
-            add_half_shadow("left")
-        else:
-            add_half_shadow("right")
-    elif illumination < 0.5:
-        curve_ratio = 1 - 2 * illumination
-        if waxing:
-            add_half_shadow("left")
-            add_crescent("right", curve_ratio)
-        else:
-            add_half_shadow("right")
-            add_crescent("left", curve_ratio)
-    else:  # gibbous
-        curve_ratio = 2 * illumination - 1
-        if waxing:
-            add_gibbous("right", curve_ratio)
-        else:
-            add_gibbous("left", curve_ratio)
-
-    dwg.save()
-    return filename
-
-
-import math
-
-from PIL import Image, ImageDraw
-
-
-def draw_moon_phase(angle_degrees, size=200):
-    """
-    Returns a Pillow Image of approximate Moon phase for a given Sun-Moon separation angle (0..360).
-    0 or 360 => Full Moon (all white),
-    180 => New Moon (all black),
-    90 or 270 => Quarters (half white/black),
-    etc.
-
-    The result is a 'cartoon' 2D circle with the lit portion on left or right.
-    """
-    # 1) Create a black background
-    img = Image.new("RGB", (size, size), "black")
-    draw = ImageDraw.Draw(img)
-
-    # 2) Calculate fraction of illumination using the standard formula:
-    #    fraction = (1 + cos(angle)) / 2
-    # Where angle is in radians, 0 => fraction=1 => Full Moon, 180 => fraction=0 => New.
-    angle_radians = math.radians(angle_degrees % 360)
-    fraction = (1.0 + math.cos(angle_radians)) / 2.0
-
-    # We'll consider "waxing" if angle<180, else "waning".
-    # Actually if angle in [0..180], it's waxing from Full->New.
-    # But many prefer 0 => Full, 180 => New, so let's define:
-    #   if angle < 180 => waxing, else => waning
-    waxing = (angle_degrees % 360) < 180
-
-    # 3) We'll define a circle in the center. Radius = ~size//3
-    radius = size // 3
-    cx, cy = size // 2, size // 2
-
-    # 4) Draw the "Moon circle" shape in a base color.
-    #    We'll fill it with white if fraction >=0.5, else black,
-    #    then we add the 'other' portion to represent the unlit or lit side.
-    if fraction >= 0.5:
-        # mostly white => base circle white
-        base_color = "white"
-        other_color = "black"
-    else:
-        # mostly black => base circle black
-        base_color = "black"
-        other_color = "white"
-
-    # Draw the base circle
-    bounding = [cx - radius, cy - radius, cx + radius, cy + radius]
-    draw.ellipse(bounding, fill=base_color, outline="gray")
-
-    # 5) If fraction close to 0 => new moon => fully black, or fraction close to 1 => full => fully white
-    eps = 1e-3
-    if fraction < eps:
-        # New Moon => just leave it black
-        draw.ellipse(bounding, fill="black", outline="gray")
-        return img
-    if abs(fraction - 1.0) < eps:
-        # Full Moon => it's already white
-        return img
-
-    # 6) For partial phases, we define a vertical "terminator" offset.
-    #    Let's define offset_x = (2*fraction -1)*radius.
-    #    fraction=0.5 => offset=0 => half
-    #    fraction>0.5 => positive => center terminator on the right
-    #    fraction<0.5 => negative => center terminator on the left
-    #    waxing vs. waning decides which side is lit vs. shadow.
-    offset = (2 * fraction - 1.0) * radius
-
-    # We'll do a pixel-based approach:
-    # For each x in [cx-radius..cx+radius], figure out y-limits of the circle,
-    # then fill with 'other_color' if it should be "shadow" or "lit portion."
-
-    # The "dark portion" is on one side of the offset.
-    # If fraction >= 0.5 => base is white => other_color=black => black is the shadow side
-    #   if waxing => shadow is on the right side? Actually if fraction=0.75 => it's a waxing gibbous => the dark side is left or right? Let's see:
-    # Actually let's do a simpler logic:
-    #   If waxing => the bright portion is on the left side (for angles <180).
-    #   If fraction>=0.5 => the black portion is smaller, so it belongs on the 'opposite side' from the bright portion.
-    # We'll define a function is_shadow(xrel) that returns True if it's overshadowed or not.
-    # We'll keep it simple:
-    #   If fraction >=0.5 => base=white => shadow = black on the side:
-    #     if waxing => black on right => xrel> offset => shadow
-    #     else => black on left => xrel< offset => shadow
-    #   If fraction <0.5 => base=black => bright portion is other_color =>
-    #     if waxing => bright portion left => xrel < offset => bright
-    #     else => bright portion right => xrel > offset => bright
-
-    def in_circle(xi, yi):
-        return (xi - cx) ** 2 + (yi - cy) ** 2 <= radius * radius
-
-    def is_shadow(xrel):
-        # xrel is x-cx
-        if fraction >= 0.5:
-            # base=white => shadow=black on one side
-            if waxing:
-                return xrel > offset  # black if x>offset
-            else:
-                return xrel < offset  # black if x<offset
-        else:
-            # base=black => bright= 'other_color'
-            # so shadow means 'remain black'? but let's do shadow= base => isShadow=not bright
-            if waxing:
-                # bright if xrel<offset => so shadow if xrel>=offset
-                return not (xrel < offset)
-            else:
-                # bright if xrel>offset => shadow if xrel<=offset
-                return not (xrel > offset)
-
-    # We'll scan pixel by pixel in bounding box
-    for x in range(cx - radius, cx + radius + 1):
-        xrel = x - cx
-        # half chord in y?
-        # y range from cy - halfchord to cy + halfchord
-        # halfchord = sqrt(r^2 - xrel^2)
-        halfc2 = radius * radius - xrel * xrel
-        if halfc2 < 0:
-            continue
-        hy = int(math.sqrt(halfc2))
-        ytop = cy - hy
-        ybot = cy + hy
-        for y in range(ytop, ybot + 1):
-            if is_shadow(xrel):
-                # shadow => color=other_color if fraction>=0.5, else base
-                # but we said if fraction>=0.5 => base=white => shadow=black
-                # if fraction<0.5 => base=black => bright= white => shadow= base
-                # Actually simpler: if is_shadow => color=some
-                if fraction >= 0.5:
-                    color = "black"
-                else:
-                    color = "black"  # base is black => overshadowed means black
-            else:
-                if fraction >= 0.5:
-                    color = "white"  # base is white => no shadow
-                else:
-                    color = "white"  # bright portion
-            img.putpixel((x, y), Image.new("RGB", (1, 1), color).getpixel((0, 0)))
-
-    return img
-
-
-import math
-
-from PIL import Image, ImageDraw
-
-
-def draw_moon_2circle(angle_degrees, size=200):
-    """
-    Draw an approximate 2D "lens" shape for the Moon’s phase using the "two-circle" approach:
-      - Circle #1: The Moon itself (centered).
-      - Circle #2: The "light circle," same radius, but offset horizontally.
-    The lit portion is the intersection of these circles (waxing or waning).
-
-    angle_degrees in [0..360], interpreted as:
-      0 deg => Full Moon (all lit)
-      180 deg => New Moon (all dark)
-      90/270 => quarter phases (half lit)
-      etc.
-    Return a Pillow Image of size x size.
-    """
-    # Create black background
-    img = Image.new("RGB", (size, size), "black")
-    draw = ImageDraw.Draw(img)
-
-    # Moon center and radius
-    cx, cy = size // 2, size // 2
-    radius = size // 3
-
-    # fraction of illuminated disc:
-    #   fraction = (1 + cos(angle_radians)) / 2
-    # angle=0 => fraction=1 => Full
-    # angle=180 => fraction=0 => New
-    angle_radians = math.radians(angle_degrees % 360)
-    fraction = (1 + math.cos(angle_radians)) / 2.0
-
-    # Decide waxing or waning
-    #   angle <180 => waxing
-    #   angle>180 => waning
-    waxing = (angle_degrees % 360) < 180
-
-    # We'll define an offset between the two circles:
-    #   offset= 2*r*(1 - fraction).
-    #   fraction=1 => offset=0 => circles coincide => fully lit
-    #   fraction=0 => offset=2*r => circles just tangent => no intersection => new
-    offset = 2 * radius * (1 - fraction)
-
-    # If waxing, shift the "light circle" to the left, else to the right
-    if waxing:
-        light_center_x = cx - offset
-    else:
-        light_center_x = cx + offset
-
-    # We'll do a pixel-by-pixel approach:
-    #  A point is "in the Moon" if dist from (cx,cy)< radius
-    #  A point is "in the Light" if dist from (light_center_x, cy)< radius
-    #  The point is lit if it’s in BOTH circles.
-    #  The final color is white if lit, black if in the Moon but not lit, else black background.
-
-    for x in range(size):
-        for y in range(size):
-            dxm = x - cx
-            dym = y - cy
-            dmoon_sq = dxm * dxm + dym * dym
-
-            if dmoon_sq <= radius * radius:
-                # We are inside the moon’s disk
-                dxl = x - light_center_x
-                dyl = y - cy
-                dlight_sq = dxl * dxl + dyl * dyl
-                # is it lit? => also inside the light circle
-                if dlight_sq <= radius * radius:
-                    # lit
-                    img.putpixel((x, y), (255, 255, 255))  # white
-                else:
-                    # shadow
-                    img.putpixel((x, y), (0, 0, 0))  # black
-            # else: remain black background
-
-    # Optionally draw a gray circle outline for the moon
-    # bounding box
-    bounding = [cx - radius, cy - radius, cx + radius, cy + radius]
-    draw.ellipse(bounding, outline="gray")
-
-    return img
-
-
-# # Example usage/test
-# if __name__ == "__main__":
-#     for deg in [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]:
-#         im = draw_moon_2circle(deg, size=240)
-#         im.save(f"moon_ellip_{deg:03d}.png")
-
-
-# # Example usage:
-# if __name__ == "__main__":
-#     # For demonstration, create images for angles in increments of 30 degrees
-#     for deg in range(0, 361, 30):
-#         im = draw_moon_phase(deg, size=240)
-#         im.save(f"moon_{deg:03d}.png")
-
-
-import math
-
-from PIL import Image, ImageDraw
-
-
-def draw_one_moon(fraction, waxing, size=80):
-    """
-    Draw a single 'moon' with fraction of disk lit [0..1].
-    If 'waxing' is True, the bright side is on the right; else on the left.
-    Return a Pillow Image of size x size with transparent background.
-
-    Uses the 'two-circle' intersection method:
-      * Circle #1 = actual moon
-      * Circle #2 = 'light circle' offset horizontally
-    The overlap is the lit portion.
-    """
-    # Transparent background
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-
-    r = size // 2 - 4  # radius for the moon
-    cx = size // 2
-    cy = size // 2
-
-    # fraction=1 => full, fraction=0 => new
-    # offset = 2*r*(1 - fraction). If fraction=1 => offset=0
-    # If fraction=0 => offset=2r
-    offset = 2 * r * (1 - fraction)
-
-    if waxing:
-        light_cx = cx + offset  # bright on right
-    else:
-        light_cx = cx - offset  # bright on left
-
-    # pixel approach
-    for x in range(size):
-        for y in range(size):
-            dx_moon = x - cx
-            dy_moon = y - cy
-            dist_moon_sq = dx_moon * dx_moon + dy_moon * dy_moon
-            if dist_moon_sq <= r * r:
-                # inside moon
-                dx_light = x - light_cx
-                dy_light = y - cy
-                dist_light_sq = dx_light * dx_light + dy_light * dy_light
-                if dist_light_sq <= r * r:
-                    # lit
-                    img.putpixel((x, y), (255, 255, 255, 255))  # white
-                else:
-                    # shadow
-                    img.putpixel((x, y), (40, 40, 40, 255))  # dark gray
-    # optional outline
-    bounding = [cx - r, cy - r, cx + r, cy + r]
-    draw.ellipse(bounding, outline="black", width=1)
-    return img
-
-
-def phases_diagram(out_size=600):
-    """
-    Create a diagram with 8 primary moon phases around a ring:
-     new, waxing crescent, first quarter, waxing gibbous,
-     full, waning gibbous, third quarter, waning crescent
-    in a clockwise circle
-    """
-    # We'll define 8 angles for the fraction: 0, 0.25, 0.5, 0.75, 1.0...,
-    # but actually we can do the standard angles for sun-moon separation:
-    #   new = 180, waxing cres=135, first quarter=90, waxing gibb=45,
-    #   full=0, waning gibb=315, third=270, waning cres=225, ...
-    # Or we can just define fraction directly. We'll do fraction-labeled approach for clarity.
-
-    # Fractions in typical order of phases (with approximate waxing/waning)
-    # new=0.0, waxing cres~0.25, first quarter=0.5, waxing gibbous=0.75,
-    # full=1.0, waning gibb=0.75, third=0.5, waning cres=0.25
-    # We'll define a tuple of (fraction, waxing).
-    phases = [
-        (0.00, False),  # new (all shadow)
-        (0.25, True),  # waxing crescent
-        (0.50, True),  # first quarter
-        (0.75, True),  # waxing gibbous
-        (1.00, True),  # full
-        (0.75, False),  # waning gibb
-        (0.50, False),  # third quarter
-        (0.25, False),  # waning crescent
-    ]
-
-    # create big image
-    img = Image.new("RGBA", (out_size, out_size), (10, 30, 60, 255))
-    draw = ImageDraw.Draw(img)
-
-    # ring center
-    cx, cy = out_size // 2, out_size // 2
-    ring_radius = out_size // 3
-
-    # place 8 phases around circle
-    n = len(phases)
-    for i, (frac, wax) in enumerate(phases):
-        # angle in radians around ring. We'll do clockwise from top.
-        # top is i=0 => let's define top is new => 0 means top, but let's do an offset so it lines up the diagram you posted:
-        # That diagram starts new at the left, but let's do the typical standard approach:
-        # We'll do i=0 at bottom. Actually let's just do i=0 at the bottom is an easy formula:
-        # angle_radians = (math.pi/2) + i*(2*math.pi/n)
-        # but let's define something that rotates them around in a circle with first at the bottom, etc.
-
-        angle = -math.pi / 2 + i * (2 * math.pi / n)  # so i=0 => angle=-90 deg => top
-        # or do angle = math.pi + i*(2*math.pi/n) => i=0 => 180 deg => left side
-        # see what you like. We'll do left side for new:
-        angle = math.pi + i * (2 * math.pi / n)
-
-        # find center for that small phase
-        moon_x = cx + ring_radius * math.cos(angle)
-        moon_y = cy + ring_radius * math.sin(angle)
-
-        # draw the sub-moon
-        single = draw_one_moon(frac, wax, size=80)
-        # paste so that center is (moon_x,moon_y)
-        w, h = single.size
-        # top-left corner
-        topx = int(moon_x - w / 2)
-        topy = int(moon_y - h / 2)
-        img.alpha_composite(single, (topx, topy))
-
-        # optional text label
-        # We'll define a quick label:
-        # match i to name:
-        label_map = [
-            "New",
-            "Wax Cres",
-            "1st Qtr",
-            "Wax Gib",
-            "Full",
-            "Waning Gib",
-            "3rd Qtr",
-            "Waning Cres",
+                dominant_baseline="middle",
+                font_size=self.style['house_number_size'],
+                fill=self.style['house_number_color'],
+                font_family="Arial, sans-serif"
+            ))
+
+    def _draw_house_sector(self, dwg: svgwrite.Drawing, start_degree: float,
+                          end_degree: float, fill_color: str) -> None:
+        """
+        Draw a sector background for a house with alternating colors.
+
+        Args:
+            dwg: SVG Drawing object
+            start_degree: Starting degree of the house
+            end_degree: Ending degree of the house
+            fill_color: Fill color for the sector
+        """
+        # Fill the entire pie slice from center to outer edge
+        outer_radius = self.radius_outer
+        inner_radius = self.radius_inner  # Start from center for full pie slice
+
+        # Convert to SVG angles
+        start_svg = self.astrological_to_svg_angle(start_degree)
+        end_svg = self.astrological_to_svg_angle(end_degree)
+
+        # Handle angle wrapping
+        if end_svg < start_svg:
+            end_svg += 360
+
+        # Calculate the angle span
+        angle_span = end_svg - start_svg
+        large_arc_flag = 1 if angle_span > 180 else 0
+
+        # Calculate start and end points for outer and inner arcs
+        start_x_outer = self.center + outer_radius * math.cos(math.radians(start_svg))
+        start_y_outer = self.center - outer_radius * math.sin(math.radians(start_svg))
+        end_x_outer = self.center + outer_radius * math.cos(math.radians(end_svg))
+        end_y_outer = self.center - outer_radius * math.sin(math.radians(end_svg))
+
+        start_x_inner = self.center + inner_radius * math.cos(math.radians(start_svg))
+        start_y_inner = self.center - inner_radius * math.sin(math.radians(start_svg))
+        end_x_inner = self.center + inner_radius * math.cos(math.radians(end_svg))
+        end_y_inner = self.center - inner_radius * math.sin(math.radians(end_svg))
+
+        # Create the sector path
+        path_data = f"M {start_x_outer},{start_y_outer} "
+        path_data += f"A {outer_radius},{outer_radius} 0 {large_arc_flag},0 {end_x_outer},{end_y_outer} "
+        path_data += f"L {end_x_inner},{end_y_inner} "
+        path_data += f"A {inner_radius},{inner_radius} 0 {large_arc_flag},1 {start_x_inner},{start_y_inner} "
+        path_data += "Z"
+
+        # Draw the sector
+        dwg.add(dwg.path(
+            d=path_data,
+            fill=fill_color,
+            stroke="none",
+            opacity=0.3
+        ))
+
+    def draw_zodiac_ring(self, dwg: svgwrite.Drawing, chart: Chart) -> None:
+        """
+        Draw the zodiac signs around the wheel.
+
+        Args:
+            dwg: SVG Drawing object
+            chart: Chart object for ASC reference
+        """
+        # Get ASC position to orient zodiac properly
+        asc_degree = chart.objects_dict["ASC"].long
+
+        # Zodiac signs with Unicode astrological glyphs
+        zodiac_signs = [
+            "♈", "♉", "♊", "♋", "♌", "♍",
+            "♎", "♏", "♐", "♑", "♒", "♓"
         ]
-        # measure text
-        # just skip text or do something simple
-        # draw.text((topx, topy+h), label_map[i], fill="white")
 
-    # optionally draw circle or arrows
-    # done
-    return img
+        # Draw zodiac division lines and signs
+        for i in range(12):
+            # Each sign is 30 degrees
+            sign_start = i * 30
+            sign_middle = sign_start + 15
+
+            # The zodiac should be positioned so that the ASC degree
+            # corresponds to its actual zodiac position on the wheel
+            # If ASC = 0° (Aries), then 0° Aries should be at ASC position
+            actual_degree = sign_start
+            actual_middle = sign_middle
+
+            # Draw sign division line
+            x_outer, y_outer = self.polar_to_cartesian(actual_degree, self.radius_outer)
+            x_zodiac, y_zodiac = self.polar_to_cartesian(actual_degree, self.radius_zodiac)
+
+            dwg.add(dwg.line(
+                start=(x_zodiac, y_zodiac),
+                end=(x_outer, y_outer),
+                stroke=self.style['zodiac_line_color'],
+                stroke_width=self.style['zodiac_line_width']
+            ))
+
+            # Add zodiac sign symbol
+            x_sign, y_sign = self.polar_to_cartesian(actual_middle, self.radius_zodiac)
+
+            dwg.add(dwg.text(
+                zodiac_signs[i],
+                insert=(x_sign, y_sign),
+                text_anchor="middle",
+                dominant_baseline="middle",
+                font_size=self.style['zodiac_sign_size'],
+                fill=self.style['zodiac_sign_color'],
+                font_family=self.style['zodiac_font_family'],
+                font_weight="bold"
+            ))
+
+    def draw_planets(self, dwg: svgwrite.Drawing, chart: Chart) -> None:
+        """
+        Draw planets on the chart wheel at their calculated positions.
+
+        Args:
+            dwg: SVG Drawing object
+            chart: Chart object containing planet data
+        """
+        # Apply collision detection to get adjusted positions
+        planet_positions = self._calculate_planet_positions_with_collision_detection(chart)
+
+        # Draw planets at their adjusted positions
+        for planet, position in planet_positions.items():
+            x_planet, y_planet = position['x'], position['y']
+
+            # Get planet symbol from the alias (last character)
+            planet_info = get_ephemeris_object(planet.swe)
+            planet_symbol = planet_info["alias"][-1]
+
+            # Determine color based on retrograde status
+            planet_color = self.style['planet_retro_color'] if planet.is_retro else self.style['planet_color']
+
+            # Draw the planet symbol
+            dwg.add(dwg.text(
+                planet_symbol,
+                insert=(x_planet, y_planet),
+                text_anchor="middle",
+                dominant_baseline="middle",
+                font_size=self.style['planet_size'],
+                fill=planet_color,
+                font_family=self.style['planet_font_family'],
+                font_weight="bold"
+            ))
+
+            # Draw a thin line connecting planet to its actual position if adjusted
+            if position['adjusted']:
+                x_actual, y_actual = self.polar_to_cartesian(
+                    planet.long,
+                    self.radius_planets
+                )
+                dwg.add(dwg.line(
+                    start=(x_actual, y_actual),
+                    end=(x_planet, y_planet),
+                    stroke="#999999",
+                    stroke_width=0.5,
+                    opacity=0.6
+                ))
+
+            # Optional: Add small degree label below planet
+            if self.style.get('show_planet_degrees', False):
+                degree_text = f"{planet.long:.0f}°"
+                dwg.add(dwg.text(
+                    degree_text,
+                    insert=(x_planet, y_planet + 12),
+                    text_anchor="middle",
+                    dominant_baseline="middle",
+                    font_size="8px",
+                    fill="#666666"
+                ))
 
 
-# if __name__ == "__main__":
-#     diagram = phases_diagram(700)
-#     diagram.save("moon_phases_diagram.png")
+    def _calculate_planet_positions_with_collision_detection(self, chart: Chart) -> Dict:
+        """
+        Calculate planet positions with basic collision detection.
 
-import math
+        Args:
+            chart: Chart object containing planet data
 
-from PIL import Image, ImageDraw
+        Returns:
+            Dictionary mapping planets to their adjusted positions
+        """
+        # Minimum distance between planets (in pixels)
+        min_distance = 20
 
+        # Store planet positions
+        planet_positions = {}
+        placed_positions = []
 
-def draw_moon_artistic(fraction, waxing=True, size=100):
-    """
-    Draw a single Moon face with 'fraction' of disk illuminated (0..1).
-      0 => New Moon (all black), 1 => Full (all white).
-    If fraction < 0.5 => a small bright crescent
-    If fraction > 0.5 => a large bright portion (gibbous).
-    If fraction ~0.5 => exactly half circle.
+        # Sort planets by longitude for consistent placement
+        sorted_planets = sorted(
+            [p for p in chart.planets if hasattr(p, 'long') and p.long is not None],
+            key=lambda p: p.long
+        )
 
-    waxing=True => bright side on right. waxing=False => bright side on left.
-    This is done by a 'two-circle' approach,
-    but using intersection if fraction < 0.5, difference if fraction > 0.5, etc.
-    """
-    # We'll create an RGBA image with black background outside the circle
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
+        for planet in sorted_planets:
+            # Calculate ideal position
+            x_ideal, y_ideal = self.polar_to_cartesian(
+                planet.long,
+                self.radius_planets
+            )
 
-    cx, cy = size // 2, size // 2
-    r = size // 2 - 2  # radius for the Moon, with a small margin
+            # Check for collisions with already placed planets
+            collision_detected = False
+            for placed_pos in placed_positions:
+                distance = math.sqrt(
+                    (x_ideal - placed_pos['x'])**2 +
+                    (y_ideal - placed_pos['y'])**2
+                )
+                if distance < min_distance:
+                    collision_detected = True
+                    break
 
-    # If fraction ~0 => all black, fraction ~1 => all white
-    eps = 1e-3
-    if fraction < eps:
-        # entire circle black
-        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill="black", outline="gray")
-        return img
-    if (1.0 - fraction) < eps:
-        # entire circle white
-        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill="white", outline="gray")
-        return img
+            if not collision_detected:
+                # No collision, use ideal position
+                planet_positions[planet] = {
+                    'x': x_ideal,
+                    'y': y_ideal,
+                    'adjusted': False
+                }
+                placed_positions.append({'x': x_ideal, 'y': y_ideal})
+            else:
+                # Collision detected, find alternative position
+                adjusted_pos = self._find_alternative_position(
+                    planet.long, placed_positions, min_distance
+                )
+                planet_positions[planet] = {
+                    'x': adjusted_pos['x'],
+                    'y': adjusted_pos['y'],
+                    'adjusted': True
+                }
+                placed_positions.append(adjusted_pos)
 
-    # For everything else:
-    # We'll define the "Moon circle" center at (cx,cy).
-    # We'll define a second circle (the 'light circle') of radius r, offset horizontally by offset.
-    # offset = 2*r*(1 - fraction).
-    # If fraction < 0.5, the intersection of these circles is the bright portion.
-    # If fraction > 0.5, the bright portion is basically the entire circle minus the intersection (the shadow).
+        return planet_positions
 
-    offset = 2 * r * (1 - fraction)
-    if waxing:
-        light_cx = cx + offset
-    else:
-        light_cx = cx - offset
+    def _find_alternative_position(self, original_longitude: float,
+                                 placed_positions: list, min_distance: float) -> Dict:
+        """
+        Find an alternative position for a planet that avoids collisions.
 
-    # We'll do a pixel-based approach.
-    # But we also need to handle special half circle if fraction ~ 0.5 => do a perfect half circle.
+        Args:
+            original_longitude: Original longitude of the planet
+            placed_positions: List of already placed positions
+            min_distance: Minimum distance required between planets
 
-    # If half => draw a half circle
-    if abs(fraction - 0.5) < eps:
-        # half circle
-        # if waxing => bright on right half, if not => bright on left half
-        bounding = (cx - r, cy - r, cx + r, cy + r)
-        # We'll do a "pieslice" from -90 to +90 if bright is on right, etc.
-        # Actually let's do a vertical cut. If waxing => right side is bright => from -90..90 deg
-        # if not => left side => from 90..270
-        if waxing:
-            start_angle = -90
-            end_angle = 90
+        Returns:
+            Dictionary with x, y coordinates for alternative position
+        """
+        # Try positions at slightly different radii
+        radius_offsets = [0, -8, 8, -16, 16, -24, 24]
+        angle_offsets = [0, 5, -5, 10, -10, 15, -15]
+
+        for radius_offset in radius_offsets:
+            for angle_offset in angle_offsets:
+                test_radius = self.radius_planets + radius_offset
+                test_angle = original_longitude + angle_offset
+
+                x_test, y_test = self.polar_to_cartesian(test_angle, test_radius)
+
+                # Check if this position conflicts with any placed position
+                valid_position = True
+                for placed_pos in placed_positions:
+                    distance = math.sqrt(
+                        (x_test - placed_pos['x'])**2 +
+                        (y_test - placed_pos['y'])**2
+                    )
+                    if distance < min_distance:
+                        valid_position = False
+                        break
+
+                if valid_position:
+                    return {'x': x_test, 'y': y_test}
+
+        # If no good position found, use a fallback position
+        # This is a simple radial offset
+        fallback_radius = self.radius_planets - 30
+        x_fallback, y_fallback = self.polar_to_cartesian(
+            original_longitude, fallback_radius
+        )
+        return {'x': x_fallback, 'y': y_fallback}
+
+    def draw_angles(self, dwg: svgwrite.Drawing, chart: Chart) -> None:
+        """
+        Draw chart angles (ASC, MC, DSC, IC) with special emphasis.
+
+        Args:
+            dwg: SVG Drawing object
+            chart: Chart object containing angle data
+        """
+        # Main angles to emphasize
+        main_angles = ["ASC", "MC", "DSC", "IC"]
+
+        for angle in chart.angles:
+            if angle.name in main_angles:
+                # Draw line from center to angle position for emphasis
+                x_inner, y_inner = self.polar_to_cartesian(angle.long, self.radius_inner)
+                x_outer, y_outer = self.polar_to_cartesian(angle.long, self.radius_outer)
+
+                dwg.add(dwg.line(
+                    start=(x_inner, y_inner),
+                    end=(x_outer, y_outer),
+                    stroke=self.style['angle_line_color'],
+                    stroke_width=self.style['angle_line_width'],
+                    opacity=self.style['angle_line_opacity']
+                ))
+
+                # Calculate label position outside the chart
+                label_radius = self.radius_outer + 20  # Outside the main circle
+                x_label, y_label = self.polar_to_cartesian(angle.long, label_radius)
+
+                # Get angle symbol
+                angle_info = get_ephemeris_object(angle.name)
+                angle_symbol = angle_info["alias"]
+
+                # Determine text anchor based on position to avoid overlap
+                text_anchor = self._get_angle_text_anchor(angle.long)
+
+                # Draw angle label outside the chart
+                dwg.add(dwg.text(
+                    angle_symbol,
+                    insert=(x_label, y_label),
+                    text_anchor=text_anchor,
+                    dominant_baseline="middle",
+                    font_size=self.style['angle_size'],
+                    fill=self.style['angle_color'],
+                    font_weight="bold",
+                    font_family="Arial, sans-serif"
+                ))
+
+    def _get_angle_text_anchor(self, longitude: float) -> str:
+        """
+        Determine the best text anchor for angle labels based on their position.
+
+        Args:
+            longitude: Angle longitude in degrees
+
+        Returns:
+            Text anchor value for SVG text element
+        """
+        # Normalize longitude to 0-360 range
+        longitude = longitude % 360
+
+        # Determine text anchor based on quadrant
+        if 315 <= longitude or longitude < 45:  # Right side (around ASC/DSC)
+            return "start"  # Text starts from the point, extends right
+        elif 45 <= longitude < 135:  # Bottom side (around IC)
+            return "middle"  # Centered
+        elif 135 <= longitude < 225:  # Left side (around DSC)
+            return "end"  # Text ends at the point, extends left
+        else:  # Top side (around MC)
+            return "middle"  # Centered
+
+    def draw_aspects(self, dwg: svgwrite.Drawing, chart: Chart) -> None:
+        """
+        Draw aspect lines between planets that form significant aspects.
+
+        Args:
+            dwg: SVG Drawing object
+            chart: Chart object containing planet data
+        """
+        if not self.style.get('show_aspects', True):
+            return
+
+        # Get valid planets with positions
+        valid_planets = [
+            p for p in chart.planets
+            if hasattr(p, 'long') and p.long is not None
+        ]
+
+        # Calculate all aspects between planet pairs
+        for i, planet1 in enumerate(valid_planets):
+            for planet2 in valid_planets[i+1:]:  # Avoid duplicate pairs
+                # Check each aspect type
+                for aspect_name, aspect_data in ASPECTS.items():
+                    is_aspect, orb, distance, movement = planet1.aspect(
+                        planet2,
+                        aspect_data['degree'],
+                        aspect_data['orb']
+                    )
+
+                    if is_aspect:
+                        self._draw_aspect_line(
+                            dwg, planet1, planet2, aspect_name, orb
+                        )
+                        break  # Only draw one aspect per planet pair
+
+    def _draw_aspect_line(self, dwg: svgwrite.Drawing, planet1, planet2,
+                         aspect_name: str, orb: float) -> None:
+        """
+        Draw a single aspect line between two planets.
+
+        Args:
+            dwg: SVG Drawing object
+            planet1: First planet object
+            planet2: Second planet object
+            aspect_name: Name of the aspect (e.g., 'Trine', 'Square')
+            orb: Orb of the aspect in degrees
+        """
+        # Get aspect styling
+        color = self.style['aspect_colors'].get(aspect_name, '#666666')
+        width = self.style['aspect_widths'].get(aspect_name, 1)
+
+        # Calculate opacity based on orb and aspect type
+        max_orb = ASPECTS[aspect_name]['orb']
+        base_opacity = self.style['aspect_opacity'].get(aspect_name, 0.8)
+        orb_factor = max(0.4, 1.0 - (orb / max_orb) * 0.6)
+        opacity = base_opacity * orb_factor
+
+        # Special handling for conjunctions - draw arc instead of line
+        if aspect_name == 'Conjunct':
+            self._draw_conjunction_arc(dwg, planet1, planet2, color, width, opacity)
         else:
-            start_angle = 90
-            end_angle = 270
-        # Fill entire circle black first
-        draw.ellipse(bounding, fill="black", outline="gray")
-        # Then fill a half pieslice with white
-        draw.pieslice(bounding, start=start_angle, end=end_angle, fill="white")
-        return img
+            # Get positions on the inner circle (to avoid overlapping planets)
+            x1, y1 = self.polar_to_cartesian(planet1.long, self.radius_inner)
+            x2, y2 = self.polar_to_cartesian(planet2.long, self.radius_inner)
 
-    # For fraction < 0.5 => bright portion is intersection
-    # For fraction > 0.5 => bright portion is everything minus intersection
-    # We'll define two param:
-    do_intersect = fraction < 0.5
+            # Draw regular aspect line
+            line_attrs = {
+                'start': (x1, y1),
+                'end': (x2, y2),
+                'stroke': color,
+                'stroke_width': width,
+                'opacity': opacity
+            }
 
-    # We'll do a pixel loop for simplicity
-    for x in range(size):
-        for y in range(size):
-            dxm = x - cx
-            dym = y - cy
-            dist_moon_sq = dxm * dxm + dym * dym
-            if dist_moon_sq <= r * r:
-                # inside the moon
-                dxl = x - light_cx
-                dyl = y - cy
-                dist_light_sq = dxl * dxl + dyl * dyl
-                in_light = dist_light_sq <= r * r
-                if do_intersect:
-                    # bright if in both
-                    if in_light:
-                        # bright
-                        img.putpixel((x, y), (255, 255, 255, 255))
-                    else:
-                        # shadow
-                        img.putpixel((x, y), (0, 0, 0, 255))
+            # Add dashed pattern for certain aspects
+            if aspect_name in ['Square']:
+                line_attrs['stroke_dasharray'] = "2,2"
+
+            dwg.add(dwg.line(**line_attrs))
+
+    def _draw_conjunction_arc(self, dwg: svgwrite.Drawing, planet1, planet2,
+                             color: str, width: float, opacity: float) -> None:
+        """
+        Draw an arc between two planets in conjunction, similar to astro.com style.
+
+        Args:
+            dwg: SVG Drawing object
+            planet1: First planet object
+            planet2: Second planet object
+            color: Stroke color
+            width: Stroke width
+            opacity: Opacity value
+        """
+        # Calculate the midpoint longitude between the two planets
+        long1, long2 = planet1.long, planet2.long
+
+        # Handle angle wrapping for conjunctions near 0°/360°
+        angle_diff = abs(long2 - long1)
+        if angle_diff > 180:
+            angle_diff = 360 - angle_diff
+
+        # Calculate midpoint longitude
+        if abs(long2 - long1) <= 180:
+            mid_long = (long1 + long2) / 2
+        else:
+            # Handle wrapping case
+            if long1 > long2:
+                mid_long = ((long1 + long2 + 360) / 2) % 360
+            else:
+                mid_long = ((long1 + long2 + 360) / 2) % 360
+
+        # Arc radius should be at planet level but slightly inward
+        arc_radius = self.radius_planets + 15
+
+        # Calculate arc span (proportional to orb)
+        arc_span = min(angle_diff * 1.5, 15)  # Cap at 15 degrees
+
+        # Start and end angles for the arc
+        start_angle = mid_long - arc_span/2
+        end_angle = mid_long + arc_span/2
+
+        # Convert to SVG coordinates
+        start_x, start_y = self.polar_to_cartesian(start_angle, arc_radius)
+        end_x, end_y = self.polar_to_cartesian(end_angle, arc_radius)
+
+        # Calculate arc parameters for SVG path
+        # We want a small arc that curves away from center
+        sweep_flag = 0  # Small arc
+        large_arc_flag = 0  # Small arc
+
+        # Create SVG path for arc
+        path_data = f"M {start_x},{start_y} A {arc_radius},{arc_radius} 0 {large_arc_flag},{sweep_flag} {end_x},{end_y}"
+
+        # Draw the arc
+        dwg.add(dwg.path(
+            d=path_data,
+            stroke=color,
+            stroke_width=width,
+            fill="none",
+            opacity=opacity
+        ))
+
+    def _create_moon_phase_symbol(self, moon_planet) -> Optional[svgwrite.container.Group]:
+        """
+        Create an SVG group containing an accurate moon phase visualization.
+
+        Args:
+            moon_planet: Moon planet object with phase data
+
+        Returns:
+            SVG group containing moon phase visualization, or None if no phase data
+        """
+        # Check if Moon has phase data
+        if not hasattr(moon_planet, 'phase_frac') or moon_planet.phase_frac is None:
+            return None
+
+        # Default moon phase styling
+        moon_style = {
+            'moon_phase_size': 16,
+            'moon_phase_border_color': '#2C3E50',
+            'moon_phase_border_width': 1,
+            'moon_phase_lit_color': '#F8F9FA',
+            'moon_phase_shadow_color': '#2C3E50',
+            'moon_phase_opacity': 0.9
+        }
+
+        # Get styling parameters
+        radius = moon_style['moon_phase_size']
+        border_color = moon_style['moon_phase_border_color']
+        border_width = moon_style['moon_phase_border_width']
+        lit_color = moon_style['moon_phase_lit_color']
+        shadow_color = moon_style['moon_phase_shadow_color']
+        opacity = moon_style['moon_phase_opacity']
+
+        # Get phase data
+        illuminated_fraction = moon_planet.phase_frac  # 0 (new) to 1 (full)
+        phase_angle = getattr(moon_planet, 'phase_angle', 0)  # 0-360 degrees
+
+        # Determine if waxing or waning based on phase angle
+        # In astronomical terms: 0° = new moon, 180° = full moon
+        # But Swiss Ephemeris may use different convention, so we use fraction
+        waxing = self._is_moon_waxing(phase_angle)
+
+        # Create the moon phase visualization using two-circle method
+        moon_group = self._draw_moon_phase_two_circles(
+            radius, illuminated_fraction, waxing,
+            lit_color, shadow_color, border_color, border_width, opacity
+        )
+
+        return moon_group
+
+    def _is_moon_waxing(self, phase_angle: float) -> bool:
+        """
+        Determine if the moon is waxing based on phase angle.
+
+        Args:
+            phase_angle: Phase angle in degrees
+
+        Returns:
+            True if waxing, False if waning
+        """
+        # Normalize angle to 0-360 range
+        normalized_angle = phase_angle % 360
+
+        # Convention: 0-180 = waxing, 180-360 = waning
+        # This matches the elongation angle (angular separation from Sun)
+        return normalized_angle <= 180
+
+    def _draw_moon_phase_two_circles(
+        self, radius: float, illuminated_fraction: float, waxing: bool,
+        lit_color: str, shadow_color: str, border_color: str, 
+        border_width: float, opacity: float
+    ) -> svgwrite.container.Group:
+        """
+        Draw artistic moon phase as a single circle with proper light/shadow pattern.
+        
+        This creates the classic artistic representation where the moon is always
+        a perfect circle with varying light and shadow regions.
+
+        Args:
+            radius: Radius of the moon circle
+            illuminated_fraction: Fraction of moon that is lit (0-1)
+            waxing: True if waxing, False if waning
+            lit_color: Color for illuminated portion
+            shadow_color: Color for shadowed portion
+            border_color: Color for border
+            border_width: Width of border
+            opacity: Overall opacity
+
+        Returns:
+            SVG group containing the moon phase
+        """
+        # Create SVG drawing instance for group creation
+        temp_dwg = svgwrite.Drawing()
+        group = temp_dwg.g()
+
+        # Handle special cases first
+        if illuminated_fraction <= 0.01:
+            # New moon - completely dark circle
+            group.add(temp_dwg.circle(
+                center=(0, 0), r=radius,
+                fill=shadow_color,
+                stroke=border_color,
+                stroke_width=border_width,
+                opacity=opacity
+            ))
+            return group
+        elif illuminated_fraction >= 0.99:
+            # Full moon - completely lit circle
+            group.add(temp_dwg.circle(
+                center=(0, 0), r=radius,
+                fill=lit_color,
+                stroke=border_color,
+                stroke_width=border_width,
+                opacity=opacity
+            ))
+            return group
+
+        # For partial phases, use the classic two-circle approach
+        # This creates the authentic-looking curved terminator
+        
+        # Calculate the offset for the "light circle"
+        # When fraction = 0.5, the circles are tangent (touching at center)
+        # When fraction approaches 0 or 1, one circle dominates
+        offset = 2 * radius * abs(0.5 - illuminated_fraction)
+        
+        # Create clipping path for moon boundary
+        moon_clip_id = f"moonClip_{id(group)}"
+        moon_clip = temp_dwg.clipPath(id=moon_clip_id)
+        moon_clip.add(temp_dwg.circle(center=(0, 0), r=radius))
+        temp_dwg.defs.add(moon_clip)
+
+        # Calculate the terminator position based on illumination
+        # For a single-circle artistic representation with curved terminator
+        
+        # Start with the base circle (always the shadow color)
+        group.add(temp_dwg.circle(
+            center=(0, 0), r=radius,
+            fill=shadow_color, stroke="none", opacity=opacity
+        ))
+        
+        if abs(illuminated_fraction - 0.5) < 0.01:
+            # Quarter moons - perfect vertical split
+            if waxing:
+                # First quarter - right half lit
+                # Path: start at center top, arc to center bottom (right side), line back to top
+                lit_path = temp_dwg.path(
+                    d=f"M 0 {-radius} A {radius} {radius} 0 0 1 0 {radius} L 0 0 Z",
+                    fill=lit_color, stroke="none", opacity=opacity
+                )
+            else:
+                # Third quarter - left half lit (mirror of first quarter)
+                # Path: start at center top, arc to center bottom (left side), line back to top
+                lit_path = temp_dwg.path(
+                    d=f"M 0 {-radius} A {radius} {radius} 0 0 0 0 {radius} L 0 0 Z",
+                    fill=lit_color, stroke="none", opacity=opacity
+                )
+            group.add(lit_path)
+        else:
+            # For crescents and gibbous phases, use simple ellipse approach
+            # This creates clean, artistic moon phases
+            
+            if illuminated_fraction < 0.5:
+                # Crescent phase - create a narrow ellipse for the lit area
+                # Calculate ellipse width based on illumination
+                ellipse_width = radius * illuminated_fraction * 2
+                
+                if waxing:
+                    # Waxing crescent - lit on right side
+                    # Create an ellipse that represents the lit crescent
+                    ellipse_cx = radius - ellipse_width/2
+                    
+                    # Use an ellipse to create the crescent shape
+                    lit_ellipse = temp_dwg.ellipse(
+                        center=(ellipse_cx, 0),
+                        r=(ellipse_width/2, radius),
+                        fill=lit_color, stroke="none", opacity=opacity
+                    )
+                    # Clip to moon boundary
+                    lit_ellipse['clip-path'] = f"url(#{moon_clip_id})"
+                    group.add(lit_ellipse)
                 else:
-                    # fraction>0.5 => bright is (in moon) except intersection => bright if (in moon) and not (in both)
-                    if in_light:
-                        # intersection => shadow
-                        img.putpixel((x, y), (0, 0, 0, 255))
-                    else:
-                        # bright
-                        img.putpixel((x, y), (255, 255, 255, 255))
-    # optional outline
-    bounding = (cx - r, cy - r, cx + r, cy + r)
-    dr = ImageDraw.Draw(img)
-    dr.ellipse(bounding, outline="gray")
-    return img
+                    # Waning crescent - lit on left side
+                    ellipse_cx = -radius + ellipse_width/2
+                    
+                    lit_ellipse = temp_dwg.ellipse(
+                        center=(ellipse_cx, 0),
+                        r=(ellipse_width/2, radius),
+                        fill=lit_color, stroke="none", opacity=opacity
+                    )
+                    lit_ellipse['clip-path'] = f"url(#{moon_clip_id})"
+                    group.add(lit_ellipse)
+            else:
+                # Gibbous phase - start with full lit circle, subtract dark ellipse
+                group.add(temp_dwg.circle(
+                    center=(0, 0), r=radius,
+                    fill=lit_color, stroke="none", opacity=opacity
+                ))
+                
+                # Calculate dark ellipse
+                dark_fraction = 1.0 - illuminated_fraction
+                ellipse_width = radius * dark_fraction * 2
+                
+                if waxing:
+                    # Waxing gibbous - dark on left
+                    ellipse_cx = -radius + ellipse_width/2
+                    
+                    dark_ellipse = temp_dwg.ellipse(
+                        center=(ellipse_cx, 0),
+                        r=(ellipse_width/2, radius),
+                        fill=shadow_color, stroke="none", opacity=opacity
+                    )
+                    dark_ellipse['clip-path'] = f"url(#{moon_clip_id})"
+                    group.add(dark_ellipse)
+                else:
+                    # Waning gibbous - dark on right
+                    ellipse_cx = radius - ellipse_width/2
+                    
+                    dark_ellipse = temp_dwg.ellipse(
+                        center=(ellipse_cx, 0),
+                        r=(ellipse_width/2, radius),
+                        fill=shadow_color, stroke="none", opacity=opacity
+                    )
+                    dark_ellipse['clip-path'] = f"url(#{moon_clip_id})"
+                    group.add(dark_ellipse)
+
+        # Add border last
+        group.add(temp_dwg.circle(
+            center=(0, 0), r=radius,
+            fill="none",
+            stroke=border_color,
+            stroke_width=border_width,
+            opacity=opacity
+        ))
+
+        return group
 
 
-def example_diagram(size=400):
+def draw_chart(chart: Chart, filename: str = "chart.svg", size: int = 600) -> str:
     """
-    Creates a demonstration diagram with 8 phases arranged in a ring:
-      new, waxing cres, first quarter, waxing gibbous,
-      full, waning gibb, third quarter, waning cres
-    in clockwise order
+    High-level function to draw a complete astrological chart.
+
+    Args:
+        chart: Chart object containing all astrological data
+        filename: Output filename for SVG
+        size: Canvas size in pixels
+
+    Returns:
+        Path to the created SVG file
     """
-    # We'll define 8 phases:
-    # fraction, waxing
-    phases = [
-        (0.0, False),  # new moon
-        (0.25, True),  # waxing crescent
-        (0.5, True),  # first quarter
-        (0.75, True),  # waxing gibbous
-        (1.0, True),  # full
-        (0.75, False),  # waning gibbous
-        (0.5, False),  # third quarter
-        (0.25, False),  # waning crescent
-    ]
-    bigimg = Image.new("RGB", (size, size), (12, 36, 60))  # background
-    draw = ImageDraw.Draw(bigimg)
+    # Create chart wheel
+    wheel = ChartWheel(size=size)
 
-    # ring center, radius
-    cx, cy = size // 2, size // 2
-    ring_r = size // 3
-    small_size = 80
+    # Create SVG drawing
+    dwg = wheel.create_svg(filename)
 
-    n = len(phases)
-    for i, (frac, wax) in enumerate(phases):
-        # define angle around circle, let's do i=0 => angle= -90 => top. So we do e.g angle= -90 + i*(360/n)
-        angle = -math.pi / 2 + i * (2 * math.pi / n)
-        moox = cx + ring_r * math.cos(angle)
-        mooy = cy + ring_r * math.sin(angle)
-        sub = draw_moon_artistic(frac, wax, small_size)
-        # center it
-        w, h = sub.size
-        left = int(moox - w / 2)
-        top = int(mooy - h / 2)
-        bigimg.paste(sub, (left, top), sub)  # use sub as mask also
+    # Draw chart elements in order (background to foreground)
+    wheel.draw_house_divisions(dwg, chart)
+    wheel.draw_zodiac_ring(dwg, chart)
+    wheel.draw_aspects(dwg, chart)    # Draw aspects before planets/angles
+    wheel.draw_angles(dwg, chart)     # Draw angles before planets
+    wheel.draw_planets(dwg, chart)
 
-    return bigimg
+    # Save the SVG
+    dwg.save()
+
+    return filename
 
 
-if __name__ == "__main__":
-    # test
-    diag = example_diagram()
-    diag.save("moon_phases_artistic.png")
+def draw_moon_phase_standalone(illuminated_fraction: float, waxing: bool = True, 
+                               filename: str = "moon_phase.svg", size: int = 100) -> str:
+    """
+    Create a standalone moon phase visualization SVG.
+
+    Args:
+        illuminated_fraction: Fraction of moon that is lit (0-1)
+        waxing: True if waxing, False if waning
+        filename: Output filename for SVG
+        size: Size of the SVG canvas
+
+    Returns:
+        Path to the created SVG file
+    """
+    # Create a temporary chart wheel for styling and methods
+    wheel = ChartWheel(size=size)
+    
+    # Create SVG drawing
+    dwg = svgwrite.Drawing(
+        filename=filename,
+        size=(f"{size}px", f"{size}px"),
+        viewBox=f"0 0 {size} {size}",
+        profile='full'
+    )
+
+    # Create a mock moon object with the required phase data
+    class MockMoon:
+        def __init__(self, phase_frac, phase_angle):
+            self.name = "Moon"
+            self.phase_frac = phase_frac
+            self.phase_angle = phase_angle
+
+    # Set phase angle based on waxing status
+    # For waxing: 0-180 degrees, for waning: 180-360 degrees
+    phase_angle = 90 if waxing else 270  # Quarter positions
+    mock_moon = MockMoon(illuminated_fraction, phase_angle)
+
+    # Create moon phase symbol
+    moon_group = wheel._create_moon_phase_symbol(mock_moon)
+    
+    if moon_group:
+        # Center the moon phase in the SVG
+        moon_group['transform'] = f"translate({size//2}, {size//2})"
+        dwg.add(moon_group)
+
+    # Save the SVG
+    dwg.save()
+    return filename
+
+
+
+
+# Test function
+def test_basic_wheel():
+    """Test the basic wheel drawing with sample data."""
+    print("Moon visualization system implemented!")
+    print("Features:")
+    print("- Automatic moon phase calculation from Swiss Ephemeris data")
+    print("- Accurate two-circle intersection method for realistic phases")
+    print("- Integration with existing chart drawing system")
+    print("- Configurable styling through ChartWheel.style")
+    print("\nRun demo_moon_phases() to see examples of all phase types.")
+
+

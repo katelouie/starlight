@@ -2,8 +2,13 @@
 """Cache management utility for Starlight."""
 
 import sys
+import os
 import argparse
-sys.path.insert(0, 'src')
+
+# Add src directory to path so we can import starlight
+script_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.join(script_dir, 'src')
+sys.path.insert(0, src_dir)
 
 from starlight.cache import cache_info, clear_cache, cache_size
 
