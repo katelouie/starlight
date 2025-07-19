@@ -33,6 +33,8 @@ rulers = [
 DIGNITIES = {
     "Aries": {
         "symbol": "♈︎",
+        "element": "Fire",
+        "modality": "Cardinal",
         "exhalt_degree": 19,
         "traditional": {
             "ruler": "Mars",
@@ -59,6 +61,8 @@ DIGNITIES = {
     },
     "Taurus": {
         "symbol": "♉︎",
+        "element": "Earth",
+        "modality": "Fixed",
         "exhalt_degree": 3,
         "traditional": {
             "ruler": "Venus",
@@ -85,6 +89,8 @@ DIGNITIES = {
     },
     "Gemini": {
         "symbol": "♊︎",
+        "element": "Air",
+        "modality": "Mutable",
         "exhalt_degree": 3,
         "traditional": {
             "ruler": "Mercury",
@@ -111,6 +117,8 @@ DIGNITIES = {
     },
     "Cancer": {
         "symbol": "♋︎",
+        "element": "Water",
+        "modality": "Cardinal",
         "exhalt_degree": 15,
         "traditional": {
             "ruler": "Moon",
@@ -137,6 +145,8 @@ DIGNITIES = {
     },
     "Leo": {
         "symbol": "♌︎",
+        "element": "Fire",
+        "modality": "Fixed",
         "exhalt_degree": None,
         "traditional": {
             "ruler": "Sun",
@@ -163,6 +173,8 @@ DIGNITIES = {
     },
     "Virgo": {
         "symbol": "♍︎",
+        "element": "Earth",
+        "modality": "Mutable",
         "exhalt_degree": 15,
         "traditional": {
             "ruler": "Mercury",
@@ -189,6 +201,8 @@ DIGNITIES = {
     },
     "Libra": {
         "symbol": "♎︎",
+        "element": "Air",
+        "modality": "Cardinal",
         "exhalt_degree": 21,
         "traditional": {
             "ruler": "Venus",
@@ -215,6 +229,8 @@ DIGNITIES = {
     },
     "Scorpio": {
         "symbol": "♏︎",
+        "element": "Water",
+        "modality": "Fixed",
         "exhalt_degree": None,
         "traditional": {
             "ruler": "Mars",
@@ -241,6 +257,8 @@ DIGNITIES = {
     },
     "Sagittarius": {
         "symbol": "♐︎",
+        "element": "Fire",
+        "modality": "Mutable",
         "exhalt_degree": 3,
         "traditional": {
             "ruler": "Jupiter",
@@ -267,6 +285,8 @@ DIGNITIES = {
     },
     "Capricorn": {
         "symbol": "♑︎",
+        "element": "Earth",
+        "modality": "Cardinal",
         "exhalt_degree": 27,
         "traditional": {
             "ruler": "Saturn",
@@ -293,6 +313,8 @@ DIGNITIES = {
     },
     "Aquarius": {
         "symbol": "♒︎",
+        "element": "Air",
+        "modality": "Fixed",
         "exhalt_degree": None,
         "traditional": {
             "ruler": "Saturn",
@@ -319,6 +341,8 @@ DIGNITIES = {
     },
     "Pisces": {
         "symbol": "♓︎",
+        "element": "Water",
+        "modality": "Mutable",
         "exhalt_degree": 27,
         "traditional": {
             "ruler": "Jupiter",
