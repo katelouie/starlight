@@ -22,6 +22,7 @@ from starlight.objects import (
     HOUSE_SYSTEMS,
 )
 from starlight.cache import cached
+from starlight.signs import DIGNITIES
 
 
 def _set_ephemeris_path():
@@ -85,6 +86,13 @@ class Chart:
         self._make_arabic_parts()
         self._make_midpoints()
 
+    def _register_object(self, obj: Object, typed_collection: list | None = None) -> None:
+        """Add object to all appropriate collections."""
+        self.objects.append(obj)
+        self.objects_dict[obj.name] = obj
+        if typed_collection is not None:
+            typed_collection.append(obj)
+
     @property
     def lat(self) -> float:
         if self.loc is None:
@@ -130,9 +138,7 @@ class Chart:
         for id in range(10):
             try:
                 planet = Planet(swe.get_planet_name(id), id, self.julian)
-                self.objects.append(planet)
-                self.objects_dict[planet.name] = planet
-                self.planets.append(planet)
+                self._register_object(planet, self.planets)
             except swe.Error as e:
                 print(e)
 
@@ -161,32 +167,24 @@ class Chart:
         ]
         for ix, value in enumerate(angles):
             angle = Angle(angle_labels[ix], value)
-            self.objects.append(angle)
-            self.objects_dict[angle.name] = angle
-            self.angles.append(angle)
+            self._register_object(angle, self.angles)
 
     def _make_lunar_parts(self) -> None:
         for swe_id in [11, 13]:  # [10, 11, 12, 13]:
             lunar_obj = Planet(swe.get_planet_name(swe_id), swe_id, self.julian)
-            self.objects.append(lunar_obj)
-            self.objects_dict[lunar_obj.name] = lunar_obj
-            self.planets.append(lunar_obj)
+            self._register_object(lunar_obj, self.planets)
             if swe_id == 11:  # add south node
                 south_node = copy.deepcopy(lunar_obj)
                 south_node.name = "South Node"
                 south_node.swe = -1  # Special ID for calculated South Node
                 south_node.long = (lunar_obj.long + 180) % 360
                 south_node._make_sign_pos()
-                self.objects.append(south_node)
-                self.objects_dict[south_node.name] = south_node
-                self.planets.append(south_node)
+                self._register_object(south_node, self.planets)
 
     def _make_asteroids(self) -> None:
         for swe_id in [15, 16, 17, 18, 19, 20]:
             asteroid = Planet(swe.get_planet_name(swe_id), swe_id, self.julian)
-            self.objects.append(asteroid)
-            self.objects_dict[asteroid.name] = asteroid
-            self.planets.append(asteroid)
+            self._register_object(asteroid, self.planets)
 
     def _make_arabic_parts(self) -> None:
         """Calculate common Arabic Parts."""
@@ -198,9 +196,7 @@ class Chart:
             part = ArabicPart(
                 part_name, points[0], points[1], points[2], sect, part_data["sect_flip"]
             )
-            self.objects.append(part)
-            self.objects_dict[part.name] = part
-            self.arabic_parts.append(part)
+            self._register_object(part, self.arabic_parts)
 
     def _make_midpoints(self):
         self.midpoints = []
@@ -310,8 +306,6 @@ class Chart:
         Returns:
             Dictionary with planet names as keys and dignity info as values.
         """
-        from starlight.signs import DIGNITIES
-
         core_names = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"]
 
         scores = {
