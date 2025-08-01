@@ -35,29 +35,77 @@ def create_table_dignities(chart, plain: bool, traditional: bool = True) -> Unio
     """Create dignity scoring for each core planet."""
 
     dignity_type = "Traditional" if traditional else "Modern"
-    output = f"Planetary Dignities ({dignity_type})\n"
-    output += "-" * 70 + "\n"
-    output += f"Chart Sect: {chart.get_sect()}\n"
-    output += "-" * 70 + "\n"
-    output += f"{'Planet':<10} | {'Sign':<12} | {'Deg':<6} | {'Dignities':<25} | Score\n"
-    output += "-" * 70 + "\n"
-
-    dignity_data = chart.get_planetary_dignities(traditional=traditional)
-
-    # Sort planets by total score (highest first)
-    sorted_planets = sorted(dignity_data.items(), key=lambda x: x[1]['total_score'], reverse=True)
-
-    for planet_name, data in sorted_planets:
-        dignities_str = ", ".join(data['dignities']) if data['dignities'] else "None"
-        output += f"{planet_name:<10} | {data['sign']:<12} | {data['degree']:>5.1f}° | {dignities_str:<25} | {data['total_score']:>3}\n"
     
-    # Also show bounds and decan rulers
-    output += "\nBounds & Decan Rulers\n"
-    output += "-" * 50 + "\n"
-    for planet_name, data in dignity_data.items():
-        output += f"{planet_name:<10} | Bound: {data['bound_ruler']:<10} | Decan: {data['decan_ruler']}\n"
+    if plain is True:
+        output = f"Planetary Dignities ({dignity_type})\n"
+        output += "-" * 70 + "\n"
+        output += f"Chart Sect: {chart.get_sect()}\n"
+        output += "-" * 70 + "\n"
+        output += f"{'Planet':<10} | {'Sign':<12} | {'Deg':<6} | {'Dignities':<25} | Score\n"
+        output += "-" * 70 + "\n"
 
-    return output
+        dignity_data = chart.get_planetary_dignities(traditional=traditional)
+
+        # Sort planets by total score (highest first)
+        sorted_planets = sorted(dignity_data.items(), key=lambda x: x[1]['total_score'], reverse=True)
+
+        for planet_name, data in sorted_planets:
+            dignities_str = ", ".join(data['dignities']) if data['dignities'] else "None"
+            output += f"{planet_name:<10} | {data['sign']:<12} | {data['degree']:>5.1f}° | {dignities_str:<25} | {data['total_score']:>3}\n"
+        
+        # Also show bounds and decan rulers
+        output += "\nBounds & Decan Rulers\n"
+        output += "-" * 50 + "\n"
+        for planet_name, data in dignity_data.items():
+            output += f"{planet_name:<10} | Bound: {data['bound_ruler']:<10} | Decan: {data['decan_ruler']}\n"
+
+        return output
+    
+    else:
+        # Rich table version
+        dignity_data = chart.get_planetary_dignities(traditional=traditional)
+        
+        # Main dignities table
+        table_dignities = Table(title=f"Planetary Dignities ({dignity_type})")
+        table_dignities.caption = f"Chart Sect: {chart.get_sect()}"
+        
+        table_dignities.add_column("Planet", style="bold")
+        table_dignities.add_column("Sign") 
+        table_dignities.add_column("Degree", justify="right")
+        table_dignities.add_column("Dignities")
+        table_dignities.add_column("Score", justify="right", style="bold")
+
+        # Sort planets by total score (highest first)
+        sorted_planets = sorted(dignity_data.items(), key=lambda x: x[1]['total_score'], reverse=True)
+
+        for planet_name, data in sorted_planets:
+            dignities_str = ", ".join(data['dignities']) if data['dignities'] else "None"
+            score_color = "green" if data['total_score'] > 0 else "red" if data['total_score'] < 0 else "white"
+            
+            table_dignities.add_row(
+                planet_name,
+                data['sign'],
+                f"{data['degree']:.1f}°",
+                dignities_str,
+                f"[{score_color}]{data['total_score']}[/{score_color}]"
+            )
+        
+        # Bounds & Decan rulers table
+        table_bounds = Table(title="Bounds & Decan Rulers")
+        table_bounds.add_column("Planet", style="bold")
+        table_bounds.add_column("Bound Ruler")
+        table_bounds.add_column("Decan Ruler")
+        
+        for planet_name, data in dignity_data.items():
+            table_bounds.add_row(
+                planet_name,
+                data['bound_ruler'],
+                data['decan_ruler']
+            )
+        
+        # Return both tables as a group
+        from rich.console import Group
+        return Group(table_dignities, "", table_bounds)
 
 
 def create_table_planets(chart, plain: bool, fmt: str = "plain") -> Union[Table, str]:
@@ -91,17 +139,20 @@ def create_table_planets(chart, plain: bool, fmt: str = "plain") -> Union[Table,
     else:
         table_planets = Table(title="Planet Placements")
 
-        for column in ["Planet", "ID", "Sign", "Longitude", "Speed", "Sign Degrees"]:
+        for column in ["Planet", "Sign", "Sign Degrees", "Retrograde", "House"]:
             table_planets.add_column(column)
 
         for p in chart.planets:
+            house = chart.get_planet_house(p)
+            display_name = get_ephemeris_object(p.swe)["alias"]
+            retro = "Rx" if p.is_retro is True else ""
+            
             row = [
-                p.name,
-                str(p.swe),
+                display_name,
                 p.sign,
-                f"{round(p.long, 2)}°",
-                f"{round(p.speed_long, 2)}",
                 p.sign_deg_str,
+                retro,
+                f"House {house}",
             ]
             table_planets.add_row(*row)
 

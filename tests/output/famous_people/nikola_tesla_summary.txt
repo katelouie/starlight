@@ -1,0 +1,121 @@
+
+============================================================
+CHART SUMMARY FOR NIKOLA TESLA
+============================================================
+Birth Date: 1856-07-10 00:00
+Location: Smiljan, Croatia
+Coordinates: 44.3514°, 15.3109°
+Timezone: Europe/Zagreb
+Notes: Cancer Sun with midnight birth - tests electrical genius and innovative aspects
+
+Error generating planet table: list index out of range
+
+             House Cusps              
+┏━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ House ┃ Cusp Sign   ┃ Cusp Degrees ┃
+┡━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ 1     │ Aries       │ 24°47'30"    │
+│ 2     │ Taurus      │ 29°56'56"    │
+│ 3     │ Gemini      │ 22°51'33"    │
+│ 4     │ Cancer      │ 12°50'33"    │
+│ 5     │ Leo         │ 4°52'35"     │
+│ 6     │ Virgo       │ 4°27'40"     │
+│ 7     │ Libra       │ 24°47'30"    │
+│ 8     │ Scorpio     │ 29°56'56"    │
+│ 9     │ Sagittarius │ 22°51'33"    │
+│ 10    │ Capricorn   │ 12°50'33"    │
+│ 11    │ Aquarius    │ 4°52'35"     │
+│ 12    │ Pisces      │ 4°27'40"     │
+└───────┴─────────────┴──────────────┘
+
+              Chart Angles               
+┏━━━━━━━━┳━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Name   ┃ ID   ┃ Sign      ┃ Degrees   ┃
+┡━━━━━━━━╇━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ ASC    │ None │ Aries     │ 24°47'30" │
+│ DSC    │ None │ Libra     │ 24°47'30" │
+│ MC     │ None │ Capricorn │ 12°50'33" │
+│ IC     │ None │ Cancer    │ 12°50'33" │
+│ ARMC   │ None │ Capricorn │ 13°51'27" │
+│ VERTEX │ None │ Libra     │ 10°42'7"  │
+│ EQUASC │ None │ Aries     │ 14°58'21" │
+│ COASC1 │ None │ Aries     │ 10°50'8"  │
+│ COASC2 │ None │ Aries     │ 25°33'10" │
+│ POLASC │ None │ Libra     │ 10°50'8"  │
+└────────┴──────┴───────────┴───────────┘
+
+                     Planet Aspects                      
+┏━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━━━━━┓
+┃ Planet A  ┃ Planet B  ┃ Aspect     ┃ Orb ┃ Movement   ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━━━━━┩
+│ Sun       │ Moon      │ Square     │ 4°  │ Separating │
+│ Sun       │ Venus     │ Conjunct   │ 3°  │ Applying   │
+│ Sun       │ Mars      │ Square     │ 1°  │ Applying   │
+│ Sun       │ Uranus    │ Sextile    │ 6°  │ Separating │
+│ Sun       │ Neptune   │ Trine      │ 3°  │ Applying   │
+│ Sun       │ true Node │ Square     │ 2°  │ Separating │
+│ Moon      │ Sun       │ Square     │ 4°  │ Separating │
+│ Moon      │ Venus     │ Square     │ 1°  │ Separating │
+│ Moon      │ Mars      │ Conjunct   │ 5°  │ Applying   │
+│ Moon      │ Jupiter   │ Opposition │ 5°  │ Separating │
+│ Moon      │ true Node │ Opposition │ 6°  │ Separating │
+│ Mercury   │ Saturn    │ Conjunct   │ 7°  │ Applying   │
+│ Mercury   │ Neptune   │ Square     │ 8°  │ Applying   │
+│ Mercury   │ Pluto     │ Sextile    │ 7°  │ Separating │
+│ Venus     │ Sun       │ Conjunct   │ 3°  │ Applying   │
+│ Venus     │ Moon      │ Square     │ 1°  │ Separating │
+│ Venus     │ Mars      │ Square     │ 4°  │ Applying   │
+│ Venus     │ Jupiter   │ Square     │ 6°  │ Separating │
+│ Venus     │ Neptune   │ Trine      │ 6°  │ Applying   │
+│ Venus     │ true Node │ Square     │ 5°  │ Separating │
+│ Mars      │ Sun       │ Square     │ 1°  │ Applying   │
+│ Mars      │ Moon      │ Conjunct   │ 5°  │ Applying   │
+│ Mars      │ Venus     │ Square     │ 4°  │ Applying   │
+│ Mars      │ true Node │ Opposition │ 1°  │ Separating │
+│ Jupiter   │ Moon      │ Opposition │ 5°  │ Separating │
+│ Jupiter   │ Venus     │ Square     │ 6°  │ Separating │
+│ Jupiter   │ Saturn    │ Square     │ 3°  │ Separating │
+│ Saturn    │ Mercury   │ Conjunct   │ 7°  │ Applying   │
+│ Saturn    │ Jupiter   │ Square     │ 3°  │ Separating │
+│ Saturn    │ Pluto     │ Sextile    │ 0°  │ Separating │
+│ Uranus    │ Sun       │ Sextile    │ 6°  │ Separating │
+│ Uranus    │ Neptune   │ Sextile    │ 4°  │ Applying   │
+│ Neptune   │ Sun       │ Trine      │ 3°  │ Applying   │
+│ Neptune   │ Mercury   │ Square     │ 8°  │ Applying   │
+│ Neptune   │ Venus     │ Trine      │ 6°  │ Applying   │
+│ Neptune   │ Uranus    │ Sextile    │ 4°  │ Applying   │
+│ Pluto     │ Mercury   │ Sextile    │ 7°  │ Separating │
+│ Pluto     │ Saturn    │ Sextile    │ 0°  │ Separating │
+│ true Node │ Sun       │ Square     │ 2°  │ Separating │
+│ true Node │ Moon      │ Opposition │ 6°  │ Separating │
+│ true Node │ Venus     │ Square     │ 5°  │ Separating │
+│ true Node │ Mars      │ Opposition │ 1°  │ Separating │
+└───────────┴───────────┴────────────┴─────┴────────────┘
+
+            Planetary Dignities (Traditional)            
+┏━━━━━━━━━┳━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Planet  ┃ Sign   ┃ Degree ┃ Dignities         ┃ Score ┃
+┡━━━━━━━━━╇━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ Mercury │ Gemini │  28.1° │ ruler, triplicity │     8 │
+│ Venus   │ Cancer │  14.8° │ triplicity        │     3 │
+│ Jupiter │ Aries  │   8.6° │ triplicity        │     3 │
+│ Sun     │ Cancer │  17.8° │ None              │     0 │
+│ Moon    │ Libra  │  13.8° │ None              │     0 │
+│ Mars    │ Libra  │  18.9° │ detriment         │    -5 │
+│ Saturn  │ Cancer │   5.6° │ detriment         │    -5 │
+└─────────┴────────┴────────┴───────────────────┴───────┘
+                    Chart Sect: Night                    
+
+         Bounds & Decan Rulers         
+┏━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Planet  ┃ Bound Ruler ┃ Decan Ruler ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ Sun     │ Mercury     │ Mars        │
+│ Moon    │ Mercury     │ Saturn      │
+│ Mercury │ Saturn      │ Saturn      │
+│ Venus   │ Mercury     │ Mars        │
+│ Mars    │ Jupiter     │ Saturn      │
+│ Jupiter │ Venus       │ Mars        │
+│ Saturn  │ Mars        │ Moon        │
+└─────────┴─────────────┴─────────────┘
+

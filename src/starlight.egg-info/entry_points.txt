@@ -1,0 +1,2 @@
+[console_scripts]
+starlight = starlight.cli:main

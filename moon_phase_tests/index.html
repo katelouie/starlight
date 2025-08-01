@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Moon Phase SVG Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .phase-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .phase-card img {
+            width: 100%;
+            height: auto;
+        }
+        .phase-name {
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .phase-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Moon Phase SVG Test Results</h1>
+    <p>This page displays the generated moon phase SVGs. Each phase shows the illuminated fraction and phase angle.</p>
+
+    <h2>Complete Grid View</h2>
+    <img src="moon_phases_grid.svg" style="max-width: 100%; height: auto; border: 1px solid #ddd;">
+
+    <h2>Individual Phases</h2>
+    <div class="grid">
+
+        <div class="phase-card">
+            <img src="new_moon.svg" alt="new_moon">
+            <div class="phase-name">New Moon</div>
+            <div class="phase-info">0.0% illuminated</div>
+            <div class="phase-info">0° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waxing_crescent_early.svg" alt="waxing_crescent_early">
+            <div class="phase-name">Waxing Crescent Early</div>
+            <div class="phase-info">10.0% illuminated</div>
+            <div class="phase-info">36° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waxing_crescent.svg" alt="waxing_crescent">
+            <div class="phase-name">Waxing Crescent</div>
+            <div class="phase-info">25.0% illuminated</div>
+            <div class="phase-info">90° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waxing_crescent_late.svg" alt="waxing_crescent_late">
+            <div class="phase-name">Waxing Crescent Late</div>
+            <div class="phase-info">40.0% illuminated</div>
+            <div class="phase-info">144° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="first_quarter.svg" alt="first_quarter">
+            <div class="phase-name">First Quarter</div>
+            <div class="phase-info">50.0% illuminated</div>
+            <div class="phase-info">90° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waxing_gibbous_early.svg" alt="waxing_gibbous_early">
+            <div class="phase-name">Waxing Gibbous Early</div>
+            <div class="phase-info">60.0% illuminated</div>
+            <div class="phase-info">108° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waxing_gibbous.svg" alt="waxing_gibbous">
+            <div class="phase-name">Waxing Gibbous</div>
+            <div class="phase-info">75.0% illuminated</div>
+            <div class="phase-info">135° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waxing_gibbous_late.svg" alt="waxing_gibbous_late">
+            <div class="phase-name">Waxing Gibbous Late</div>
+            <div class="phase-info">90.0% illuminated</div>
+            <div class="phase-info">162° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="full_moon.svg" alt="full_moon">
+            <div class="phase-name">Full Moon</div>
+            <div class="phase-info">100.0% illuminated</div>
+            <div class="phase-info">180° (Waxing)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waning_gibbous_early.svg" alt="waning_gibbous_early">
+            <div class="phase-name">Waning Gibbous Early</div>
+            <div class="phase-info">90.0% illuminated</div>
+            <div class="phase-info">198° (Waning)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waning_gibbous.svg" alt="waning_gibbous">
+            <div class="phase-name">Waning Gibbous</div>
+            <div class="phase-info">75.0% illuminated</div>
+            <div class="phase-info">225° (Waning)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waning_gibbous_late.svg" alt="waning_gibbous_late">
+            <div class="phase-name">Waning Gibbous Late</div>
+            <div class="phase-info">60.0% illuminated</div>
+            <div class="phase-info">252° (Waning)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="last_quarter.svg" alt="last_quarter">
+            <div class="phase-name">Last Quarter</div>
+            <div class="phase-info">50.0% illuminated</div>
+            <div class="phase-info">270° (Waning)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waning_crescent_early.svg" alt="waning_crescent_early">
+            <div class="phase-name">Waning Crescent Early</div>
+            <div class="phase-info">40.0% illuminated</div>
+            <div class="phase-info">288° (Waning)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waning_crescent.svg" alt="waning_crescent">
+            <div class="phase-name">Waning Crescent</div>
+            <div class="phase-info">25.0% illuminated</div>
+            <div class="phase-info">315° (Waning)</div>
+        </div>
+
+        <div class="phase-card">
+            <img src="waning_crescent_late.svg" alt="waning_crescent_late">
+            <div class="phase-name">Waning Crescent Late</div>
+            <div class="phase-info">10.0% illuminated</div>
+            <div class="phase-info">324° (Waning)</div>
+        </div>
+
+    </div>
+</body>
+</html>

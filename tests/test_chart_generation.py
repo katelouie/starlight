@@ -44,11 +44,29 @@ class MockPlanet:
         self.is_retro = is_retro
         self.speed_long = -0.5 if is_retro else 1.0
         
+        # Calculate sign information for planet info display
+        self._calculate_sign_info()
+        
         # Moon phase data (if this is the Moon)
         if name == "Moon":
             self.phase_frac = phase_frac if phase_frac is not None else 0.5
             self.phase_angle = phase_angle if phase_angle is not None else 90.0
             self.phase_para = 0.0  # Parallax
+    
+    def _calculate_sign_info(self):
+        """Calculate sign position information like real Planet objects."""
+        # Import here to avoid circular imports
+        from starlight.signs import sign_names
+        
+        # Calculate sign information
+        self.sign = sign_names[int(self.long // 30)]
+        self.sign_deg = self.long % 30
+        self.sign_min = (self.long % 1) * 60
+        self.sign_sec = (self.sign_min % 1) * 60
+        self.sign_deg_str = (
+            f"{round(self.sign_deg)}°{round(self.sign_min)}'"
+            + f'{round(self.sign_sec)}"'
+        )
     
     @property
     def has_speed(self) -> bool:

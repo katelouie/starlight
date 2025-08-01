@@ -1,0 +1,138 @@
+
+============================================================
+CHART SUMMARY FOR PABLO PICASSO
+============================================================
+Birth Date: 1881-10-25 23:15
+Location: Málaga, Spain
+Coordinates: 36.7213°, -4.4213°
+Timezone: Europe/Madrid
+Notes: Scorpio Sun - tests artistic revolution and creative transformation
+
+                          Planet Placements                          
+┏━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━┓
+┃ Planet       ┃ Sign        ┃ Sign Degrees ┃ Retrograde ┃ House    ┃
+┡━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━┩
+│ Sun ☉        │ Scorpio     │ 3°43'41"     │            │ House 4  │
+│ Moon ☽       │ Sagittarius │ 8°11'28"     │            │ House 5  │
+│ Mercury ☿    │ Scorpio     │ 24°15'36"    │            │ House 4  │
+│ Venus ♀      │ Libra       │ 5°31'29"     │            │ House 3  │
+│ Mars ♂       │ Cancer      │ 12°21'10"    │            │ House 12 │
+│ Jupiter ♃    │ Taurus      │ 24°34'32"    │ Rx         │ House 10 │
+│ Saturn ♄     │ Taurus      │ 9°27'26"     │ Rx         │ House 10 │
+│ Uranus ♅     │ Virgo       │ 17°2'9"      │            │ House 2  │
+│ Neptune ♆    │ Taurus      │ 16°31'46"    │ Rx         │ House 10 │
+│ Pluto ♇      │ Taurus      │ 29°47'10"    │ Rx         │ House 10 │
+│ North Node ☊ │ Sagittarius │ 9°24'45"     │ Rx         │ House 5  │
+│ ?            │ Gemini      │ 9°24'45"     │ Rx         │ House 11 │
+│ BM Lilith ⚸  │ Leo         │ 8°21'5"      │            │ House 1  │
+│ Chiron ⚷     │ Taurus      │ 21°3'1"      │ Rx         │ House 10 │
+│ Pholus 𝛷     │ Aquarius    │ 29°29'36"    │ Rx         │ House 8  │
+│ Ceres ⚳      │ Sagittarius │ 28°56'36"    │            │ House 5  │
+│ Pallas ⚴     │ Sagittarius │ 17°43'12"    │            │ House 5  │
+│ Juno ⚵       │ Sagittarius │ 4°30'1"      │            │ House 5  │
+│ Vesta ⚶      │ Taurus      │ 9°29'32"     │ Rx         │ House 10 │
+└──────────────┴─────────────┴──────────────┴────────────┴──────────┘
+
+             House Cusps              
+┏━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ House ┃ Cusp Sign   ┃ Cusp Degrees ┃
+┡━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ 1     │ Leo         │ 5°6'38"      │
+│ 2     │ Leo         │ 27°44'24"    │
+│ 3     │ Virgo       │ 23°41'11"    │
+│ 4     │ Libra       │ 24°22'56"    │
+│ 5     │ Sagittarius │ 0°3'45"      │
+│ 6     │ Capricorn   │ 5°41'46"     │
+│ 7     │ Aquarius    │ 5°6'38"      │
+│ 8     │ Aquarius    │ 27°44'24"    │
+│ 9     │ Pisces      │ 23°41'11"    │
+│ 10    │ Aries       │ 24°22'56"    │
+│ 11    │ Gemini      │ 0°3'45"      │
+│ 12    │ Cancer      │ 5°41'46"     │
+└───────┴─────────────┴──────────────┘
+
+               Chart Angles                
+┏━━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Name   ┃ ID   ┃ Sign        ┃ Degrees   ┃
+┡━━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ ASC    │ None │ Leo         │ 5°6'38"   │
+│ DSC    │ None │ Aquarius    │ 5°6'38"   │
+│ MC     │ None │ Aries       │ 24°22'56" │
+│ IC     │ None │ Libra       │ 24°22'56" │
+│ ARMC   │ None │ Aries       │ 23°34'43" │
+│ VERTEX │ None │ Sagittarius │ 19°53'34" │
+│ EQUASC │ None │ Cancer      │ 21°52'52" │
+│ COASC1 │ None │ Cancer      │ 3°25'49"  │
+│ COASC2 │ None │ Leo         │ 14°48'56" │
+│ POLASC │ None │ Capricorn   │ 3°25'49"  │
+└────────┴──────┴─────────────┴───────────┘
+
+                     Planet Aspects                      
+┏━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━━━━━┓
+┃ Planet A  ┃ Planet B  ┃ Aspect     ┃ Orb ┃ Movement   ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━━━━━┩
+│ Sun       │ Saturn    │ Opposition │ 7°  │ Separating │
+│ Moon      │ Venus     │ Sextile    │ 4°  │ Separating │
+│ Moon      │ true Node │ Conjunct   │ 1°  │ Applying   │
+│ Mercury   │ Jupiter   │ Opposition │ 1°  │ Separating │
+│ Mercury   │ Uranus    │ Sextile    │ 7°  │ Separating │
+│ Mercury   │ Pluto     │ Opposition │ 5°  │ Separating │
+│ Venus     │ Moon      │ Sextile    │ 4°  │ Separating │
+│ Venus     │ Mars      │ Square     │ 8°  │ Separating │
+│ Venus     │ Pluto     │ Trine      │ 6°  │ Separating │
+│ Venus     │ true Node │ Sextile    │ 5°  │ Applying   │
+│ Mars      │ Venus     │ Square     │ 8°  │ Separating │
+│ Mars      │ Saturn    │ Sextile    │ 3°  │ Separating │
+│ Mars      │ Uranus    │ Sextile    │ 5°  │ Applying   │
+│ Mars      │ Neptune   │ Sextile    │ 3°  │ Separating │
+│ Jupiter   │ Mercury   │ Opposition │ 1°  │ Separating │
+│ Jupiter   │ Uranus    │ Trine      │ 7°  │ Separating │
+│ Jupiter   │ Pluto     │ Conjunct   │ 5°  │ Separating │
+│ Saturn    │ Sun       │ Opposition │ 7°  │ Separating │
+│ Saturn    │ Mars      │ Sextile    │ 3°  │ Separating │
+│ Saturn    │ Uranus    │ Trine      │ 8°  │ Separating │
+│ Saturn    │ Neptune   │ Conjunct   │ 6°  │ Separating │
+│ Uranus    │ Mercury   │ Sextile    │ 7°  │ Separating │
+│ Uranus    │ Mars      │ Sextile    │ 5°  │ Applying   │
+│ Uranus    │ Jupiter   │ Trine      │ 7°  │ Separating │
+│ Uranus    │ Saturn    │ Trine      │ 8°  │ Separating │
+│ Uranus    │ Neptune   │ Trine      │ 2°  │ Separating │
+│ Uranus    │ true Node │ Square     │ 8°  │ Applying   │
+│ Neptune   │ Mars      │ Sextile    │ 3°  │ Separating │
+│ Neptune   │ Saturn    │ Conjunct   │ 6°  │ Separating │
+│ Neptune   │ Uranus    │ Trine      │ 2°  │ Separating │
+│ Pluto     │ Mercury   │ Opposition │ 5°  │ Separating │
+│ Pluto     │ Venus     │ Trine      │ 6°  │ Separating │
+│ Pluto     │ Jupiter   │ Conjunct   │ 5°  │ Separating │
+│ true Node │ Moon      │ Conjunct   │ 1°  │ Applying   │
+│ true Node │ Venus     │ Sextile    │ 5°  │ Applying   │
+│ true Node │ Uranus    │ Square     │ 8°  │ Applying   │
+└───────────┴───────────┴────────────┴─────┴────────────┘
+
+            Planetary Dignities (Traditional)            
+┏━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Planet  ┃ Sign        ┃ Degree ┃ Dignities    ┃ Score ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━╇━━━━━━━┩
+│ Venus   │ Libra       │   4.5° │ ruler, decan │     6 │
+│ Sun     │ Scorpio     │   2.7° │ None         │     0 │
+│ Moon    │ Sagittarius │   8.2° │ None         │     0 │
+│ Mercury │ Scorpio     │  24.2° │ None         │     0 │
+│ Jupiter │ Taurus      │  23.6° │ None         │     0 │
+│ Saturn  │ Taurus      │   9.5° │ None         │     0 │
+│ Mars    │ Cancer      │  12.3° │ fall, decan  │    -3 │
+└─────────┴─────────────┴────────┴──────────────┴───────┘
+                    Chart Sect: Night                    
+
+         Bounds & Decan Rulers         
+┏━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Planet  ┃ Bound Ruler ┃ Decan Ruler ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ Sun     │ Mars        │ Mars        │
+│ Moon    │ Jupiter     │ Jupiter     │
+│ Mercury │ Saturn      │ Venus       │
+│ Venus   │ Saturn      │ Venus       │
+│ Mars    │ Venus       │ Mars        │
+│ Jupiter │ Saturn      │ Saturn      │
+│ Saturn  │ Mercury     │ Venus       │
+└─────────┴─────────────┴─────────────┘
+

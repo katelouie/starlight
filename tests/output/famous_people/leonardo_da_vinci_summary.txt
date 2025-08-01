@@ -1,0 +1,119 @@
+
+============================================================
+CHART SUMMARY FOR LEONARDO DA VINCI
+============================================================
+Birth Date: 1452-04-15 21:40
+Location: Vinci, Italy
+Coordinates: 43.7811°, 10.9237°
+Timezone: Europe/Rome
+Notes: Aries Sun with strong Taurus - tests Renaissance genius and artistic/scientific blend
+
+Error generating planet table: list index out of range
+
+            House Cusps             
+┏━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ House ┃ Cusp Sign ┃ Cusp Degrees ┃
+┡━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ 1     │ Scorpio   │ 29°14'18"    │
+│ 2     │ Capricorn │ 1°58'13"     │
+│ 3     │ Aquarius  │ 9°58'39"     │
+│ 4     │ Pisces    │ 16°23'20"    │
+│ 5     │ Aries     │ 17°41'3"     │
+│ 6     │ Taurus    │ 10°4'18"     │
+│ 7     │ Taurus    │ 29°14'18"    │
+│ 8     │ Cancer    │ 1°58'13"     │
+│ 9     │ Leo       │ 9°58'39"     │
+│ 10    │ Virgo     │ 16°23'20"    │
+│ 11    │ Libra     │ 17°41'3"     │
+│ 12    │ Scorpio   │ 10°4'18"     │
+└───────┴───────────┴──────────────┘
+
+               Chart Angles                
+┏━━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Name   ┃ ID   ┃ Sign        ┃ Degrees   ┃
+┡━━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ ASC    │ None │ Scorpio     │ 29°14'18" │
+│ DSC    │ None │ Taurus      │ 29°14'18" │
+│ MC     │ None │ Virgo       │ 16°23'20" │
+│ IC     │ None │ Pisces      │ 16°23'20" │
+│ ARMC   │ None │ Virgo       │ 17°29'54" │
+│ VERTEX │ None │ Cancer      │ 13°34'39" │
+│ EQUASC │ None │ Sagittarius │ 18°30'31" │
+│ COASC1 │ None │ Capricorn   │ 11°39'53" │
+│ COASC2 │ None │ Scorpio     │ 28°47'20" │
+│ POLASC │ None │ Cancer      │ 11°39'53" │
+└────────┴──────┴─────────────┴───────────┘
+
+                     Planet Aspects                      
+┏━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━━━━━┓
+┃ Planet A  ┃ Planet B  ┃ Aspect     ┃ Orb ┃ Movement   ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━━━━━┩
+│ Sun       │ Jupiter   │ Sextile    │ 4°  │ Applying   │
+│ Sun       │ Uranus    │ Square     │ 4°  │ Applying   │
+│ Moon      │ Jupiter   │ Square     │ 4°  │ Applying   │
+│ Moon      │ Uranus    │ Trine      │ 4°  │ Separating │
+│ Moon      │ Neptune   │ Sextile    │ 4°  │ Separating │
+│ Mercury   │ Mars      │ Sextile    │ 2°  │ Separating │
+│ Mercury   │ Saturn    │ Opposition │ 7°  │ Separating │
+│ Mercury   │ Neptune   │ Opposition │ 7°  │ Separating │
+│ Mercury   │ Pluto     │ Trine      │ 3°  │ Separating │
+│ Mercury   │ true Node │ Square     │ 1°  │ Separating │
+│ Venus     │ Mars      │ Square     │ 5°  │ Applying   │
+│ Venus     │ Uranus    │ Sextile    │ 7°  │ Applying   │
+│ Venus     │ true Node │ Trine      │ 7°  │ Applying   │
+│ Mars      │ Mercury   │ Sextile    │ 2°  │ Separating │
+│ Mars      │ Venus     │ Square     │ 5°  │ Applying   │
+│ Mars      │ Saturn    │ Trine      │ 5°  │ Separating │
+│ Mars      │ Pluto     │ Opposition │ 5°  │ Separating │
+│ Jupiter   │ Sun       │ Sextile    │ 4°  │ Applying   │
+│ Jupiter   │ Moon      │ Square     │ 4°  │ Applying   │
+│ Jupiter   │ true Node │ Sextile    │ 7°  │ Separating │
+│ Saturn    │ Mercury   │ Opposition │ 7°  │ Separating │
+│ Saturn    │ Mars      │ Trine      │ 5°  │ Separating │
+│ Saturn    │ Uranus    │ Square     │ 7°  │ Applying   │
+│ Saturn    │ true Node │ Square     │ 8°  │ Applying   │
+│ Uranus    │ Sun       │ Square     │ 4°  │ Applying   │
+│ Uranus    │ Moon      │ Trine      │ 4°  │ Separating │
+│ Uranus    │ Venus     │ Sextile    │ 7°  │ Applying   │
+│ Uranus    │ Saturn    │ Square     │ 7°  │ Applying   │
+│ Neptune   │ Moon      │ Sextile    │ 4°  │ Separating │
+│ Neptune   │ Mercury   │ Opposition │ 7°  │ Separating │
+│ Neptune   │ Pluto     │ Sextile    │ 5°  │ Applying   │
+│ Neptune   │ true Node │ Square     │ 7°  │ Applying   │
+│ Pluto     │ Mercury   │ Trine      │ 3°  │ Separating │
+│ Pluto     │ Mars      │ Opposition │ 5°  │ Separating │
+│ Pluto     │ Neptune   │ Sextile    │ 5°  │ Applying   │
+│ true Node │ Mercury   │ Square     │ 1°  │ Separating │
+│ true Node │ Venus     │ Trine      │ 7°  │ Applying   │
+│ true Node │ Jupiter   │ Sextile    │ 7°  │ Separating │
+│ true Node │ Saturn    │ Square     │ 8°  │ Applying   │
+│ true Node │ Neptune   │ Square     │ 7°  │ Applying   │
+└───────────┴───────────┴────────────┴─────┴────────────┘
+
+            Planetary Dignities (Traditional)             
+┏━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Planet  ┃ Sign     ┃ Degree ┃ Dignities        ┃ Score ┃
+┡━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ Jupiter │ Pisces   │   0.0° │ ruler, decan     │     6 │
+│ Venus   │ Taurus   │  14.6° │ ruler            │     5 │
+│ Saturn  │ Libra    │  14.7° │ exhalt, decan    │     5 │
+│ Sun     │ Aries    │  25.9° │ exhalt           │     4 │
+│ Mercury │ Aries    │   7.8° │ None             │     0 │
+│ Mars    │ Aquarius │  10.1° │ None             │     0 │
+│ Moon    │ Scorpio  │  26.4° │ fall, triplicity │    -2 │
+└─────────┴──────────┴────────┴──────────────────┴───────┘
+                    Chart Sect: Night                     
+
+         Bounds & Decan Rulers         
+┏━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Planet  ┃ Bound Ruler ┃ Decan Ruler ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ Sun     │ Saturn      │ Jupiter     │
+│ Moon    │ Saturn      │ Venus       │
+│ Mercury │ Venus       │ Mars        │
+│ Venus   │ Jupiter     │ Mercury     │
+│ Mars    │ Venus       │ Mercury     │
+│ Jupiter │ Venus       │ Jupiter     │
+│ Saturn  │ Jupiter     │ Saturn      │
+└─────────┴─────────────┴─────────────┘
+

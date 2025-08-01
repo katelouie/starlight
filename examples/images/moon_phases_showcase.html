@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starlight Moon Phases</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        h1 {
+            color: #ffd700;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .moon-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+            margin: 40px 0;
+        }
+        .moon-phase {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s ease;
+        }
+        .moon-phase:hover {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.1);
+        }
+        .moon-phase h3 {
+            color: #87ceeb;
+            margin-bottom: 15px;
+            text-transform: capitalize;
+            font-size: 1.1em;
+        }
+        .moon-phase svg {
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            padding: 10px;
+        }
+        .description {
+            margin-top: 40px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #d0d0d0;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌟 Starlight Moon Phases</h1>
+        
+        <div class="moon-grid">
+
+            <div class="moon-phase">
+                <h3>New Moon</h3>
+                <object data="moon_phase_new_moon.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_new_moon.svg" alt="New Moon" width="120" height="120">
+                </object>
+                <p>0% illuminated</p>
+            </div>
+        
+            <div class="moon-phase">
+                <h3>Waxing Crescent</h3>
+                <object data="moon_phase_waxing_crescent.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_waxing_crescent.svg" alt="Waxing Crescent" width="120" height="120">
+                </object>
+                <p>25% illuminated</p>
+            </div>
+        
+            <div class="moon-phase">
+                <h3>First Quarter</h3>
+                <object data="moon_phase_first_quarter.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_first_quarter.svg" alt="First Quarter" width="120" height="120">
+                </object>
+                <p>50% illuminated</p>
+            </div>
+        
+            <div class="moon-phase">
+                <h3>Waxing Gibbous</h3>
+                <object data="moon_phase_waxing_gibbous.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_waxing_gibbous.svg" alt="Waxing Gibbous" width="120" height="120">
+                </object>
+                <p>75% illuminated</p>
+            </div>
+        
+            <div class="moon-phase">
+                <h3>Full Moon</h3>
+                <object data="moon_phase_full_moon.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_full_moon.svg" alt="Full Moon" width="120" height="120">
+                </object>
+                <p>100% illuminated</p>
+            </div>
+        
+            <div class="moon-phase">
+                <h3>Waning Gibbous</h3>
+                <object data="moon_phase_waning_gibbous.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_waning_gibbous.svg" alt="Waning Gibbous" width="120" height="120">
+                </object>
+                <p>75% illuminated</p>
+            </div>
+        
+            <div class="moon-phase">
+                <h3>Third Quarter</h3>
+                <object data="moon_phase_third_quarter.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_third_quarter.svg" alt="Third Quarter" width="120" height="120">
+                </object>
+                <p>50% illuminated</p>
+            </div>
+        
+            <div class="moon-phase">
+                <h3>Waning Crescent</h3>
+                <object data="moon_phase_waning_crescent.svg" type="image/svg+xml" width="120" height="120">
+                    <img src="moon_phase_waning_crescent.svg" alt="Waning Crescent" width="120" height="120">
+                </object>
+                <p>25% illuminated</p>
+            </div>
+        
+        </div>
+        
+        <div class="description">
+            <p>
+                These moon phases are generated using Starlight's sophisticated astronomical calculations
+                and artistic SVG rendering system. Each phase shows the mathematically accurate 
+                illumination pattern based on the lunar cycle.
+            </p>
+            <p>
+                The visualization uses a two-circle method to create authentic curved terminators,
+                matching the appearance of the Moon as seen from Earth.
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>Generated by <strong>Starlight</strong> - Modern Python Astrology Library</p>
+            <p>Built with Swiss Ephemeris for astronomical precision</p>
+        </div>
+    </div>
+</body>
+</html>

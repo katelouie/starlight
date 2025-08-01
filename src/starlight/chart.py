@@ -63,11 +63,15 @@ class Chart:
         self.loc_name = loc_name
         self.is_time_known = time_known
 
-        # Handle location
-        if loc_name:
+        # Handle location - prioritize coordinates if provided
+        if loc is not None:
+            self.loc = loc
+            if loc_name:
+                print(f"{loc_name} ({self.loc[0]}, {self.loc[1]})")
+        elif loc_name:
             self.get_lat_long()
         else:
-            self.loc = loc
+            raise ValueError("Need either coordinates or place name.")
 
         # Calculate Julian day
         self.julian = self._calc_julian_day()

@@ -1,0 +1,121 @@
+
+============================================================
+CHART SUMMARY FOR MAYA ANGELOU
+============================================================
+Birth Date: 1928-04-04 14:10
+Location: St. Louis, Missouri, USA
+Coordinates: 38.6270°, -90.1994°
+Timezone: America/Chicago
+Notes: Aries Sun - tests literary genius and resilience themes
+
+Error generating planet table: list index out of range
+
+             House Cusps              
+┏━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ House ┃ Cusp Sign   ┃ Cusp Degrees ┃
+┡━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━┩
+│ 1     │ Leo         │ 24°58'58"    │
+│ 2     │ Virgo       │ 17°54'21"    │
+│ 3     │ Libra       │ 15°48'9"     │
+│ 4     │ Scorpio     │ 18°39'17"    │
+│ 5     │ Sagittarius │ 23°32'28"    │
+│ 6     │ Capricorn   │ 25°13'30"    │
+│ 7     │ Aquarius    │ 24°58'58"    │
+│ 8     │ Pisces      │ 17°54'21"    │
+│ 9     │ Aries       │ 15°48'9"     │
+│ 10    │ Taurus      │ 18°39'17"    │
+│ 11    │ Gemini      │ 23°32'28"    │
+│ 12    │ Cancer      │ 25°13'30"    │
+└───────┴─────────────┴──────────────┘
+
+              Chart Angles               
+┏━━━━━━━━┳━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━┓
+┃ Name   ┃ ID   ┃ Sign      ┃ Degrees   ┃
+┡━━━━━━━━╇━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━┩
+│ ASC    │ None │ Leo       │ 24°58'58" │
+│ DSC    │ None │ Aquarius  │ 24°58'58" │
+│ MC     │ None │ Taurus    │ 18°39'17" │
+│ IC     │ None │ Scorpio   │ 18°39'17" │
+│ ARMC   │ None │ Taurus    │ 15°11'20" │
+│ VERTEX │ None │ Capricorn │ 12°14'7"  │
+│ EQUASC │ None │ Leo       │ 13°43'19" │
+│ COASC1 │ None │ Cancer    │ 25°17'53" │
+│ COASC2 │ None │ Leo       │ 28°28'22" │
+│ POLASC │ None │ Capricorn │ 25°17'53" │
+└────────┴──────┴───────────┴───────────┘
+
+                     Planet Aspects                      
+┏━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━┳━━━━━┳━━━━━━━━━━━━┓
+┃ Planet A  ┃ Planet B  ┃ Aspect     ┃ Orb ┃ Movement   ┃
+┡━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━╇━━━━━╇━━━━━━━━━━━━┩
+│ Sun       │ Moon      │ Opposition │ 3°  │ Separating │
+│ Sun       │ Jupiter   │ Conjunct   │ 1°  │ Applying   │
+│ Sun       │ Saturn    │ Trine      │ 4°  │ Applying   │
+│ Sun       │ Pluto     │ Square     │ 0°  │ Applying   │
+│ Sun       │ true Node │ Sextile    │ 4°  │ Applying   │
+│ Moon      │ Sun       │ Opposition │ 3°  │ Separating │
+│ Moon      │ Jupiter   │ Opposition │ 5°  │ Separating │
+│ Moon      │ Saturn    │ Sextile    │ 8°  │ Applying   │
+│ Moon      │ Uranus    │ Opposition │ 7°  │ Separating │
+│ Moon      │ Pluto     │ Square     │ 4°  │ Separating │
+│ Moon      │ true Node │ Trine      │ 0°  │ Separating │
+│ Mercury   │ Venus     │ Conjunct   │ 1°  │ Applying   │
+│ Mercury   │ Saturn    │ Square     │ 1°  │ Separating │
+│ Mercury   │ Pluto     │ Trine      │ 5°  │ Separating │
+│ Venus     │ Mercury   │ Conjunct   │ 1°  │ Applying   │
+│ Venus     │ Saturn    │ Square     │ 3°  │ Separating │
+│ Venus     │ Pluto     │ Trine      │ 7°  │ Separating │
+│ Mars      │ Neptune   │ Opposition │ 1°  │ Separating │
+│ Jupiter   │ Sun       │ Conjunct   │ 1°  │ Applying   │
+│ Jupiter   │ Moon      │ Opposition │ 5°  │ Separating │
+│ Jupiter   │ Saturn    │ Trine      │ 3°  │ Applying   │
+│ Jupiter   │ Pluto     │ Square     │ 1°  │ Applying   │
+│ Jupiter   │ true Node │ Sextile    │ 5°  │ Applying   │
+│ Saturn    │ Sun       │ Trine      │ 4°  │ Applying   │
+│ Saturn    │ Moon      │ Sextile    │ 8°  │ Applying   │
+│ Saturn    │ Mercury   │ Square     │ 1°  │ Separating │
+│ Saturn    │ Venus     │ Square     │ 3°  │ Separating │
+│ Saturn    │ Jupiter   │ Trine      │ 3°  │ Applying   │
+│ Saturn    │ Neptune   │ Trine      │ 8°  │ Separating │
+│ Uranus    │ Moon      │ Opposition │ 7°  │ Separating │
+│ Uranus    │ true Node │ Sextile    │ 7°  │ Applying   │
+│ Neptune   │ Mars      │ Opposition │ 1°  │ Separating │
+│ Neptune   │ Saturn    │ Trine      │ 8°  │ Separating │
+│ Pluto     │ Sun       │ Square     │ 0°  │ Applying   │
+│ Pluto     │ Moon      │ Square     │ 4°  │ Separating │
+│ Pluto     │ Mercury   │ Trine      │ 5°  │ Separating │
+│ Pluto     │ Venus     │ Trine      │ 7°  │ Separating │
+│ Pluto     │ Jupiter   │ Square     │ 1°  │ Applying   │
+│ true Node │ Sun       │ Sextile    │ 4°  │ Applying   │
+│ true Node │ Moon      │ Trine      │ 0°  │ Separating │
+│ true Node │ Jupiter   │ Sextile    │ 5°  │ Applying   │
+│ true Node │ Uranus    │ Sextile    │ 7°  │ Applying   │
+└───────────┴───────────┴────────────┴─────┴────────────┘
+
+               Planetary Dignities (Traditional)               
+┏━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┓
+┃ Planet  ┃ Sign        ┃ Degree ┃ Dignities          ┃ Score ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━┩
+│ Venus   │ Pisces      │  21.7° │ exhalt, triplicity │     7 │
+│ Sun     │ Aries       │  14.8° │ exhalt, decan      │     5 │
+│ Jupiter │ Aries       │  16.1° │ triplicity         │     3 │
+│ Mars    │ Aquarius    │  27.9° │ bound              │     2 │
+│ Saturn  │ Sagittarius │  19.1° │ triplicity         │     2 │
+│ Moon    │ Libra       │  11.3° │ None               │     0 │
+│ Mercury │ Pisces      │  20.4° │ detriment          │    -5 │
+└─────────┴─────────────┴────────┴────────────────────┴───────┘
+                       Chart Sect: Night                       
+
+         Bounds & Decan Rulers         
+┏━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━┓
+┃ Planet  ┃ Bound Ruler ┃ Decan Ruler ┃
+┡━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━┩
+│ Sun     │ Mercury     │ Sun         │
+│ Moon    │ Mercury     │ Saturn      │
+│ Mercury │ Mars        │ Moon        │
+│ Venus   │ Mars        │ Moon        │
+│ Mars    │ Mars        │ Venus       │
+│ Jupiter │ Mercury     │ Sun         │
+│ Saturn  │ Mercury     │ Mars        │
+└─────────┴─────────────┴─────────────┘
+
