@@ -103,6 +103,31 @@ class HouseSystemEngine(Protocol):
         ...
 
 
+class OrbEngine(Protocol):
+    """
+    Protocol for orb calculation.
+
+    Encapsulates logic for determining orb allowance, which can be simple (by aspect)
+    or complex (by planet, by planet pair, by day/night, etc.).
+    """
+
+    def get_orb_allowance(
+        self, obj1: CelestialPosition, obj2: CelestialPosition, aspect_name: str
+    ) -> float:
+        """
+        Get the allowed orb for a specific aspect between two objects.
+
+        Args:
+            obj1: The first celestial object
+            obj2: The second celestial object
+            aspect_name: The name of the aspect (e.g. Square)
+
+        Returns:
+            The maximum allowed orb in degrees
+        """
+        ...
+
+
 class AspectEngine(Protocol):
     """
     Protocol for aspect calculation engines.
@@ -128,31 +153,6 @@ class AspectEngine(Protocol):
 
         Returns:
             List of Aspect objects
-        """
-        ...
-
-
-class OrbEngine(Protocol):
-    """
-    Protocol for orb calculation.
-
-    Encapsulates logic for determining orb allowance, which can be simple (by aspect)
-    or complex (by planet, by planet pair, by day/night, etc.).
-    """
-
-    def get_orb_allowance(
-        self, obj1: CelestialPosition, obj2: CelestialPosition, aspect_name: str
-    ) -> float:
-        """
-        Get the allowed orb for a specific aspect between two objects.
-
-        Args:
-            obj1: The first celestial object
-            obj2: The second celestial object
-            aspect_name: The name of the aspect (e.g. Square)
-
-        Returns:
-            The maximum allowed orb in degrees
         """
         ...
 
