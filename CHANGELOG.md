@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added 4 tests for core dataclass models
 - Added Protocol definitions: EphemerisEngine, HouseSystemEngine, AspectEngine, OrbEngine, DignityCalculator, ChartComponent
 - Added configuration models: AspectConfig, CalculationConfig
+- Added SwissEphemerisEngine and MockEphemerisEngine and 2 tests
 
 ### Removed
 
