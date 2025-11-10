@@ -9,13 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added core dataclass models in `core/models.py`: ObjectType, ChartLocation, ChartDateTime, CelestialPosition, HouseCusps, Aspect, CalculatedChart
+- Added 4 tests for core dataclass models
+- Added Protocol definitions: EphemerisEngine, HouseSystemEngine, AspectEngine, OrbEngine, DignityCalculator, ChartComponent
+- Added configuration models: AspectConfig, CalculationConfig
+
 ### Removed
 
 ### Changed
 
 - Complete restructuring of the package to composable design.
-- Added core dataclass models in `core/models.py`: ObjectType, ChartLocation, ChartDateTime, CelestialPosition, HouseCusps, Aspect, CalculatedChart
-- Added 4 tests for core dataclass models
+- Pivoted on houses: Chart supports multiple house systems, data models updated
 
 ### Fixed
 
