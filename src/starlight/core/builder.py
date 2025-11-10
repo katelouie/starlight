@@ -9,7 +9,6 @@ import datetime as dt
 
 import pytz
 import swisseph as swe
-from geopy.geoencoders import Nominatim
 
 from starlight.cache import cached
 from starlight.core.config import CalculationConfig
@@ -86,7 +85,7 @@ class ChartBuilder:
         return cls(native.datetime, native.location)
 
     # ---- Fluent configuration methods ---
-    def with_ephemeris(self, engine: EphemerisEngine) -> "ChartBuilder"
+    def with_ephemeris(self, engine: EphemerisEngine) -> "ChartBuilder":
         """Set the ephemeris engine."""
         self._ephemeris = engine
         return self
@@ -100,7 +99,7 @@ class ChartBuilder:
         self._house_engines = engines
         return self
 
-    def add_house_system(self, engine: HouseSystemEngine) -> 'ChartBuilder':
+    def add_house_system(self, engine: HouseSystemEngine) -> "ChartBuilder":
         """
         Adds an additional house engine to the calculation list.
         (e.g., to calculate Placidus *and* Whole Sign)
@@ -108,22 +107,22 @@ class ChartBuilder:
         self._house_engines.append(engine)
         return self
 
-    def with_aspects(self, engine: AspectEngine | None) -> 'ChartBuilder':
+    def with_aspects(self, engine: AspectEngine | None) -> "ChartBuilder":
         """Set the aspect calculation engine. (Set to None to disable)"""
         self._aspect_engine = engine
         return self
 
-    def with_orbs(self, engine: OrbEngine) -> 'ChartBuilder':
+    def with_orbs(self, engine: OrbEngine) -> "ChartBuilder":
         """Set the orb calculation engine."""
         self._orb_engine = engine
         return self
 
-    def with_config(self, config: CalculationConfig) -> 'ChartBuilder':
+    def with_config(self, config: CalculationConfig) -> "ChartBuilder":
         """Set the calculation configuration (which objects to find)."""
         self._config = config
         return self
 
-    def add_component(self, component: ChartComponent) -> 'ChartBuilder':
+    def add_component(self, component: ChartComponent) -> "ChartBuilder":
         """Add an additional calculation component (e.g. ArabicParts)."""
         self._components.append(component)
         return self
@@ -135,10 +134,10 @@ class ChartBuilder:
         objects = self._config.include_planets.copy()
 
         if self._config.include_nodes:
-            objects.append('True Node')
+            objects.append("True Node")
 
         if self._config.include_chiron:
-            objects.append('Chiron')
+            objects.append("Chiron")
 
         objects.extend(self._config.include_asteroids)
 
@@ -155,9 +154,7 @@ class ChartBuilder:
         # Step 1: Calculate planetary positions
         objects_to_calculate = self._get_objects_list()
         positions = self._ephemeris.calculate_positions(
-            self._datetime,
-            self._location,
-            objects_to_calculate
+            self._datetime, self._location, objects_to_calculate
         )
 
         # Step 2: Calculate all house systems AND angles
@@ -167,12 +164,10 @@ class ChartBuilder:
         for engine in self._house_engines:
             system_name = engine.system_name
             if system_name in house_systems_map:
-                continue # Avoid duplicate calculations
+                continue  # Avoid duplicate calculations
 
             # Call the efficient protocol method
-            cusps, angles = engine.calculate_house_data(
-                self._datetime, self._location
-            )
+            cusps, angles = engine.calculate_house_data(self._datetime, self._location)
 
             house_systems_map[system_name] = cusps
 
@@ -190,7 +185,7 @@ class ChartBuilder:
                 self._datetime,
                 self._location,
                 positions,
-                house_systems_map # Pass the full map of cusps
+                house_systems_map,  # Pass the full map of cusps
             )
             positions.extend(additional)
 
@@ -209,7 +204,7 @@ class ChartBuilder:
         if self._aspect_engine:
             aspects = self._aspect_engine.calculate_aspects(
                 positions,
-                self._orb_engine # Pass the configured orb engine
+                self._orb_engine,  # Pass the configured orb engine
             )
 
         # Step 7: Build final chart
@@ -219,5 +214,5 @@ class ChartBuilder:
             positions=tuple(positions),
             house_systems=house_systems_map,
             house_placements=house_placements_map,
-            aspects=tuple(aspects)
+            aspects=tuple(aspects),
         )
