@@ -24,6 +24,7 @@ class AspectConfig:
     # Which object types to include in aspect calculations
     # (The AspectEngine will use this to filter pairs)
     include_angles: bool = True
+    include_nodes: bool = True
     include_asteroids: bool = True
 
 

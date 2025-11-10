@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added configuration models: AspectConfig, CalculationConfig
 - Added SwissEphemerisEngine and MockEphemerisEngine and 2 tests
 - Added initial House System engines: PlacidusHouses, WholeSignHouses, KochHouses, EqualHouses. Added helper base class SwissHouseSystemBase.
+- Added Native class for processing messy datetime and location inputs
 
 ### Removed
 
