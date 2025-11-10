@@ -217,7 +217,10 @@ class CalculatedChart:
                 "longitude": self.location.longitude,
                 "name": self.location.name,
             },
-            "houses": {"system": self.houses.system, "cusps": list(self.houses.cusps)},
+            "houses": {
+                system_name: list(house_cusps.cusps)
+                for system_name, house_cusps in self.house_systems.items()
+            },
             "positions": [
                 {
                     "name": p.name,
@@ -226,7 +229,6 @@ class CalculatedChart:
                     "latitude": p.latitude,
                     "sign": p.sign,
                     "sign_degree": p.sign_degree,
-                    "house": p.house,
                     "is_retrograde": p.is_retrograde,
                 }
                 for p in self.positions

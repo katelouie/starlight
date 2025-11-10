@@ -67,11 +67,11 @@ class HouseSystemEngine(Protocol):
         """Name of this house system (e.g. Placidus)"""
         ...
 
-    def calculate_cusps(
+    def calculate_house_data(
         self,
         datetime: ChartDateTime,
         location: ChartLocation,
-    ) -> HouseCusps:
+    ) -> tuple[HouseCusps, list[CelestialPosition]]:
         """
         Calculate house cusps for this system.
 
@@ -80,7 +80,10 @@ class HouseSystemEngine(Protocol):
             location: Chart location
 
         Returns:
-            HouseCusps object with 12 cusp positions
+            Tuple containing:
+            1. HouseCusps object with 12 cusp positions (For this specific system)
+            2. A List of CelestialPosition objects for the primary angles
+               (ASC, MC, DSC, IC, Vertex)
         """
         ...
 

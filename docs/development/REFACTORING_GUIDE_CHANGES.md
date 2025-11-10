@@ -592,3 +592,257 @@ This new structure is much cleaner and enforces the **Separation of Concerns** p
     ```
 
 This approach is far more flexible and solves all the issues you raised.
+
+---
+
+You are absolutely right. That's a key piece of data that was completely missed in the Day 5 plan for the `ChartBuilder`.
+
+My recommendation is to include the "big three": **Ascendant**, **MC**, and **Vertex**. You can then derive the Descendant and IC from the ASC/MC, giving you the five most common angles.
+
+This is a great catch, and it requires a small architectural pivot to be efficient.
+
+### The Architectural Pivot 💡
+
+Your idea to add a `calculate_angles` method is correct, but it would be inefficient. The `swe.houses()` function returns *both* cusps and angles in a single call.
+
+* `calculate_cusps()` would call `swe.houses()` and *only* use the cusps.
+* `calculate_angles()` would call `swe.houses()` *again* and *only* use the angles.
+
+**The Solution:** Change the `HouseSystemEngine` protocol to use a single, more efficient method that returns *both* pieces of data from the one `swe.houses()` call.
+
+-----
+
+### 1\. Update Your Protocol (`core/protocols.py`)
+
+Replace the `calculate_cusps` method on your `HouseSystemEngine` protocol with this:
+
+```python
+from typing import Tuple, List
+# ... other imports
+
+class HouseSystemEngine(Protocol):
+    # ... (system_name property is the same) ...
+
+    # PIVOT: This method replaces calculate_cusps
+    def calculate_house_data(
+        self,
+        datetime: ChartDateTime,
+        location: ChartLocation,
+    ) -> Tuple[HouseCusps, List[CelestialPosition]]:
+        """
+        Calculates both house cusps AND chart angles.
+        This is the primary data generation method for a house system.
+
+        Args:
+            datetime: Chart datetime
+            location: Chart location
+
+        Returns:
+            A tuple containing:
+            1. A HouseCusps object (for this specific system)
+            2. A List of CelestialPosition objects for the primary angles
+               (ASC, MC, DSC, IC, Vertex)
+        """
+        ...
+
+    # ... (assign_houses method is the same) ...
+```
+
+-----
+
+### 2\. Update Your Implementation (`engines/houses.py`)
+
+Now, your `PlacidusHouses` (and other engines) will implement this new method. They will call `swe.houses()` *once* and use all the data.
+
+```python
+# In src/starlight/engines/houses.py
+
+import swisseph as swe
+from starlight.core.models import (
+    HouseCusps,
+    CelestialPosition,
+    ObjectType,
+    # ... etc
+)
+
+class PlacidusHouses:
+    @property
+    def system_name(self) -> str:
+        return "Placidus"
+
+    # This is the new, combined method
+    def calculate_house_data(
+        self,
+        datetime: ChartDateTime,
+        location: ChartLocation,
+    ) -> Tuple[HouseCusps, List[CelestialPosition]]:
+
+        # 1. Call swe.houses() ONE time
+        julian_day = datetime.julian_day
+        lat = location.latitude
+        lon = location.longitude
+
+        # Call with Placidus code (b'P')
+        cusps_list, ascmc = swe.houses(julian_day, lat, lon, hsys=b'P')
+
+        # 2. Create the HouseCusps object
+        house_cusps = HouseCusps(
+            system=self.system_name,
+            cusps=tuple(cusps_list)
+        )
+
+        # 3. Create the CelestialPosition objects for angles
+        asc = ascmc[0]
+        mc = ascmc[1]
+        vertex = ascmc[3]
+
+        angles = [
+            CelestialPosition(
+                name='ASC',
+                object_type=ObjectType.ANGLE,
+                longitude=asc,
+            ),
+            CelestialPosition(
+                name='MC',
+                object_type=ObjectType.ANGLE,
+                longitude=mc,
+            ),
+            # As you planned, derive the DSC and IC
+            CelestialPosition(
+                name='DSC',
+                object_type=ObjectType.ANGLE,
+                longitude=(asc + 180) % 360,
+            ),
+            CelestialPosition(
+                name='IC',
+                object_type=ObjectType.ANGLE,
+                longitude=(mc + 180) % 360,
+            ),
+            # And include the Vertex
+            CelestialPosition(
+                name='Vertex',
+                object_type=ObjectType.ANGLE,
+                longitude=vertex,
+            ),
+        ]
+
+        return (house_cusps, angles)
+
+    # ... (assign_houses method is unchanged) ...
+
+
+class WholeSignHouses:
+    @property
+    def system_name(self) -> str:
+        return "Whole Sign"
+
+    def calculate_house_data(
+        self,
+        datetime: ChartDateTime,
+        location: ChartLocation,
+    ) -> Tuple[HouseCusps, List[CelestialPosition]]:
+
+        # 1. Call swe.houses() to get angles
+        # NOTE: We still need the ASC/MC from Placidus (or any)
+        # to calculate Whole Sign cusps and find the angles.
+        julian_day = datetime.julian_day
+        lat = location.latitude
+        lon = location.longitude
+
+        # We use 'P' just to get the ascmc data
+        _, ascmc = swe.houses(julian_day, lat, lon, hsys=b'P')
+
+        # 2. Create Whole Sign cusps
+        asc_long = ascmc[0]
+        asc_sign_start = (asc_long // 30) * 30
+
+        whole_sign_cusps = tuple(
+            (asc_sign_start + (i * 30)) % 360 for i in range(12)
+        )
+
+        house_cusps = HouseCusps(
+            system=self.system_name,
+            cusps=whole_sign_cusps
+        )
+
+        # 3. Create angles (same as Placidus)
+        asc = ascmc[0]
+        mc = ascmc[1]
+        vertex = ascmc[3]
+
+        angles = [
+            CelestialPosition(name='ASC', object_type=ObjectType.ANGLE, longitude=asc),
+            CelestialPosition(name='MC', object_type=ObjectType.ANGLE, longitude=mc),
+            CelestialPosition(name='DSC', object_type=ObjectType.ANGLE, longitude=(asc + 180) % 360),
+            CelestialPosition(name='IC', object_type=ObjectType.ANGLE, longitude=(mc + 180) % 360),
+            CelestialPosition(name='Vertex', object_type=ObjectType.ANGLE, longitude=vertex),
+        ]
+
+        return (house_cusps, angles)
+
+    # ... (assign_houses method is unchanged) ...
+```
+
+-----
+
+### 3\. Update Your `ChartBuilder` (`core/builder.py`)
+
+Finally, update your `calculate` method in `ChartBuilder` to use this new protocol.
+
+```python
+# In ChartBuilder.calculate() method:
+
+    # ... (Step 1: Calculate planetary positions is the same) ...
+    # positions = self._ephemeris.calculate_positions(...)
+
+    # Step 2: Calculate all house systems AND angles
+    house_systems_map: Dict[str, HouseCusps] = {}
+    calculated_angles: List[CelestialPosition] = [] # Store angles here
+
+    for engine in self._house_engines:
+        system_name = engine.system_name
+        if system_name in house_systems_map:
+            continue # Already calculated
+
+        # Call the new, efficient protocol method
+        cusps, angles = engine.calculate_house_data(
+            self._datetime, self._location
+        )
+
+        house_systems_map[system_name] = cusps
+
+        # Only add the angles ONCE
+        # (ASC is the same regardless of house system)
+        if not calculated_angles:
+            calculated_angles = angles
+
+    # Step 3: Add chart angles to the main positions list
+    # (This replaces the old, forgotten "Step 4" from the plan)
+    positions.extend(calculated_angles)
+
+    # Step 4: Run additional components (Arabic parts, etc.)
+    # (This was Step 5 in the old plan)
+    for component in self._components:
+        # ... (this logic is unchanged) ...
+
+    # Step 5: Assign houses for all systems
+    # (This was Step 6 in the old plan)
+    house_placements_map: Dict[str, Dict[str, int]] = {}
+    # ... (this logic is unchanged) ...
+
+    # Step 6: Calculate aspects
+    # (This was Step 7 in the old plan)
+    # ... (this logic is unchanged) ...
+
+    # Step 7: Build final chart
+    # (This was Step 8 in the old plan)
+    return CalculatedChart(
+        # ...
+        positions=tuple(positions),
+        house_systems=house_systems_map,
+        house_placements=house_placements_map,
+        aspects=tuple(aspects),
+    )
+```
+
+This pivot is more efficient, solves the missing angles problem, and keeps your `HouseSystemEngine` as the single source of truth for all house and angle data.

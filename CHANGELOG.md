@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Protocol definitions: EphemerisEngine, HouseSystemEngine, AspectEngine, OrbEngine, DignityCalculator, ChartComponent
 - Added configuration models: AspectConfig, CalculationConfig
 - Added SwissEphemerisEngine and MockEphemerisEngine and 2 tests
+- Added initial House System engines: PlacidusHouses, WholeSignHouses, KochHouses, EqualHouses. Added helper base class SwissHouseSystemBase.
 
 ### Removed
 
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Complete restructuring of the package to composable design.
 - Pivoted on houses: Chart supports multiple house systems, data models updated
+- Changed protocol HouseSystemEngine to output both cusps and chart angles
 
 ### Fixed
 
