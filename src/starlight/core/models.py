@@ -80,7 +80,6 @@ class CelestialPosition:
     sign_degree: float = field(init=False)
 
     # Optional metadata
-    house: int | None = None
     is_retrograde: bool = field(init=False)
 
     def __post_init__(self) -> None:
@@ -170,13 +169,21 @@ class CalculatedChart:
 
     # Calculated data
     positions: tuple[CelestialPosition, ...]
-    houses: HouseCusps
+    house_systems: dict[str, HouseCusps] = field(default_factory=dict)
+    # chart.placements["Placidus"]["Sun"] -> 10
+    house_placements: dict[str, dict[str, int]] = field(default_factory=dict)
     aspects: tuple[Aspect, ...] = ()
 
     # Metadata
     calculation_timestamp: dt.datetime = field(
         default_factory=lambda: dt.datetime.now(dt.UTC)
     )
+
+    def get_house(self, object_name: str, system_name: str) -> int | None:
+        """
+        Helper method to get the house number for a specific object in a specific system.
+        """
+        return self.house_placements.get(system_name, {}).get(object_name)
 
     def get_object(self, name: str) -> CelestialPosition | None:
         """Get a celestial object by name."""
