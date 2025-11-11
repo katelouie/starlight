@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added initial House System engines: PlacidusHouses, WholeSignHouses, KochHouses, EqualHouses. Added helper base class SwissHouseSystemBase.
 - Added Native class for processing messy datetime and location inputs
 - Added multiple OrbEngine implementations: SimpleOrbEngine, LuminariesOrbEngine, ComplexOrbEngine
+- Added ChartBuilder class and 2 tests for it.
+- Added AspectEngine implementations (ModernAspectEngine, HarmonicAspectEngine) and 3 tests for them.
 
 ### Removed
 
