@@ -20,11 +20,14 @@ class SimpleOrbEngine:
     This is the default engine used by ChartBuilder.
     """
 
-    def __init__(self, orb_map: dict[str, float] | None = None) -> None:
+    def __init__(
+        self, orb_map: dict[str, float] | None = None, fallback_orb: int | None = None
+    ) -> None:
         """
         Args:
             orb_map: A dictionary of {aspect_name: orb_value}. Uses a default set
                 if None.
+            fallback_orb: Configurable default orb for unmapped aspects
         """
         self._orbs = orb_map or {
             "Conjunction": 8.0,
@@ -34,8 +37,12 @@ class SimpleOrbEngine:
             "Opposition": 8.0,
             "Quincunx": 3.0,
             "Semisquare": 3.0,
+            "Sesquisquare": 3.0,
+            "Semisextile": 3.0,
+            "Quintile": 1.0,
+            "Biquintile": 1.0,
         }
-        self._default_orb = 2.0  # Fallback for unlisted aspects
+        self._default_orb = fallback_orb or 2.0  # Fallback for unlisted aspects
 
     def get_orb_allowance(
         self, obj1: CelestialPosition, obj2: CelestialPosition, aspect_name: str
@@ -59,6 +66,7 @@ class LuminariesOrbEngine:
         self,
         luminary_orbs: dict[str, float] | None = None,
         default_orbs: dict[str, float] | None = None,
+        fallback_orb: int | None = None,
     ) -> None:
         self._luminary_orbs = luminary_orbs or {
             "Conjunction": 10.0,
@@ -74,7 +82,7 @@ class LuminariesOrbEngine:
             "Trine": 8.0,
             "Opposition": 8.0,
         }
-        self._default_orb = 2.0
+        self._default_orb = fallback_orb or 2.0
 
     def get_orb_allowance(
         self, obj1: CelestialPosition, obj2: CelestialPosition, aspect_name: str
