@@ -144,4 +144,4 @@ class EqualHouses(SwissHouseSystemBase):
 
     @property
     def system_name(self) -> str:
-        return "Koch"
+        return "Equal"
