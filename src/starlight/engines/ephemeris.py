@@ -1,6 +1,7 @@
 """Ephemeris calculation engines."""
 
 import os
+from pathlib import Path
 
 import swisseph as swe
 
@@ -15,10 +16,23 @@ from starlight.core.models import (
 
 def _set_ephemeris_path() -> None:
     """Set the path to Swiss Ephemeris data files."""
-    path_lib = os.path.dirname(os.path.dirname(__file__))
-    path_project = os.path.dirname(path_lib)
-    path_data = os.path.join(path_project, "data", "swisseph", "ephe") + os.sep
-    swe.set_ephe_path(path_data)
+    # Path to this file: .../src/starlight/engines/ephemeris.py
+    current_file = Path(__file__)
+
+    # Go up 3 levels to get to the 'src' directory
+    # .parent -> engines
+    # .parent -> starlight
+    # .parent -> src
+    src_dir = current_file.parent.parent.parent
+
+    # Go up one *more* level to get the project root
+    project_root = src_dir.parent
+
+    # Now, build the path from the project root
+    path_data = project_root / "data" / "swisseph" / "ephe"
+
+    # swe.set_ephe_path needs a string, and we still need the trailing slash
+    swe.set_ephe_path(str(path_data) + os.sep)
 
 
 # Swiss Ephemeris object IDs
@@ -153,18 +167,18 @@ class SwissEphemerisEngine:
             )
             positions.append(position)
 
-            # Add South Node (opposite of True Node)
-            if "True Node" in objects:
-                north_node = next(p for p in positions if p.name == "True Node")
-                south_node = CelestialPosition(
-                    name="South Node",
-                    object_type=ObjectType.PLANET,
-                    longitude=(north_node.longitude + 180) % 360,
-                    latitude=-north_node.latitude,
-                    speed_longitude=-north_node.speed_longitude,
-                    speed_latitude=-north_node.speed_latitude,
-                )
-                positions.append(south_node)
+        # Add South Node (opposite of True Node)
+        if "True Node" in objects:
+            north_node = next(p for p in positions if p.name == "True Node")
+            south_node = CelestialPosition(
+                name="South Node",
+                object_type=ObjectType.PLANET,
+                longitude=(north_node.longitude + 180) % 360,
+                latitude=-north_node.latitude,
+                speed_longitude=-north_node.speed_longitude,
+                speed_latitude=-north_node.speed_latitude,
+            )
+            positions.append(south_node)
 
         return positions
 
