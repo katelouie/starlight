@@ -42,7 +42,7 @@ class ChartBuilder:
 
     Usage:
         chart = (
-            ChartBuilder.from_native(dt, location)
+            ChartBuilder.from_native(native)
             .with_ephemeris(SwissEphemeris())
             .with_house_systems([PlacidusHouses(), WholeSignHouses()])
             .with_aspects(ModernAspectEngine())
