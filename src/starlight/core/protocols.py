@@ -177,6 +177,7 @@ class DignityCalculator(Protocol):
         Returns:
             Dictionary with dignity information
         """
+        ...
 
 
 class ChartComponent(Protocol):
