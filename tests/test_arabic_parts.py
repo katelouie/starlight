@@ -81,7 +81,7 @@ def test_all_arabic_parts():
     # Check a few specific ones
     assert chart.get_object("Part of Fortune") is not None
     assert chart.get_object("Part of Spirit") is not None
-    assert chart.get_object("Part of Love") is not None
+    assert chart.get_object("Part of Eros (Love)") is not None
 
     # All should have house assignments
     for part in arabic_parts:

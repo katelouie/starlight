@@ -24,55 +24,158 @@ from starlight.core.models import (
 # Arabic parts catalog
 # Each entry defines: which points to use, whether to flip for sect
 ARABIC_PARTS_CATALOG = {
+    # === The 7 Hermetic / Core Hellenistic Lots ===
     "Part of Fortune": {
         "points": ["ASC", "Moon", "Sun"],
         "sect_flip": True,
-        "description": "Material wellbeing, body, health",
+        "description": "The primary lot. Body, health, material wellbeing, possessions, and the Moon's expression.",
     },
     "Part of Spirit": {
         "points": ["ASC", "Sun", "Moon"],
         "sect_flip": True,
-        "description": "Spiritual purpose, inner life",
+        "description": "The inverse of Fortune. The soul, intellect, purpose, career, and the Sun's expression.",
     },
-    "Part of Love": {
+    "Part of Eros (Love)": {
+        "points": ["ASC", "Venus", "Part of Spirit"],
+        "sect_flip": True,
+        "description": "Love, desire, affection, and sensual/romantic expression. (Note: This requires calculating Spirit first).",
+    },
+    "Part of Eros (Planetary)": {
         "points": ["ASC", "Venus", "Sun"],
         "sect_flip": False,
-        "description": "Romantic love, desire",
+        "description": "Alternative (Ptolemaic) Lot of Love. (This was your 'Part of Love' and is a valid, non-flipping alternative).",
     },
-    "Part of Marriage": {
-        "points": ["ASC", "Venus", "Jupiter"],
-        "sect_flip": False,
-        "description": "Partnership, committed relationships",
+    "Part of Necessity (Ananke)": {
+        "points": ["ASC", "Mercury", "Part of Fortune"],
+        "sect_flip": True,
+        "description": "Constraints, fate, necessity, enemies, and struggles. (Note: Requires calculating Fortune first).",
     },
-    "Part of Eros": {
-        "points": ["ASC", "Venus", "Mars"],
-        "sect_flip": False,
-        "description": "Passion, sexual attraction",
+    "Part of Courage (Tolma)": {
+        "points": ["ASC", "Mars", "Part of Fortune"],
+        "sect_flip": True,
+        "description": "Courage, boldness, action, violence, and treachery. (Note: Requires calculating Fortune first).",
     },
-    "Part of Children": {
-        "points": ["ASC", "Jupiter", "Moon"],
-        "sect_flip": False,
-        "description": "Fertility, relationship with children",
+    "Part of Victory (Nike)": {
+        "points": ["ASC", "Jupiter", "Part of Fortune"],
+        "sect_flip": True,
+        "description": "Victory, faith, success, honors, and associates. (Note: Requires calculating Fortune first).",
     },
+    "Part of Nemesis": {
+        "points": ["ASC", "Saturn", "Part of Fortune"],
+        "sect_flip": True,
+        "description": "Subconscious, illness, endings, debts, and that which is hidden or karmic. (Note: Requires calculating Fortune first).",
+    },
+    # === Family & Relationship Lots (Classical) ===
     "Part of Father": {
         "points": ["ASC", "Sun", "Saturn"],
-        "sect_flip": False,
-        "description": "Relationship with father figure",
+        "sect_flip": True,
+        "description": "Relationship with the father figure. (CORRECTED: Your points were right, but this lot classically flips).",
     },
     "Part of Mother": {
-        "points": ["ASC", "Venus", "Moon"],
-        "sect_flip": False,
-        "description": "Relationship with mother figure",
+        "points": ["ASC", "Moon", "Venus"],
+        "sect_flip": True,
+        "description": "Relationship with the mother figure. (CORRECTED: Your points were ['ASC', 'Venus', 'Moon'] and sect_flip was False. This is the standard classical order).",
     },
-    "Part of Profession": {
+    "Part of Marriage": {
+        "points": ["ASC", "Venus", "Saturn"],
+        "sect_flip": True,
+        "description": "Partnership, marriage, and committed relationships. (CORRECTED: Your points were ['ASC', 'Venus', 'Jupiter']. This is the more common classical formulation).",
+    },
+    "Part of Children": {
+        "points": ["ASC", "Jupiter", "Saturn"],
+        "sect_flip": True,
+        "description": "Fertility and relationship with children. (CORRECTED: Your points were ['ASC', 'Jupiter', 'Moon']. This is the standard classical formulation).",
+    },
+    "Part of Siblings": {
+        "points": ["ASC", "Mercury", "Saturn"],
+        "sect_flip": True,
+        "description": "Relationship with brothers, sisters, and close kin.",
+    },
+    # === Life Topic Lots ===
+    "Part of Action (Praxis)": {
+        "points": ["ASC", "Mars", "Sun"],
+        "sect_flip": True,
+        "description": "Career, action, vocation, and how one's will is asserted in the world.",
+    },
+    "Part of Profession (User)": {
         "points": ["ASC", "MC", "Sun"],
         "sect_flip": False,
-        "description": "Career, vocation, public standing",
+        "description": "Career, vocation, public standing. (This was your 'Part of Profession', a valid Medieval/Modern lot. Kept for posterity).",
+    },
+    "Part of Passion / Lust": {
+        "points": ["ASC", "Venus", "Mars"],
+        "sect_flip": False,
+        "description": "Passion, sexual attraction, and impulse. (This was your 'Part of Eros', a common modern variant).",
+    },
+    "Part of Illness / Disease": {
+        "points": ["ASC", "Mars", "Saturn"],
+        "sect_flip": True,
+        "description": "Chronic and acute health issues, matters of bodily harm.",
     },
     "Part of Death": {
         "points": ["ASC", "Saturn", "Moon"],
-        "sect_flip": False,
-        "description": "Transformation, endings, legacy",
+        "sect_flip": True,
+        "description": "Matters of endings, loss, and the nature of one's death. (CORRECTED: Your points were right, but this lot classically flips).",
+    },
+    "Part of Debt / Bondage": {
+        "points": ["ASC", "Mercury", "Saturn"],
+        "sect_flip": True,
+        "description": "Debts, obligations, and areas of subservience or being tied down. (Note: Identical to Part of Siblings in this formulation).",
+    },
+    "Part of Travel": {
+        "points": ["ASC", "Mars", "Mercury"],
+        "sect_flip": True,
+        "description": "Journeys, movement, and travel, especially over land.",
+    },
+    "Part of Friends / Associates": {
+        "points": ["ASC", "Mercury", "Moon"],
+        "sect_flip": True,
+        "description": "Friendships, alliances, and helpful associates.",
+    },
+    # === Planetary Lots (Exaltation-Based) ===
+    # These show where a planet's "joy" or "exaltation" is rooted.
+    "Part of the Sun (Exaltation)": {
+        "points": ["ASC", "Sun", "Mars"],  # Sun exalted in Aries (Mars-ruled)
+        "sect_flip": True,
+        "description": "Glory, recognition, and public honor.",
+    },
+    "Part of the Moon (Exaltation)": {
+        "points": ["ASC", "Moon", "Venus"],  # Moon exalted in Taurus (Venus-ruled)
+        "sect_flip": True,
+        "description": "Nurturing, protection, and emotional expression. (Note: Identical to Part of Mother).",
+    },
+    "Part of Mercury (Exaltation)": {
+        "points": [
+            "ASC",
+            "Mercury",
+            "Mercury",
+        ],  # Mercury exalted in Virgo (Mercury-ruled)
+        "sect_flip": False,  # Cannot flip
+        "description": "Intellect, writing, speech, and technical skill.",
+    },
+    "Part of Venus (Exaltation)": {
+        "points": [
+            "ASC",
+            "Venus",
+            "Jupiter",
+        ],  # Venus exalted in Pisces (Jupiter-ruled)
+        "sect_flip": True,
+        "description": "Beauty, art, grace, and refined pleasure.",
+    },
+    "Part of Mars (Exaltation)": {
+        "points": ["ASC", "Mars", "Saturn"],  # Mars exalted in Capricorn (Saturn-ruled)
+        "sect_flip": True,
+        "description": "Strategy, endurance, ambition, and directed force. (Note: Identical to Part of Illness).",
+    },
+    "Part of Jupiter (Exaltation)": {
+        "points": ["ASC", "Jupiter", "Moon"],  # Jupiter exalted in Cancer (Moon-ruled)
+        "sect_flip": True,
+        "description": "Growth, generosity, faith, and good fortune.",
+    },
+    "Part of Saturn (Exaltation)": {
+        "points": ["ASC", "Saturn", "Venus"],  # Saturn exalted in Libra (Venus-ruled)
+        "sect_flip": True,
+        "description": "Structure, justice, discipline, and tangible results. (Note: Inverse of Part of Marriage).",
     },
 }
 
@@ -147,7 +250,7 @@ class ArabicPartsCalculator:
         for part_name, part_config in catalog_to_use.items():
             try:
                 part_position = self._calculate_single_part(
-                    part_name, part_config, pos_dict, sect
+                    part_name, part_config, pos_dict, sect, parts
                 )
                 parts.append(part_position)
             except KeyError as e:
@@ -163,6 +266,7 @@ class ArabicPartsCalculator:
         part_config: dict,
         positions: dict[str, CelestialPosition],
         sect: str,
+        parts: list[CelestialPosition],
     ) -> CelestialPosition:
         """
         Calculate a single Arabic Part.
@@ -172,6 +276,7 @@ class ArabicPartsCalculator:
             part_config: Configuration (points, sect_flip)
             positions: Position lookup
             sect: Chart sect ("day" or "night")
+            parts: Already-calculated parts, for parts that depend on other parts
 
         Returns:
             CelestialPosition for the calculated part
@@ -179,10 +284,17 @@ class ArabicPartsCalculator:
         point_names = part_config["points"]
         sect_flip = part_config["sect_flip"]
 
+        parts_lookup = {p.name: p for p in parts}
+
         # Get the three points
-        asc = positions[point_names[0]]
-        point2 = positions[point_names[1]]
-        point3 = positions[point_names[2]]
+        asc = positions.get(point_names[0]) or parts_lookup.get(point_names[0])
+        point2 = positions.get(point_names[1]) or parts_lookup.get(point_names[1])
+        point3 = positions.get(point_names[2]) or parts_lookup.get(point_names[2])
+
+        if asc is None or point2 is None or point3 is None:
+            raise ValueError(
+                f"All points specified must already exist: {asc}, {point2}, {point3}"
+            )
 
         # Calculate longitude based on formula and sect
         if sect == "day" or not sect_flip:
