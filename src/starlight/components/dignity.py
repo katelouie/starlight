@@ -20,6 +20,41 @@ from starlight.engines.dignities import (
 )
 
 
+def determine_sect(positions: list[CelestialPosition]) -> str:
+    """Determines if a day or night chart. Returns 'day' or 'night.'
+
+    Day chart = Sun above the horizon, between ASC and DSC (going through MC).
+    """
+    # Find Sun and ASC
+    sun = None
+    asc = None
+
+    for pos in positions:
+        if pos.name == "Sun":
+            sun = pos
+        elif pos.name == "ASC":
+            asc = pos
+
+        if sun and asc:
+            break
+
+    if not sun or not asc:
+        return "day"  # Default to day chart if we can't determine.
+
+    # Calculate DSC (opposite of ASC)
+    dsc_long = (asc.longitude + 180) % 360
+
+    # Check if sun is above the horizon
+    if asc.longitude < dsc_long:
+        # Normal case: ASC at 0°, DSC at 180°
+        is_day = asc.longitude <= sun.longitude < dsc_long
+    else:
+        # Wrapped case: ASC at 270°, DSC at 90°
+        is_day = sun.longitude >= asc.longitude or sun.longitude < dsc_long
+
+    return "day" if is_day else "night"
+
+
 class DignityComponent:
     """
     Chart component that calculates dignities for all planets.
@@ -94,7 +129,7 @@ class DignityComponent:
         """
 
         # Determine if this is a day or night chart (sect) for triplicity rulers
-        sect = self._determine_sect(positions)
+        sect = determine_sect(positions)
 
         # Calculate dignities for each planet
         dignity_results = {}
@@ -151,40 +186,6 @@ class DignityComponent:
         This should be called after calculate() to retrieve results.
         """
         return getattr(self, "_dignity_data", {})
-
-    def _determine_sect(self, positions: list[CelestialPosition]) -> str:
-        """Determines if a day or night chart. Returns 'day' or 'night.'
-
-        Day chart = Sun above the horizon, between ASC and DSC (going through MC).
-        """
-        # Find Sun and ASC
-        sun = None
-        asc = None
-
-        for pos in positions:
-            if pos.name == "Sun":
-                sun = pos
-            elif pos.name == "ASC":
-                asc = pos
-
-            if sun and asc:
-                break
-
-        if not sun or not asc:
-            return "day"  # Default to day chart if we can't determine.
-
-        # Calculate DSC (opposite of ASC)
-        dsc_long = (asc.longitude + 180) % 360
-
-        # Check if sun is above the horizon
-        if asc.longitude < dsc_long:
-            # Normal case: ASC at 0°, DSC at 180°
-            is_day = asc.longitude <= sun.longitude < dsc_long
-        else:
-            # Wrapped case: ASC at 270°, DSC at 90°
-            is_day = sun.longitude >= asc.longitude or sun.longitude < dsc_long
-
-        return "day" if is_day else "night"
 
 
 class AccidentalDignityComponent:

@@ -192,6 +192,8 @@ class ChartComponent(Protocol):
     - Harmonic charts
     """
 
+    metadata_name = ""
+
     @property
     def component_name(self) -> str:
         """Name of this component."""

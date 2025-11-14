@@ -72,7 +72,7 @@ class ChartBuilder:
         self._config = CalculationConfig()
 
         # Additional components
-        self._components = []
+        self._components: list[ChartComponent] = []
 
     @classmethod
     def from_native(cls, native: Native) -> "ChartBuilder":
@@ -198,9 +198,20 @@ class ChartBuilder:
                 self._location,
                 positions,
                 house_systems_map,  # Pass the full map of cusps
+                house_placements_map,
             )
             positions.extend(additional)
 
+            # If component returned new CelestialPositions
+            # add their house placements to the placement map for all systems
+            if additional:
+                for engine in self._house_engines:
+                    system_name = engine.system_name
+                    cusps = house_systems_map[system_name]
+                    placements = engine.assign_houses(additional, cusps)
+                    house_placements_map[system_name].update(placements)
+
+            # Add the metadata to the chart object if component has any
             if hasattr(component, "get_metadata"):
                 metadata_key = component.metadata_name
                 component_metadata[metadata_key] = component.get_metadata()
