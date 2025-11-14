@@ -173,17 +173,46 @@ class CalculatedChart:
     # chart.placements["Placidus"]["Sun"] -> 10
     house_placements: dict[str, dict[str, int]] = field(default_factory=dict)
     aspects: tuple[Aspect, ...] = ()
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     # Metadata
     calculation_timestamp: dt.datetime = field(
         default_factory=lambda: dt.datetime.now(dt.UTC)
     )
 
-    def get_house(self, object_name: str, system_name: str) -> int | None:
+    def _get_default_house_system(self) -> str:
+        """
+        Get the default house system to use.
+
+        Returns the first (and typically only) house system in the chart.
+        Raises ValueError if no house systems are available.
+        """
+        if not self.house_systems:
+            raise ValueError(
+                "No house systems calculated. Add a house system engine when building the chart."
+            )
+
+        # Get the first system (dict maintains insertion order in Python 3.7+)
+        return next(iter(self.house_systems.keys()))
+
+    @property
+    def default_house_system(self) -> str:
+        return self._get_default_house_system()
+
+    def get_house(self, object_name: str, system_name: str | None = None) -> int | None:
         """
         Helper method to get the house number for a specific object in a specific system.
         """
+        if system_name is None:
+            system_name = self.default_house_system
         return self.house_placements.get(system_name, {}).get(object_name)
+
+    def get_houses(self, system_name: str | None = None) -> HouseCusps:
+        """Get all cusps for a specific system (or default system)."""
+        if system_name is None:
+            system_name = self.default_house_system
+
+        return self.house_systems[system_name]
 
     def get_object(self, name: str) -> CelestialPosition | None:
         """Get a celestial object by name."""
@@ -201,13 +230,208 @@ class CalculatedChart:
         """Get all chart angles."""
         return [p for p in self.positions if p.object_type == ObjectType.ANGLE]
 
+    def get_dignities(self, system: str = "traditional") -> dict[str, Any]:
+        """
+        Get essential dignity calculations.
+
+        Args:
+            system: "traditional" or "modern"
+
+        Returns:
+            Dictionary of planet dignities, or empty dict if not calculated
+        """
+        dignity_data = self.metadata.get("dignities", {})
+        planet_dignities = dignity_data.get("planet_dignities", {})
+
+        result = {}
+        for planet_name, data in planet_dignities.items():
+            if system in data:
+                result[planet_name] = data[system]
+
+        return result
+
+    def get_planet_dignity(
+        self, planet_name: str, system: str = "traditional"
+    ) -> dict[str, Any] | None:
+        """
+        Get dignity calculation for a specific planet.
+
+        Args:
+            planet_name: Name of the planet (e.g., "Sun", "Moon")
+            system: "traditional" or "modern"
+
+        Returns:
+            Dignity data for the planet, or None if not found
+        """
+        dignities = self.get_dignities(system)
+        return dignities.get(planet_name)
+
+    def get_mutual_receptions(
+        self, system: str = "traditional"
+    ) -> list[dict[str, Any]]:
+        """
+        Get all mutual receptions in the chart.
+
+        Args:
+            system: "traditional" or "modern"
+
+        Returns:
+            List of mutual reception dictionaries
+        """
+        dignity_data = self.metadata.get("dignities", {})
+        receptions = dignity_data.get("mutual_receptions", {})
+        return receptions.get(system, [])
+
+    def get_all_accidental_dignities(self) -> dict[str, Any]:
+        """Get all accidental dignities (entire object)."""
+        return self.metadata.get("accidental_dignities", {})
+
+    def get_accidental_dignities(self, system: str | None = None) -> dict[str, Any]:
+        """
+        Get accidental dignity calculations.
+
+        Args:
+            system: Specific house system ("Placidus"). If None returns all systems.
+
+        Returns:
+            Dictionary of planetary accidental dignities
+        """
+        all_accidentals = self.metadata.get("accidental_dignities", {})
+
+        if system is None:
+            # Use the first house system in the chart
+            system = self.default_house_system
+
+        # Return for specific system
+        result = {}
+        for planet_name, data in all_accidentals.items():
+            by_system = data.get("by_system", {})
+            universal = data.get("universal", {})
+
+            if system in by_system:
+                # Combine system-specific and universal
+                system_data = by_system[system].copy()
+
+                # Add universal conditions to this system's conditions
+                combined_conditions = system_data.get("conditions", []).copy()
+                combined_conditions.extend(universal.get("conditions", []))
+
+                result[planet_name] = {
+                    "planet": planet_name,
+                    "score": system_data.get("score", 0) + universal.get("score", 0),
+                    "house": system_data.get("house"),
+                    "conditions": combined_conditions,
+                    "system": system,
+                }
+
+        return result
+
+    def get_planet_accidental(
+        self, planet_name: str, system: str | None = None
+    ) -> dict[str, Any] | None:
+        """
+        Get accidental dignity for a specific planet.
+
+        Args:
+            planet_name: Name of the planet
+            system: House system (defaults to default house system if None)
+
+        Returns:
+            Accidental dignity data, or None if not found
+        """
+        accidentals = self.get_accidental_dignities(system)
+        return accidentals.get(planet_name)
+
+    def get_strongest_planet(
+        self, system: str = "traditional"
+    ) -> tuple[str, int] | None:
+        """
+        Find the planet with the highest dignity score (Almuten).
+
+        Args:
+            system: "traditional" or "modern"
+
+        Returns:
+            Tuple of (planet_name, score) or None if no dignities calculated
+        """
+        dignities = self.get_dignities(system)
+
+        if not dignities:
+            return None
+
+        strongest = max(dignities.items(), key=lambda x: x[1].get("score", 0))
+
+        return strongest[0], strongest[1].get("score", 0)
+
+    def get_planet_total_score(
+        self,
+        planet_name: str,
+        essential_system: str = "traditional",
+        accidental_system: str | None = None,
+    ) -> dict[str, Any]:
+        """
+        Get combined essential + accidental dignity score.
+
+        Args:
+            planet_name: Name of the planet
+            essential_system: "traditional" or "modern"
+            accidental_system: House system name (defaults to default system)
+
+        Returns:
+            Dict with essential, accidental, and total scores
+        """
+        essential = self.get_planet_dignity(planet_name, essential_system)
+        accidental = self.get_planet_accidental(planet_name, accidental_system)
+
+        essential_score = essential.get("score", 0) if essential else 0
+        accidental_score = accidental.get("score", 0) if accidental else 0
+
+        return {
+            "planet": planet_name,
+            "essential_score": essential_score,
+            "essential_system": essential_system,
+            "accidental_score": accidental_score,
+            "accidental_system": accidental_system or self.default_house_system,
+            "total_score": essential_score + accidental_score,
+            "interpretation": self._interpret_total_score(
+                essential_score + accidental_score
+            ),
+        }
+
+    def _interpret_total_score(self, total_score: int) -> str:
+        """Interpret combined dignity score."""
+        if total_score >= 15:
+            return "Exceptionally strong - excellent condition"
+        elif total_score >= 10:
+            return "Very strong - favorable condition"
+        elif total_score >= 5:
+            return "Strong - good condition"
+        elif total_score >= 0:
+            return "Moderate - neutral to favorable"
+        elif total_score >= -5:
+            return "Challenged - some difficulties"
+        elif total_score >= -10:
+            return "Significantly challenged - considerable difficulties"
+        else:
+            return "Severely challenged - very difficult condition"
+
+    def sect(self) -> bool | None:
+        """
+        Check which sect this chart is (day or night) (Sun above the horizon).
+
+        Returns:
+            "day" or "night"
+        """
+        dignity_data = self.metadata.get("dignities", {})
+        return dignity_data.get("sect")
+
     def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dictionary for JSON export.
 
         This enables web API integration, storage, etc.
         """
-        return {
+        base_dict = {
             "datetime": {
                 "utc": self.datetime.utc_datetime.isoformat(),
                 "julian_date": self.datetime.julian_day,
@@ -217,10 +441,12 @@ class CalculatedChart:
                 "longitude": self.location.longitude,
                 "name": self.location.name,
             },
-            "houses": {
+            "house_systems": {
                 system_name: list(house_cusps.cusps)
                 for system_name, house_cusps in self.house_systems.items()
             },
+            "default_house_system": self.default_house_system,
+            "house_placements": self.house_placements,
             "positions": [
                 {
                     "name": p.name,
@@ -243,3 +469,9 @@ class CalculatedChart:
                 for a in self.aspects
             ],
         }
+
+        # add metadata (including dignities)
+        if self.metadata:
+            base_dict["metadata"] = self.metadata
+
+        return base_dict

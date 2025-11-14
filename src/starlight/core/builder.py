@@ -178,8 +178,20 @@ class ChartBuilder:
         # Step 3: Add angles to the main position list
         positions.extend(calculated_angles)
 
-        # Step 4: Run additional components (Arabic parts, etc)
+        # Step 4: Assign house placements for all systems
+        house_placements_map: dict[str, dict[str, int]] = {}
+        for engine in self._house_engines:
+            system_name = engine.system_name
+            cusps = house_systems_map[system_name]
+
+            # Get the {object_name: house_num} dict
+            placements = engine.assign_houses(positions, cusps)
+            house_placements_map[system_name] = placements
+
+        # Step 5: Run additional components (Arabic parts, etc)
         # (Components can now see angles in the position list)
+        component_metadata = {}
+
         for component in self._components:
             additional = component.calculate(
                 self._datetime,
@@ -189,15 +201,9 @@ class ChartBuilder:
             )
             positions.extend(additional)
 
-        # Step 5: Assign house placements for all systems
-        house_placements_map: dict[str, dict[str, int]] = {}
-        for engine in self._house_engines:
-            system_name = engine.system_name
-            cusps = house_systems_map[system_name]
-
-            # Get the {object_name: house_num} dict
-            placements = engine.assign_houses(positions, cusps)
-            house_placements_map[system_name] = placements
+            if hasattr(component, "get_metadata"):
+                metadata_key = component.metadata_name
+                component_metadata[metadata_key] = component.get_metadata()
 
         # Step 6: Calculate aspects (if engine provided)
         aspects = []
@@ -215,4 +221,5 @@ class ChartBuilder:
             house_systems=house_systems_map,
             house_placements=house_placements_map,
             aspects=tuple(aspects),
+            metadata=component_metadata,
         )

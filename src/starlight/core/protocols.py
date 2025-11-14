@@ -142,14 +142,14 @@ class AspectEngine(Protocol):
     def calculate_aspects(
         self,
         positions: list[CelestialPosition],
-        orb_config: OrbEngine,
+        orb_engine: OrbEngine,
     ) -> list[Aspect]:
         """
         Calculate aspects between celestial objects.
 
         Args:
             positions: Objects to find aspects between
-            orb_config: Optional custom orb settings
+            orb_engine: Optional custom orb settings
 
         Returns:
             List of Aspect objects
@@ -201,7 +201,8 @@ class ChartComponent(Protocol):
         datetime: ChartDateTime,
         location: ChartLocation,
         positions: list[CelestialPosition],
-        houses: HouseCusps,
+        house_systems_map: dict[str, HouseCusps],
+        house_placements_map: dict[str, dict[str, int]],
     ) -> list[CelestialPosition]:
         """
         Calculate additional chart objects.
@@ -210,7 +211,8 @@ class ChartComponent(Protocol):
             datetime: Chart datetime
             location: Chart location
             positions: Already calculated positions
-            houses: House cusps
+            house_systems_map: House cusps by system
+            house_placements_map: House placements by system then planet
 
         Returns:
             List of additional CelestialPosition objects
