@@ -383,23 +383,40 @@ class PlanetLayer:
                 )
 
             # Draw planet glyph at adjusted position
-            glyph = get_glyph(planet.name)
+            glyph_info = get_glyph(planet.name)
             x, y = renderer.polar_to_cartesian(adjusted_long, base_radius)
 
             color = (
                 style["retro_color"] if planet.is_retrograde else style["glyph_color"]
             )
-            dwg.add(
-                dwg.text(
-                    glyph,
-                    insert=(x, y),
-                    text_anchor="middle",
-                    dominant_baseline="central",
-                    font_size=style["glyph_size"],
-                    fill=color,
-                    font_family=renderer.style["font_family_glyphs"],
+
+            if glyph_info["type"] == "svg":
+                # Render SVG image
+                glyph_size_px = float(style["glyph_size"][:-2])
+                # Center the image on the position
+                image_x = x - (glyph_size_px / 2)
+                image_y = y - (glyph_size_px / 2)
+
+                dwg.add(
+                    dwg.image(
+                        href=glyph_info["value"],
+                        insert=(image_x, image_y),
+                        size=(glyph_size_px, glyph_size_px),
+                    )
                 )
-            )
+            else:
+                # Render Unicode text glyph
+                dwg.add(
+                    dwg.text(
+                        glyph_info["value"],
+                        insert=(x, y),
+                        text_anchor="middle",
+                        dominant_baseline="central",
+                        font_size=style["glyph_size"],
+                        fill=color,
+                        font_family=renderer.style["font_family_glyphs"],
+                    )
+                )
 
             # Draw Planet Info (Degrees, Sign, Minutes) - all at ADJUSTED longitude
             # This creates a "column" of info that moves together with the glyph

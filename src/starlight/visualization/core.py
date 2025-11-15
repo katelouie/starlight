@@ -82,7 +82,7 @@ ASPECT_GLYPHS = {
 }
 
 
-def get_glyph(object_name: str) -> str:
+def get_glyph(object_name: str) -> dict[str, str]:
     """
     Get the glyph for a celestial object, with registry lookup and fallback.
 
@@ -90,21 +90,26 @@ def get_glyph(object_name: str) -> str:
         object_name: Name of the object (e.g., "Sun", "Mean Apogee", "ASC")
 
     Returns:
-        Unicode glyph string, or abbreviated name if not found
+        Dictionary with:
+        - "type": "unicode" or "svg"
+        - "value": glyph string or SVG file path
     """
     # Try registry first
     obj_info = get_object_info(object_name)
     if obj_info:
-        return obj_info.glyph
+        # Check if there's an SVG path
+        if obj_info.glyph_svg_path:
+            return {"type": "svg", "value": obj_info.glyph_svg_path}
+        return {"type": "unicode", "value": obj_info.glyph}
 
-    # Fall back to legacy dictionaries
+    # Fall back to legacy dictionaries (always unicode)
     if object_name in PLANET_GLYPHS:
-        return PLANET_GLYPHS[object_name]
+        return {"type": "unicode", "value": PLANET_GLYPHS[object_name]}
     if object_name in ANGLE_GLYPHS:
-        return ANGLE_GLYPHS[object_name]
+        return {"type": "unicode", "value": ANGLE_GLYPHS[object_name]}
 
     # Final fallback: use first 2-3 characters
-    return object_name[:3]
+    return {"type": "unicode", "value": object_name[:3]}
 
 
 def get_display_name(object_name: str) -> str:

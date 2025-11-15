@@ -28,19 +28,26 @@ class CelestialObjectInfo:
 
     # Visual Representation
     glyph: str  # Unicode astrological glyph (e.g., "☽", "☊", "⚸")
+    glyph_svg_path: str | None = None  # Path to SVG image for objects without Unicode glyphs
 
     # Ephemeris/Calculation Data
     swiss_ephemeris_id: int | None = None  # Swiss Ephemeris object ID (if applicable)
 
     # Classification & Organization
-    category: str | None = None  # "Traditional Planet", "Asteroid", "Centaur", "TNO", "Fixed Star", etc.
-    aliases: list[str] = field(default_factory=list)  # Alternative names (e.g., ["Lilith", "BML"])
+    category: str | None = (
+        None  # "Traditional Planet", "Asteroid", "Centaur", "TNO", "Fixed Star", etc.
+    )
+    aliases: list[str] = field(
+        default_factory=list
+    )  # Alternative names (e.g., ["Lilith", "BML"])
 
     # Documentation
     description: str = ""  # Brief explanation of what this object represents
 
     # Advanced/Optional Metadata
-    metadata: dict[str, Any] = field(default_factory=dict)  # Extensible for future needs
+    metadata: dict[str, Any] = field(
+        default_factory=dict
+    )  # Extensible for future needs
 
     def __str__(self) -> str:
         return f"{self.display_name} ({self.name})"
@@ -119,7 +126,6 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Traditional Planet",
         description="The planet of structure, discipline, boundaries, responsibility, and time.",
     ),
-
     # ========================================================================
     # MODERN PLANETS (Outer Planets)
     # ========================================================================
@@ -150,7 +156,6 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Modern Planet",
         description="The planet of transformation, power, death/rebirth, and the underworld.",
     ),
-
     # ========================================================================
     # LUNAR NODES
     # ========================================================================
@@ -184,7 +189,6 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         aliases=["Dragon's Tail", "Ketu"],
         description="The lunar south node - opposite the North Node, representing past patterns and karmic release.",
     ),
-
     # ========================================================================
     # CALCULATED POINTS
     # ========================================================================
@@ -212,13 +216,12 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         name="Vertex",
         display_name="Vertex",
         object_type=ObjectType.POINT,
-        glyph="Vx",
+        glyph="🜊",
         swiss_ephemeris_id=-5,  # Calculated by swe.houses()
         category="Calculated Point",
         aliases=["Electric Ascendant"],
         description="A sensitive point on the western horizon, often associated with fated encounters and destined events.",
     ),
-
     # ========================================================================
     # ASTEROIDS (The "Big Four")
     # ========================================================================
@@ -259,7 +262,6 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Main Belt Asteroid",
         description="The asteroid of the sacred flame, devotion, focus, and sexual integrity.",
     ),
-
     # ========================================================================
     # CENTAURS
     # ========================================================================
@@ -278,6 +280,7 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         display_name="Pholus",
         object_type=ObjectType.ASTEROID,
         glyph="⬰",
+        glyph_svg_path="assets/glyphs/pholus.svg",
         swiss_ephemeris_id=16,
         category="Centaur",
         description="Small cause, big effect - represents multigenerational patterns and catalyst events.",
@@ -287,6 +290,7 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         display_name="Nessus",
         object_type=ObjectType.ASTEROID,
         glyph="Nes",
+        glyph_svg_path="assets/glyphs/nessus.svg",
         swiss_ephemeris_id=7066,
         category="Centaur",
         description="Represents abuse, boundaries violated, karmic consequences, and the poison that becomes medicine.",
@@ -300,7 +304,6 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Centaur",
         description="Chiron's wife - represents compassionate healing, devotion, and grounding spiritual wisdom.",
     ),
-
     # ========================================================================
     # TRANS-NEPTUNIAN OBJECTS (TNOs)
     # ========================================================================
@@ -309,6 +312,7 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         display_name="Eris",
         object_type=ObjectType.ASTEROID,
         glyph="⯰",
+        glyph_svg_path="assets/glyphs/eris.svg",
         swiss_ephemeris_id=136199,
         category="Dwarf Planet (TNO)",
         aliases=["Xena"],
@@ -360,7 +364,6 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Trans-Neptunian Object",
         description="Represents creation myths, harmony, and finding order in chaos.",
     ),
-
     # ========================================================================
     # URANIAN / HAMBURG SCHOOL PLANETS
     # ========================================================================
@@ -437,7 +440,6 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Uranian Planet",
         description="Hypothetical planet representing spirituality, enlightenment, and clarity.",
     ),
-
     # ========================================================================
     # FIXED STARS (Selected Notable Stars)
     # ========================================================================
@@ -450,7 +452,11 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["Beta Persei", "The Demon Star"],
         description="The most infamous fixed star - represents the Medusa's head, transformation through crisis, and facing the shadow.",
-        metadata={"constellation": "Perseus", "magnitude": 2.1, "approx_longitude_2000": 26.0},  # ~26° Taurus
+        metadata={
+            "constellation": "Perseus",
+            "magnitude": 2.1,
+            "approx_longitude_2000": 26.0,
+        },  # ~26° Taurus
     ),
     "Regulus": CelestialObjectInfo(
         name="Regulus",
@@ -461,7 +467,11 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["Alpha Leonis", "The Heart of the Lion"],
         description="Royal star representing glory, success, nobility, and leadership. One of the four Royal Stars of Persia.",
-        metadata={"constellation": "Leo", "magnitude": 1.4, "approx_longitude_2000": 29.5},  # ~29° Leo
+        metadata={
+            "constellation": "Leo",
+            "magnitude": 1.4,
+            "approx_longitude_2000": 29.5,
+        },  # ~29° Leo
     ),
     "Spica": CelestialObjectInfo(
         name="Spica",
@@ -472,7 +482,11 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["Alpha Virginis"],
         description="The gift of the harvest - represents talent, brilliance, protection, and divine favor. One of the four Royal Stars.",
-        metadata={"constellation": "Virgo", "magnitude": 1.0, "approx_longitude_2000": 23.5},  # ~23° Libra
+        metadata={
+            "constellation": "Virgo",
+            "magnitude": 1.0,
+            "approx_longitude_2000": 23.5,
+        },  # ~23° Libra
     ),
     "Antares": CelestialObjectInfo(
         name="Antares",
@@ -483,7 +497,11 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["Alpha Scorpii", "The Rival of Mars"],
         description="The heart of the Scorpion - represents courage, obsession, confrontation, and intensity. One of the four Royal Stars.",
-        metadata={"constellation": "Scorpius", "magnitude": 1.0, "approx_longitude_2000": 9.5},  # ~9° Sagittarius
+        metadata={
+            "constellation": "Scorpius",
+            "magnitude": 1.0,
+            "approx_longitude_2000": 9.5,
+        },  # ~9° Sagittarius
     ),
     "Aldebaran": CelestialObjectInfo(
         name="Aldebaran",
@@ -494,7 +512,11 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["Alpha Tauri", "The Eye of the Bull"],
         description="The follower of the Pleiades - represents integrity, eloquence, courage, and the warrior spirit. One of the four Royal Stars.",
-        metadata={"constellation": "Taurus", "magnitude": 0.9, "approx_longitude_2000": 9.5},  # ~9° Gemini
+        metadata={
+            "constellation": "Taurus",
+            "magnitude": 0.9,
+            "approx_longitude_2000": 9.5,
+        },  # ~9° Gemini
     ),
     "Fomalhaut": CelestialObjectInfo(
         name="Fomalhaut",
@@ -505,7 +527,11 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["Alpha Piscis Austrini"],
         description="The mouth of the fish - represents idealism, utopianism, and the fall from grace. One of the four Royal Stars.",
-        metadata={"constellation": "Piscis Austrinus", "magnitude": 1.2, "approx_longitude_2000": 3.5},  # ~3° Pisces
+        metadata={
+            "constellation": "Piscis Austrinus",
+            "magnitude": 1.2,
+            "approx_longitude_2000": 3.5,
+        },  # ~3° Pisces
     ),
     "Sirius": CelestialObjectInfo(
         name="Sirius",
@@ -516,7 +542,11 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["Alpha Canis Majoris", "The Dog Star"],
         description="The brightest star in the sky - represents fame, honor, devotion, passion, and the guardianship of the sacred.",
-        metadata={"constellation": "Canis Major", "magnitude": -1.5, "approx_longitude_2000": 14.0},  # ~14° Cancer
+        metadata={
+            "constellation": "Canis Major",
+            "magnitude": -1.5,
+            "approx_longitude_2000": 14.0,
+        },  # ~14° Cancer
     ),
     "Pleiades": CelestialObjectInfo(
         name="Pleiades",
@@ -527,9 +557,12 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
         category="Fixed Star",
         aliases=["The Seven Sisters", "M45"],
         description="The weeping sisters - represents ambition, brilliance, love of learning, but also sorrow and loss.",
-        metadata={"constellation": "Taurus", "magnitude": 1.6, "approx_longitude_2000": 0.0},  # ~0° Gemini
+        metadata={
+            "constellation": "Taurus",
+            "magnitude": 1.6,
+            "approx_longitude_2000": 0.0,
+        },  # ~0° Gemini
     ),
-
     # ========================================================================
     # OTHER NOTABLE POINTS/BODIES
     # ========================================================================
@@ -548,6 +581,7 @@ CELESTIAL_REGISTRY: dict[str, CelestialObjectInfo] = {
 # ============================================================================
 # REGISTRY HELPER FUNCTIONS
 # ============================================================================
+
 
 def get_object_info(name: str) -> CelestialObjectInfo | None:
     """
@@ -634,7 +668,10 @@ def search_objects(query: str) -> list[CelestialObjectInfo]:
 
     for obj_info in CELESTIAL_REGISTRY.values():
         # Check name, display name
-        if query_lower in obj_info.name.lower() or query_lower in obj_info.display_name.lower():
+        if (
+            query_lower in obj_info.name.lower()
+            or query_lower in obj_info.display_name.lower()
+        ):
             results.append(obj_info)
             continue
 
