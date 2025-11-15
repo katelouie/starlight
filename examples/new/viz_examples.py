@@ -158,7 +158,7 @@ def example_3_advanced_synastry_chart():
         AspectLayer(),
         # --- The Synastry "Bi-Wheel" ---
         # Draw Chart 1's planets on the main (outer) ring
-        PlanetLayer(planet_set=planets1, radius_key="planet_ring"),
+        PlanetLayer(planet_set=planets1, radius_key="synastry_planet_ring_outer"),
         # Draw Chart 2's planets on the inner synastry ring
         PlanetLayer(
             planet_set=planets2,

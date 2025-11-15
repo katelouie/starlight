@@ -161,7 +161,8 @@ class ChartRenderer:
             "planet_ring": size * 0.30,
             "house_number_ring": size * 0.22,
             "aspect_ring_inner": size * 0.18,
-            "synastry_planet_ring_inner": size * 0.13,
+            "synastry_planet_ring_inner": size * 0.25,
+            "synastry_planet_ring_outer": size * 0.35,
         }
 
         self.style = self._get_default_style()

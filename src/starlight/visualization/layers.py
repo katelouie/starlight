@@ -53,6 +53,41 @@ class ZodiacLayer:
             )
         )
 
+        # Draw degree tick marks (5° increments within each sign)
+        tick_color = style.get("line_color")
+        for sign_index in range(12):
+            sign_start = sign_index * 30.0
+
+            # Draw ticks at 5°, 10°, 15°, 20°, 25° within each sign
+            # (0° is handled by sign boundary lines)
+            for degree_in_sign in [5, 10, 15, 20, 25]:
+                absolute_degree = sign_start + degree_in_sign
+
+                # Longer ticks at 10° and 20° marks
+                if degree_in_sign in [10, 20]:
+                    tick_length = 10
+                    tick_width = 0.8
+                else:  # Shorter ticks at 5°, 15°, 25° marks
+                    tick_length = 7
+                    tick_width = 0.5
+
+                # Draw tick from zodiac_ring_outer inward
+                x_outer, y_outer = renderer.polar_to_cartesian(
+                    absolute_degree, renderer.radii["zodiac_ring_outer"]
+                )
+                x_inner, y_inner = renderer.polar_to_cartesian(
+                    absolute_degree, renderer.radii["zodiac_ring_outer"] - tick_length
+                )
+
+                dwg.add(
+                    dwg.line(
+                        start=(x_outer, y_outer),
+                        end=(x_inner, y_inner),
+                        stroke=tick_color,
+                        stroke_width=tick_width,
+                    )
+                )
+
         # Draw 12 sign boundaries and glyphs
         for i in range(12):
             deg = i * 30.0
@@ -551,7 +586,9 @@ class PlanetLayer:
             if angle_diff > 180:
                 angle_diff = 360 - angle_diff
 
-            is_adjusted = angle_diff > 0.5  # More than 0.5° difference counts as adjusted
+            is_adjusted = (
+                angle_diff > 0.5
+            )  # More than 0.5° difference counts as adjusted
 
             adjusted_positions[planet] = {
                 "longitude": adjusted_long,
