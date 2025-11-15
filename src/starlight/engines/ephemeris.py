@@ -12,6 +12,7 @@ from starlight.core.models import (
     ChartLocation,
     ObjectType,
 )
+from starlight.core.registry import get_object_info
 
 
 def _set_ephemeris_path() -> None:
@@ -121,6 +122,26 @@ class SwissEphemerisEngine:
         _set_ephemeris_path()
         self._object_ids = SWISS_EPHEMERIS_IDS.copy()
 
+    def _get_object_type(self, name: str) -> ObjectType:
+        """Determine the ObjectType for a celestial object by name using the registry."""
+        # Try to get from registry first
+        obj_info = get_object_info(name)
+        if obj_info:
+            return obj_info.object_type
+
+        # Fallback for objects not in registry (shouldn't happen, but defensive)
+        # Nodes
+        if "Node" in name:
+            return ObjectType.NODE
+        # Points (Lilith/Apogees)
+        if "Apogee" in name or "Lilith" in name:
+            return ObjectType.POINT
+        # Asteroids
+        if name in ("Ceres", "Pallas", "Juno", "Vesta"):
+            return ObjectType.ASTEROID
+        # Everything else is a planet
+        return ObjectType.PLANET
+
     def calculate_positions(
         self,
         datetime: ChartDateTime,
@@ -153,6 +174,7 @@ class SwissEphemerisEngine:
                 "Pluto",
                 "True Node",
                 "Chiron",
+                "Mean Apogee",  # Black Moon Lilith
             ]
 
         positions = []
@@ -172,7 +194,7 @@ class SwissEphemerisEngine:
             north_node = next(p for p in positions if p.name == "True Node")
             south_node = CelestialPosition(
                 name="South Node",
-                object_type=ObjectType.PLANET,
+                object_type=ObjectType.NODE,
                 longitude=(north_node.longitude + 180) % 360,
                 latitude=-north_node.latitude,
                 speed_longitude=-north_node.speed_longitude,
@@ -202,7 +224,7 @@ class SwissEphemerisEngine:
 
             return CelestialPosition(
                 name=object_name,
-                object_type=ObjectType.PLANET,
+                object_type=self._get_object_type(object_name),
                 longitude=result[0][0],
                 latitude=result[0][1],
                 distance=result[0][2],

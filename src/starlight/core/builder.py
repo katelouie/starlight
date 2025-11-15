@@ -139,6 +139,7 @@ class ChartBuilder:
         if self._config.include_chiron:
             objects.append("Chiron")
 
+        objects.extend(self._config.include_points)
         objects.extend(self._config.include_asteroids)
 
         # Ensure all names are unique

@@ -18,6 +18,8 @@ class ObjectType(Enum):
     PLANET = "planet"
     ANGLE = "angle"
     ASTEROID = "asteroid"
+    POINT = "point"
+    NODE = "node"
     ARABIC_PART = "arabic_part"
     MIDPOINT = "midpoint"
     FIXED_STAR = "fixed_star"
@@ -229,6 +231,14 @@ class CalculatedChart:
     def get_angles(self) -> list[CelestialPosition]:
         """Get all chart angles."""
         return [p for p in self.positions if p.object_type == ObjectType.ANGLE]
+
+    def get_points(self) -> list[CelestialPosition]:
+        """Get all calculated points (Vertex, Lilith, etc.)."""
+        return [p for p in self.positions if p.object_type == ObjectType.POINT]
+
+    def get_nodes(self) -> list[CelestialPosition]:
+        """Get all nodes (True Node, South Node, etc.)."""
+        return [p for p in self.positions if p.object_type == ObjectType.NODE]
 
     def get_dignities(self, system: str = "traditional") -> dict[str, Any]:
         """

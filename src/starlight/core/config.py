@@ -52,12 +52,20 @@ class CalculationConfig:
     )
     include_nodes: bool = True
     include_chiron: bool = True
+    include_points: list[str] = field(
+        default_factory=lambda: ["Mean Apogee"]  # Black Moon Lilith by default
+    )
     include_asteroids: list[str] = field(default_factory=list)  # Default empty
 
     @classmethod
     def minimal(cls) -> "CalculationConfig":
         """Minimal calculation - planets only."""
-        return cls(include_nodes=False, include_chiron=False, include_asteroids=[])
+        return cls(
+            include_nodes=False,
+            include_chiron=False,
+            include_points=[],
+            include_asteroids=[],
+        )
 
     @classmethod
     def comprehensive(cls) -> "CalculationConfig":
@@ -65,5 +73,6 @@ class CalculationConfig:
         return cls(
             include_nodes=True,
             include_chiron=True,
+            include_points=["Mean Apogee", "True Apogee"],  # Both Liliths
             include_asteroids=["Chiron", "Pholus", "Ceres", "Pallas", "Juno", "Vesta"],
         )

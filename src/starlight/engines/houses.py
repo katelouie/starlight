@@ -108,7 +108,7 @@ class SwissHouseSystemBase:
             ),
             # Include Vertex
             CelestialPosition(
-                name="Vertex", object_type=ObjectType.ANGLE, longitude=vertex
+                name="Vertex", object_type=ObjectType.POINT, longitude=vertex
             ),
         ]
 

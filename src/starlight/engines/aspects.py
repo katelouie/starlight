@@ -94,7 +94,7 @@ class ModernAspectEngine:
         aspects = []
 
         # 1. Filter the list of positions based on our config
-        valid_types = {ObjectType.PLANET}
+        valid_types = {ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT}
         if self._config.include_angles:
             valid_types.add(ObjectType.ANGLE)
         if self._config.include_asteroids:
