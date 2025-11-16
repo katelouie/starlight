@@ -12,6 +12,36 @@ from enum import Enum
 from typing import Any
 
 
+def longitude_to_sign_and_degree(longitude: float) -> tuple[str, float]:
+    """Convert position longitude to a sign and sign degree.
+
+    Args:
+        longitude: Position longitude (0-360)
+
+    Returns:
+        tuple of (sign_name, sign_degree)
+    """
+    signs = [
+        "Aries",
+        "Taurus",
+        "Gemini",
+        "Cancer",
+        "Leo",
+        "Virgo",
+        "Libra",
+        "Scorpio",
+        "Sagittarius",
+        "Capricorn",
+        "Aquarius",
+        "Pisces",
+    ]
+
+    sign_name = signs[int(longitude // 30)]
+    sign_degree = longitude % 30
+
+    return sign_name, sign_degree
+
+
 class ObjectType(Enum):
     """Type of astrological object."""
 
@@ -90,22 +120,9 @@ class CelestialPosition:
     def __post_init__(self) -> None:
         """Calculate derived fields."""
         # Use object.__setattr__ because the dataclass is frozen!
-        signs = [
-            "Aries",
-            "Taurus",
-            "Gemini",
-            "Cancer",
-            "Leo",
-            "Virgo",
-            "Libra",
-            "Scorpio",
-            "Sagittarius",
-            "Capricorn",
-            "Aquarius",
-            "Pisces",
-        ]
-        object.__setattr__(self, "sign", signs[int(self.longitude // 30)])
-        object.__setattr__(self, "sign_degree", self.longitude % 30)
+        sign, sign_degree = longitude_to_sign_and_degree(self.longitude)
+        object.__setattr__(self, "sign", sign)
+        object.__setattr__(self, "sign_degree", sign_degree)
         object.__setattr__(self, "is_retrograde", self.speed_longitude < 0)
 
     @property
@@ -114,6 +131,10 @@ class CelestialPosition:
         degrees = int(self.sign_degree)
         minutes = int((self.sign_degree % 1) * 60)
         return f"{degrees}°{minutes:02d}' {self.sign}"
+
+    def __str__(self) -> str:
+        retro = " ℞" if self.is_retrograde else ""
+        return f"{self.name}: {self.sign_position} ({self.longitude:.2f}°){retro}"
 
 
 @dataclass(frozen=True)
@@ -167,17 +188,69 @@ class HouseCusps:
 
     system: str
     cusps: tuple[float, ...]  # 12 cusps, 0-360 degrees
+    signs: list
+    sign_degrees: list
+    houses: list
 
     def __post_init__(self) -> None:
         """Validate cusp count."""
         if len(self.cusps) != 12:
             raise ValueError(f"Expected 12 cusps, got {len(self.cusps)}")
 
+        signs = []
+        sign_degrees = []
+        houses = []
+
+        for i, cusp in enumerate(self.cusps):
+            sign, sign_degree = longitude_to_sign_and_degree(cusp)
+            houses.append(i + 1)
+            signs.append(sign)
+            sign_degrees.append(sign_degree)
+
+        # Frozen
+        object.__setattr__(self, "houses", houses)
+        object.__setattr__(self, "signs", signs)
+        object.__setattr__(self, "sign_degrees", sign_degrees)
+
+    def _sign_position(self, sign, sign_degree) -> str:
+        """Human-readable sign position (e.g. 15°23' Aries)"""
+        degrees = int(sign_degree)
+        minutes = int((sign_degree % 1) * 60)
+        return f"{degrees}°{minutes:02d}' {sign}"
+
     def get_cusp(self, house_number: int) -> float:
         """Get cusp for a specific house (1-12)"""
         if not 1 <= house_number <= 12:
             raise ValueError(f"House number must be 1-12, got {house_number}")
         return self.cusps[house_number - 1]
+
+    def get_sign(self, house_number: int) -> str:
+        """Get sign name for a specific house (1-12)"""
+        if not 1 <= house_number <= 12:
+            raise ValueError(f"House number must be 1-12, got {house_number}")
+        return self.signs[house_number - 1]
+
+    def get_sign_degree(self, house_number: int) -> str:
+        """Get sign name for a specific house (1-12)"""
+        if not 1 <= house_number <= 12:
+            raise ValueError(f"House number must be 1-12, got {house_number}")
+        return self.sign_degrees[house_number - 1]
+
+    def get_description(self, house_number: int) -> str:
+        """Get human-readable cusp description for a specific house."""
+        if not 1 <= house_number <= 12:
+            raise ValueError(f"House number must be 1-12, got {house_number}")
+        sign_position = self._sign_position(
+            self.signs[house_number - 1], self.sign_degrees[house_number - 1]
+        )
+        house_string = f"House {house_number}: {sign_position} ({self.cusps[house_number - 1]:.2f}°)"
+        return house_string
+
+    def __str__(self) -> str:
+        strings = []
+        for i in range(len(self.cusps)):
+            strings.append(self.get_description(i + 1))
+        return "\n".join(strings)
 
 
 @dataclass(frozen=True)
@@ -202,6 +275,9 @@ class Aspect:
             applying = " (separating)"
 
         return f"{self.object1.name} {self.aspect_name} {self.object2.name} (orb: {self.orb:.2f}°){applying}"
+
+    def __str__(self) -> str:
+        return self.description
 
 
 @dataclass(frozen=True)
@@ -599,10 +675,12 @@ class PhaseData:
         else:
             return "Waxing Gibbous" if waxing else "Waning Gibbous"
 
-    def __str__(self) -> str:
-        """String representation."""
+    def __repr__(self) -> str:
         return (
             f"PhaseData(angle={self.phase_angle:.1f}°, "
             f"illuminated={self.illuminated_fraction:.1%}, "
             f"magnitude={self.apparent_magnitude:.2f})"
         )
+
+    def __str__(self) -> str:
+        return f"Phase: {self.phase_name} ({self.illuminated_fraction:.1%} illuminated)"

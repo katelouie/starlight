@@ -1,0 +1,21 @@
+# MIT License
+
+Copyright (c) 2025 Kate Louie
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+## SWISS EPHEMERIS LICENSE NOTICE
+
+This software uses Swiss Ephemeris for astronomical calculations.
+
+Swiss Ephemeris is licensed under the Swiss Ephemeris Public License, which is suitable for free software. For commercial applications, a commercial license must be obtained from Astrodienst AG.
+
+See <https://www.astro.com/swisseph/swephinfo_e.htm> for details.
+
+The Swiss Ephemeris license does NOT restrict Starlight's MIT license for non-ephemeris code, but users must comply with Swiss Ephemeris licensing terms when using the astronomical calculation features.
