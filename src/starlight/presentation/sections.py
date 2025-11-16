@@ -206,7 +206,6 @@ class AspectSection:
         aspects = chart.aspects
         aspect_category = self.mode.title()
         allowed_aspects = [a.name for a in get_aspects_by_category(aspect_category)]
-
         aspects = [a for a in aspects if a.aspect_name in allowed_aspects]
 
         # Sort aspects
@@ -271,7 +270,7 @@ class MidpointSection:
 
     @property
     def section_name(self) -> str:
-        if self.mode == "core_only":
+        if self.mode == "core":
             return "Core Midpoints (Sun/Moon/ASC/MC)"
         return "Midpoints"
 
