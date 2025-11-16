@@ -8,7 +8,7 @@ into a standardized structure that renderers can consume.
 import datetime as dt
 from typing import Any
 
-from starlight.core.models import CalculatedChart, ObjectType
+from starlight.core.models import CalculatedChart, MidpointPosition, ObjectType
 from starlight.core.registry import CELESTIAL_REGISTRY, get_aspects_by_category
 
 
@@ -384,26 +384,33 @@ class MidpointSection:
         if self.mode == "core":
             midpoints = [mp for mp in midpoints if self._is_core_midpoint(mp.name)]
 
-        # Sort midpoints by component object names
-        # Parse names like "Midpoint:Sun/Moon" to extract component objects
+        # Sort midpoints by component objects using object1/object2
         def get_midpoint_sort_key(mp):
-            # Parse midpoint name
-            if ":" in mp.name:
-                pair_part = mp.name.split(":")[1]
+            # Use isinstance to check if it's a MidpointPosition
+            if isinstance(mp, MidpointPosition):
+                # Direct access to component objects - use registry order!
+                return (
+                    get_object_sort_key(mp.object1),
+                    get_object_sort_key(mp.object2),
+                )
             else:
-                pair_part = mp.name
+                # Fallback for legacy CelestialPosition midpoints (backward compatibility)
+                # Parse names like "Midpoint:Sun/Moon"
+                if ":" in mp.name:
+                    pair_part = mp.name.split(":")[1]
+                else:
+                    pair_part = mp.name
 
-            # Remove "(indirect)" if present
-            pair_part = pair_part.replace(" (indirect)", "")
+                # Remove "(indirect)" if present
+                pair_part = pair_part.replace(" (indirect)", "")
 
-            # Split into component names
-            objects = pair_part.split("/")
-            if len(objects) == 2:
-                # Sort by first object name, then second
-                return (objects[0], objects[1])
+                # Split into component names
+                objects = pair_part.split("/")
+                if len(objects) == 2:
+                    return (objects[0], objects[1])
 
-            # Fallback: use the full name
-            return (mp.name,)
+                # Final fallback: use full name
+                return (mp.name,)
 
         midpoints = sorted(midpoints, key=get_midpoint_sort_key)
 

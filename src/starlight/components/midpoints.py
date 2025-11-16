@@ -16,6 +16,7 @@ from starlight.core.models import (
     ChartDateTime,
     ChartLocation,
     HouseCusps,
+    MidpointPosition,
     ObjectType,
 )
 
@@ -151,7 +152,7 @@ class MidpointCalculator:
 
     def _calculate_direct_midpoint(
         self, obj1: CelestialPosition, obj2: CelestialPosition
-    ) -> CelestialPosition:
+    ) -> MidpointPosition:
         """
         Calculate direct midpoint (shortest arc).
 
@@ -160,7 +161,7 @@ class MidpointCalculator:
             obj2: Second object
 
         Returns:
-            CelestialPosition for the midpoint
+            MidpointPosition for the midpoint
         """
         # Calculate shortest arc midpoint
         long1, long2 = obj1.longitude, obj2.longitude
@@ -175,16 +176,19 @@ class MidpointCalculator:
             # Shorter arc goes the other way
             midpoint_long = ((long1 + long2) / 2 + 180) % 360
 
-        # Create position
-        return CelestialPosition(
+        # Create midpoint position
+        return MidpointPosition(
             name=f"Midpoint:{obj1.name}/{obj2.name}",
             object_type=ObjectType.MIDPOINT,
             longitude=midpoint_long,
+            object1=obj1,
+            object2=obj2,
+            is_indirect=False,
         )
 
     def _calculate_indirect_midpoint(
         self, obj1: CelestialPosition, obj2: CelestialPosition
-    ) -> CelestialPosition:
+    ) -> MidpointPosition:
         """
         Calculate indirect midpoint (opposite of direct).
 
@@ -193,7 +197,7 @@ class MidpointCalculator:
             obj2: Second object
 
         Returns:
-            CelestialPosition for the indirect midpoint
+            MidpointPosition for the indirect midpoint
         """
         # Get direct midpoint
         direct = self._calculate_direct_midpoint(obj1, obj2)
@@ -201,8 +205,11 @@ class MidpointCalculator:
         # Indirect is 180° opposite
         indirect_long = (direct.longitude + 180) % 360
 
-        return CelestialPosition(
+        return MidpointPosition(
             name=f"Midpoint:{obj1.name}/{obj2.name} (indirect)",
             object_type=ObjectType.MIDPOINT,
             longitude=indirect_long,
+            object1=obj1,
+            object2=obj2,
+            is_indirect=True,
         )

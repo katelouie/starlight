@@ -114,6 +114,51 @@ class CelestialPosition:
 
 
 @dataclass(frozen=True)
+class MidpointPosition(CelestialPosition):
+    """
+    Specialized position type for midpoints between two celestial objects.
+
+    A midpoint represents the halfway point between two celestial objects,
+    either along the shorter arc (direct) or the longer arc (indirect).
+
+    Attributes:
+        object1: First component object
+        object2: Second component object
+        is_indirect: True if this is the indirect (opposite) midpoint
+
+    Example:
+        # Sun at 10° Aries, Moon at 20° Aries
+        # Direct midpoint: 15° Aries
+        # Indirect midpoint: 15° Libra (opposite)
+
+        midpoint = MidpointPosition(
+            name="Midpoint:Sun/Moon",
+            object_type=ObjectType.MIDPOINT,
+            longitude=15.0,  # 15° Aries
+            object1=sun_position,
+            object2=moon_position,
+            is_indirect=False,
+        )
+    """
+
+    # Use field with default_factory=None pattern to handle required fields after optional ones
+    object1: CelestialPosition = field(default=None)  # type: ignore
+    object2: CelestialPosition = field(default=None)  # type: ignore
+    is_indirect: bool = False
+
+    def __post_init__(self) -> None:
+        """Validate that object1 and object2 are provided."""
+        # Call parent __post_init__ first
+        super().__post_init__()
+
+        # Validate required fields
+        if self.object1 is None:
+            raise ValueError("object1 is required for MidpointPosition")
+        if self.object2 is None:
+            raise ValueError("object2 is required for MidpointPosition")
+
+
+@dataclass(frozen=True)
 class HouseCusps:
     """Immutable house cusp data."""
 
