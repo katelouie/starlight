@@ -9,7 +9,12 @@ from typing import Any
 
 import svgwrite
 
-from starlight.core.models import CalculatedChart, CelestialPosition, ObjectType
+from starlight.core.models import (
+    CalculatedChart,
+    CelestialPosition,
+    ObjectType,
+    PhaseData,
+)
 
 from .core import ChartRenderer
 
@@ -262,3 +267,73 @@ class MoonPhaseLayer:
             path += "Z"
 
         return path
+
+
+def draw_moon_phase_standalone(
+    phase_frac: float,
+    phase_angle: float,
+    filename: str = "moon_phase.svg",
+    size: int = 200,
+    style: dict[str, Any] | None = None,
+) -> str:
+    """
+    Draw a standalone moon phase SVG.
+
+    Useful for testing or standalone moon phase displays.
+
+    Args:
+        phase_frac: Illuminated fraction (0-1)
+        phase_angle: Phase angle in degrees (0-360)
+        filename: Output filename
+        size: SVG size in pixels
+        style: Style overrides
+
+    Returns:
+        Filename of saved SVG
+
+    Example:
+        # Draw a waxing crescent
+        draw_moon_phase_standalone(0.25, 90, "waxing_crescent.svg")
+
+        # Draw a full moon
+        draw_moon_phase_standalone(1.0, 180, "full_moon.svg")
+    """
+    moon = CelestialPosition(
+        name="Moon",
+        object_type=ObjectType.PLANET,
+        longitude=0.0,
+    )
+    moon_phase_data = PhaseData(
+        phase_angle=phase_angle,
+        illuminated_fraction=phase_frac,
+        elongation=0.0,
+        apparent_diameter=0.0,
+        apparent_magnitude=0.0,
+    )
+    object.__setattr__(moon, "phase", moon_phase_data)
+
+    # Create SVG
+    dwg = svgwrite.Drawing(
+        filename=filename,
+        size=(f"{size}px", f"{size}px"),
+        viewBox=f"0 0 {size} {size}",
+    )
+
+    # Add background
+    dwg.add(dwg.rect(insert=(0, 0), size=(size, size), fill="#1a1a1a"))
+
+    # Create moon phase layer
+    layer = MoonPhaseLayer(style_override=style)
+
+    # Render (need a mock renderer/chart for the interface)
+    from unittest.mock import Mock
+
+    mock_renderer = Mock()
+    mock_renderer.center = size // 2
+    mock_chart = Mock()
+    mock_chart.get_object = lambda name: moon if name == "Moon" else None
+
+    layer.render(mock_renderer, dwg, mock_chart)
+
+    dwg.save()
+    return filename

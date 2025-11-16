@@ -16,10 +16,14 @@ from .layers import (
     PlanetLayer,
     ZodiacLayer,
 )
+from .moon_phase import MoonPhaseLayer
 
 
 def draw_chart(
-    chart: CalculatedChart, filename: str = "chart.svg", size: int = 600
+    chart: CalculatedChart,
+    filename: str = "chart.svg",
+    size: int = 600,
+    moon_phase: bool = True,
 ) -> str:
     """
     Draws a standard natal chart.
@@ -31,6 +35,7 @@ def draw_chart(
         chart: The CalculatedChart object from the ChartBuilder.
         filename: The output filename (e.g., "natal_chart.svg").
         size: The pixel dimensions of the (square) chart.
+        moon_phase: Whether to show moon phase.
 
     Returns:
         The filename of the saved chart.
@@ -62,6 +67,9 @@ def draw_chart(
         PlanetLayer(planet_set=planets_to_draw, radius_key="planet_ring"),
         AngleLayer(),
     ]
+
+    if moon_phase:
+        layers.insert(3, MoonPhaseLayer())  # Insert before PlanetLayer
 
     # Tell each layer to render itself
     for layer in layers:
