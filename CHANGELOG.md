@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Direct midpoint calculation (shortest arc)
   - Indirect midpoint calculation (opposite point)
   - Creates `MidpointPosition` instances with component object references
+- Added PhaseData data model, and added phase data to relevant planets and asteroids under CelestialPosition.phase during ephemeris engine call.
 
 #### Chart Building & Calculation
 
@@ -85,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Customizable styles via style dictionaries
   - Chart inversion support
   - Automatic zodiac ring, house cusps, planet positions, and aspect grid rendering
+  - Added moon phase visualization to the chart.
 
 #### Presentation & Reporting
 
