@@ -137,7 +137,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q --strict-markers --strict-config"
+addopts = "-ra -v --tb=short --cov=src --cov-report=term-missing --strict-markers --strict-config"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
@@ -146,8 +146,16 @@ python_functions = ["test_*"]
 [tool.coverage.run]
 source = ["src"]
 branch = true
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+]
 
 [tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -159,4 +167,9 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "class .*\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",  # Ellipsis in protocol methods
 ]
+
+[tool.coverage.html]
+directory = "htmlcov"
