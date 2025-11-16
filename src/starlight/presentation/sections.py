@@ -9,7 +9,97 @@ import datetime as dt
 from typing import Any
 
 from starlight.core.models import CalculatedChart, ObjectType
-from starlight.core.registry import get_aspects_by_category
+from starlight.core.registry import CELESTIAL_REGISTRY, get_aspects_by_category
+
+
+def get_object_sort_key(position):
+    """
+    Generate sort key for consistent object ordering in reports.
+
+    Sorting hierarchy:
+    1. Object type (Planet < Node < Point < Asteroid < Angle < Midpoint)
+    2. Registry insertion order (for registered objects)
+    3. Swiss Ephemeris ID (for unregistered known objects)
+    4. Alphabetical name (for custom objects)
+
+    Args:
+        position: A celestial object position from CalculatedChart
+
+    Returns:
+        Tuple sort key for use with sorted()
+
+    Example:
+        positions = sorted(chart.positions, key=get_object_sort_key)
+    """
+    # Define type ordering
+    type_order = {
+        ObjectType.PLANET: 0,
+        ObjectType.NODE: 1,
+        ObjectType.POINT: 2,
+        ObjectType.ASTEROID: 3,
+        ObjectType.ANGLE: 4,
+        ObjectType.MIDPOINT: 5,
+    }
+
+    type_rank = type_order.get(position.object_type, 999)
+
+    # Try registry order (using insertion order of dict keys)
+    registry_keys = list(CELESTIAL_REGISTRY.keys())
+    if position.name in registry_keys:
+        registry_index = registry_keys.index(position.name)
+        return (type_rank, registry_index)
+
+    # Fallback to Swiss Ephemeris ID
+    if hasattr(position, "swiss_ephemeris_id") and position.swiss_ephemeris_id is not None:
+        return (type_rank, 10000 + position.swiss_ephemeris_id)
+
+    # Final fallback: alphabetical by name
+    return (type_rank, 20000, position.name)
+
+
+def get_aspect_sort_key(aspect_name: str) -> tuple:
+    """
+    Generate sort key for consistent aspect ordering in reports.
+
+    Sorting hierarchy:
+    1. Registry insertion order (aspects ordered by angle: 0°, 60°, 90°, etc.)
+    2. Angle value (for aspects not in registry)
+    3. Alphabetical name (final fallback)
+
+    Args:
+        aspect_name: Name of the aspect (e.g., "Conjunction", "Trine")
+
+    Returns:
+        Tuple sort key for use with sorted()
+
+    Example:
+        aspects = sorted(aspects, key=lambda a: get_aspect_sort_key(a.aspect_name))
+    """
+    from starlight.core.registry import (
+        ASPECT_REGISTRY,
+        get_aspect_by_alias,
+        get_aspect_info,
+    )
+
+    # Try registry order (insertion order = angle order)
+    registry_keys = list(ASPECT_REGISTRY.keys())
+    if aspect_name in registry_keys:
+        registry_index = registry_keys.index(aspect_name)
+        return (registry_index,)
+
+    # Try to find by alias
+    aspect_info = get_aspect_by_alias(aspect_name)
+    if aspect_info and aspect_info.name in registry_keys:
+        registry_index = registry_keys.index(aspect_info.name)
+        return (registry_index,)
+
+    # Fallback: try to get angle from registry
+    aspect_info = get_aspect_info(aspect_name)
+    if aspect_info:
+        return (1000 + aspect_info.angle,)
+
+    # Final fallback: alphabetical
+    return (2000, aspect_name)
 
 
 class ChartOverviewSection:
@@ -124,6 +214,9 @@ class PlanetPositionSection:
             )
         ]
 
+        # Sort positions consistently
+        positions = sorted(positions, key=get_object_sort_key)
+
         # Build rows
         rows = []
         for pos in positions:
@@ -212,8 +305,17 @@ class AspectSection:
         if self.sort_by == "orb":
             aspects = sorted(aspects, key=lambda a: a.orb)
         elif self.sort_by == "aspect_type":
-            aspects = sorted(aspects, key=lambda a: a.aspect_name)
-        # planet sort: keep as-is (usually sorted by first planet already)
+            # Sort by aspect using registry order (angle order)
+            aspects = sorted(aspects, key=lambda a: get_aspect_sort_key(a.aspect_name))
+        elif self.sort_by == "planet":
+            # Sort by first object, then second object
+            aspects = sorted(
+                aspects,
+                key=lambda a: (
+                    get_object_sort_key(a.object1),
+                    get_object_sort_key(a.object2),
+                ),
+            )
 
         # Build headers
         headers = ["Planet 1", "Aspect", "Planet 2"]
@@ -281,7 +383,31 @@ class MidpointSection:
         # Filter to core midpoints if requested
         if self.mode == "core":
             midpoints = [mp for mp in midpoints if self._is_core_midpoint(mp.name)]
-        # Apply threshold (limit to top N)
+
+        # Sort midpoints by component object names
+        # Parse names like "Midpoint:Sun/Moon" to extract component objects
+        def get_midpoint_sort_key(mp):
+            # Parse midpoint name
+            if ":" in mp.name:
+                pair_part = mp.name.split(":")[1]
+            else:
+                pair_part = mp.name
+
+            # Remove "(indirect)" if present
+            pair_part = pair_part.replace(" (indirect)", "")
+
+            # Split into component names
+            objects = pair_part.split("/")
+            if len(objects) == 2:
+                # Sort by first object name, then second
+                return (objects[0], objects[1])
+
+            # Fallback: use the full name
+            return (mp.name,)
+
+        midpoints = sorted(midpoints, key=get_midpoint_sort_key)
+
+        # Apply threshold AFTER sorting (limit to top N)
         if self.threshold:
             midpoints = midpoints[: self.threshold]
         # Build table
