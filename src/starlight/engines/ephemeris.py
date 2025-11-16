@@ -10,6 +10,7 @@ from starlight.core.models import (
     ChartDateTime,
     ChartLocation,
     ObjectType,
+    PhaseData,
 )
 from starlight.core.registry import get_object_info
 from starlight.utils.cache import cached
@@ -217,10 +218,13 @@ class SwissEphemerisEngine:
             object_name: Name of the object
 
         Returns:
-            CelestialPosition
+            CelestialPosition with optional phase data
         """
         try:
             result = swe.calc_ut(julian_day, object_id)
+
+            # Calculate phase data if available
+            phase_data = self._calculate_phase(julian_day, object_id, object_name)
 
             return CelestialPosition(
                 name=object_name,
@@ -231,9 +235,68 @@ class SwissEphemerisEngine:
                 speed_longitude=result[0][3],
                 speed_latitude=result[0][4],
                 speed_distance=result[0][5],
+                phase=phase_data,
             )
         except swe.Error as e:
             raise RuntimeError(f"Failed to calculate {object_name}: {e}") from swe.Error
+
+    @cached(cache_type="ephemeris", max_age_seconds=86400)
+    def _calculate_phase(
+        self, julian_day: float, object_id: int, object_name: str
+    ) -> PhaseData | None:
+        """
+        Calculate phase data for an object.
+
+        Uses swe.pheno_ut() which works for:
+        - Moon (most useful)
+        - Sun (phase angle = 0, always fully lit from Earth's perspective)
+        - All planets
+        - Some asteroids
+
+        Args:
+            julian_day: Julian day number
+            object_id: Swiss Ephemeris object ID
+            object_name: Name of object (for logging)
+
+        Returns:
+            PhaseData if calculation succeeds, None otherwise
+
+        Why try/except instead of object type check?
+        - Swiss Ephemeris supports phase for many object types
+        - The list of supported objects may change
+        - Better to attempt and gracefully fail than maintain a whitelist
+        - Performance impact is negligible (only runs once per object per chart)
+        """
+        try:
+            # Calculate phase using Swiss Ephemeris
+            pheno_result = swe.pheno_ut(julian_day, object_id)
+
+            # pheno_result is a tuple:
+            # [0] phase_angle (elongation from Sun, 0-360°)
+            # [1] illuminated_fraction (0.0-1.0)
+            # [2] elongation (same as [0])
+            # [3] apparent_diameter (arc seconds)
+            # [4] apparent_magnitude (visual)
+            # [5] geocentric_parallax (primarily for Moon)
+
+            return PhaseData(
+                phase_angle=pheno_result[0],
+                illuminated_fraction=pheno_result[1],
+                elongation=pheno_result[2],
+                apparent_diameter=pheno_result[3],
+                apparent_magnitude=pheno_result[4],
+                geocentric_parallax=pheno_result[5],
+            )
+
+        except (swe.Error, IndexError, TypeError) as _e:
+            # Phase calculation not supported for this object
+            # This is normal for:
+            # - Angles (ASC, MC, etc.)
+            # - Nodes
+            # - Some hypothetical objects
+            # - Fixed stars
+            # Silently return None - this is not an error condition
+            return None
 
 
 class MockEphemerisEngine:

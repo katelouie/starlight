@@ -84,6 +84,9 @@ class CelestialPosition:
     # Optional metadata
     is_retrograde: bool = field(init=False)
 
+    # Phase data
+    phase: "PhaseData | None" = None
+
     def __post_init__(self) -> None:
         """Calculate derived fields."""
         # Use object.__setattr__ because the dataclass is frozen!
@@ -530,3 +533,76 @@ class CalculatedChart:
             base_dict["metadata"] = self.metadata
 
         return base_dict
+
+
+@dataclass(frozen=True)
+class PhaseData:
+    """
+    Planetary phase information.
+
+    Contains data about a celestial object's appearance and illumination
+    as seen from Earth. Available for Moon, planets, and some asteroids.
+
+    Attributes:
+        phase_angle: Angular separation from Sun (0-360°)
+            - 0° = conjunction (new moon)
+            - 90° = quadrature (quarter moon)
+            - 180° = opposition (full moon)
+        illuminated_fraction: Fraction of disk that is illuminated (0.0-1.0)
+            - 0.0 = completely dark (new)
+            - 0.5 = half illuminated (quarter)
+            - 1.0 = fully illuminated (full)
+        elongation: Elongation of the planet
+        apparent_diameter: Angular diameter as seen from Earth (arc seconds)
+        apparent_magnitude: Visual brightness magnitude (lower = brighter)
+        geocentric_parallax: Parallax angle (radians) - primarily for Moon
+    """
+
+    phase_angle: float  # 0-360 degrees
+    illuminated_fraction: float  # 0.0 to 1.0
+    elongation: float
+    apparent_diameter: float  # arc seconds
+    apparent_magnitude: float  # visual magnitude
+    geocentric_parallax: float = 0.0  # radians (mainly for Moon)
+
+    @property
+    def is_waxing(self) -> bool:
+        """
+        Whether object is waxing (growing in illumination).
+
+        For the Moon: 0-180° = waxing, 180-360° = waning
+        """
+        return self.phase_angle <= 180.0
+
+    @property
+    def phase_name(self) -> str:
+        """
+        Human-readable phase name (primarily for Moon).
+
+        Returns:
+            Phase name like "New", "Waxing Crescent", etc.
+        """
+        frac = self.illuminated_fraction
+        waxing = self.is_waxing
+
+        # Special cases
+        if frac < 0.03:
+            return "New"
+        elif frac > 0.97:
+            return "Full"
+        elif 0.48 <= frac <= 0.52:
+            return "First Quarter" if waxing else "Last Quarter"
+
+        # Crescents and gibbous
+        if frac < 0.48:
+            return "Waxing Crescent" if waxing else "Waning Crescent"
+        else:
+            return "Waxing Gibbous" if waxing else "Waning Gibbous"
+
+    def __str__(self) -> str:
+        """String representation."""
+        return (
+            f"PhaseData(angle={self.phase_angle:.1f}°, "
+            f"illuminated={self.illuminated_fraction:.1%}, "
+            f"magnitude={self.apparent_magnitude:.2f})"
+        )

@@ -11,7 +11,10 @@
 
 - Transfer over moon phase rendering code from old files.
 - Add chart type with more info (such as positions, native info, aspect triangle chart).
-- Add option to render aspect triangle charts separately.
+- Add option to render aspect triangle aspect charts separately.
+- Add vedic square-type charts
+- Synastry square aspect table
+- Declinations
 
 ## Core Functions
 
@@ -19,6 +22,9 @@
 - Add composite
 - Add transits
 - Add returns (?)
+- Add sidereal
+- Add Vedic
+- Declinations
 
 ## Testing
 

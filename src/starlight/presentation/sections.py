@@ -494,3 +494,35 @@ class CacheInfoSection:
             "type": "key_value",
             "data": data,
         }
+
+
+class MoonPhaseSection:
+    """Display Moon phase information."""
+
+    @property
+    def section_name(self) -> str:
+        return "Moon Phase"
+
+    def generate_data(self, chart: CalculatedChart) -> dict[str, Any]:
+        """Generate moon phase data."""
+        moon = chart.get_object("Moon")
+
+        if not moon or not moon.phase:
+            return {"type": "text", "text": "Moon phase data not available."}
+
+        phase = moon.phase
+
+        data = {
+            "Phase Name": phase.phase_name,
+            "Illumination": f"{phase.illuminated_fraction:.1%}",
+            "Phase Angle": f"{phase.phase_angle:.1f}°",
+            "Direction": "Waxing" if phase.is_waxing else "Waning",
+            "Apparent Magnitude": f"{phase.apparent_magnitude:.2f}",
+            "Apparent Diameter": f"{phase.apparent_diameter:.1f}″",
+            "Geocentric Parallax": f"{phase.geocentric_parallax:.4f} rad",
+        }
+
+        return {
+            "type": "key_value",
+            "data": data,
+        }

@@ -15,6 +15,7 @@ from .sections import (
     AspectSection,
     ChartOverviewSection,
     MidpointSection,
+    MoonPhaseSection,
     PlanetPositionSection,
 )
 
@@ -170,6 +171,11 @@ class ReportBuilder:
             )
         """
         self._sections.append(section)
+        return self
+
+    def with_moon_phase(self) -> "ReportBuilder":
+        """Add moon phase section."""
+        self._sections.append(MoonPhaseSection())
         return self
 
     # -------------------------------------------------------------------------
