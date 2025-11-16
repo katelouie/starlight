@@ -1,15 +1,10 @@
 """
 Tests for the Notable system (Notable class and NotableRegistry).
 
-Tests cover:
-- Notable class initialization and inheritance from Native
-- NotableRegistry YAML loading
-- Registry query methods
-- ChartBuilder integration
-- Error handling
+OPTIMIZED VERSION - uses dicts with timezone to avoid slow TimezoneFinder lookups.
 """
 
-import datetime as dt
+from datetime import datetime
 
 import pytest
 import pytz
@@ -20,11 +15,55 @@ from starlight.core.native import Native, Notable
 from starlight.data import NotableRegistry, get_notable_registry
 
 
+# Test fixtures with timezone data (fast!)
+@pytest.fixture
+def test_location_nyc():
+    """New York location with timezone - no lookup needed."""
+    return {
+        "latitude": 40.7128,
+        "longitude": -74.0060,
+        "timezone": "America/New_York",
+        "name": "New York, USA",
+    }
+
+
+@pytest.fixture
+def test_location_null():
+    """Null island location with timezone."""
+    return {"latitude": 0.0, "longitude": 0.0, "timezone": "UTC", "name": "Null Island"}
+
+
+@pytest.fixture
+def sample_notable(test_location_nyc):
+    """Create a sample Notable for testing."""
+    return Notable(
+        name="Test Person",
+        event_type="birth",
+        year=1990,
+        month=6,
+        day=15,
+        hour=12,
+        minute=30,
+        location_input=test_location_nyc,  # ✅ Fast!
+        category="test",
+        subcategories=["example"],
+        notable_for="Testing purposes",
+        data_quality="C",
+        verified=False,
+    )
+
+
+@pytest.fixture
+def registry():
+    """Get the NotableRegistry instance."""
+    return get_notable_registry()
+
+
 class TestNotableClass:
     """Test the Notable class directly."""
 
-    def test_notable_creation_with_tuple_location(self):
-        """Test creating a Notable with lat/long tuple."""
+    def test_notable_creation_with_dict_location(self, test_location_nyc):
+        """Test creating a Notable with location dict (fast!)."""
         notable = Notable(
             name="Test Person",
             event_type="birth",
@@ -33,9 +72,10 @@ class TestNotableClass:
             day=15,
             hour=12,
             minute=30,
-            location_input=(40.7128, -74.0060),  # New York
+            location_input=test_location_nyc,
             category="test",
         )
+
         assert notable.name == "Test Person"
         assert notable.event_type == "birth"
         assert notable.category == "test"
@@ -47,8 +87,9 @@ class TestNotableClass:
         assert isinstance(notable.location, ChartLocation)
         assert notable.location.latitude == 40.7128
         assert notable.location.longitude == -74.0060
+        assert notable.location.timezone == "America/New_York"
 
-    def test_notable_inherits_from_native(self):
+    def test_notable_inherits_from_native(self, test_location_null):
         """Test that Notable is an instance of Native."""
         notable = Notable(
             name="Test",
@@ -58,7 +99,7 @@ class TestNotableClass:
             day=1,
             hour=0,
             minute=0,
-            location_input=(0.0, 0.0),
+            location_input=test_location_null,
             category="test",
         )
 
@@ -76,7 +117,12 @@ class TestNotableClass:
             day=14,
             hour=11,
             minute=30,
-            location_input=(48.3984, 9.9916),  # Ulm, Germany
+            location_input={
+                "latitude": 48.3984,
+                "longitude": 9.9916,
+                "timezone": "Europe/Berlin",
+                "name": "Ulm, Germany",
+            },
             category="scientist",
         )
 
@@ -90,7 +136,7 @@ class TestNotableClass:
         assert local.hour == 11
         assert local.minute == 30
 
-    def test_notable_metadata_fields(self):
+    def test_notable_metadata_fields(self, test_location_null):
         """Test all metadata fields are stored correctly."""
         notable = Notable(
             name="Test Person",
@@ -100,7 +146,7 @@ class TestNotableClass:
             day=1,
             hour=0,
             minute=0,
-            location_input=(0.0, 0.0),
+            location_input=test_location_null,
             category="scientist",
             subcategories=["physicist", "theorist"],
             notable_for="Test achievements",
@@ -119,7 +165,7 @@ class TestNotableClass:
         assert notable.sources == ["Test Source"]
         assert notable.verified is True
 
-    def test_notable_default_values(self):
+    def test_notable_default_values(self, test_location_null):
         """Test that optional fields have correct defaults."""
         notable = Notable(
             name="Test",
@@ -129,7 +175,7 @@ class TestNotableClass:
             day=1,
             hour=0,
             minute=0,
-            location_input=(0.0, 0.0),
+            location_input=test_location_null,
             category="test",
         )
 
@@ -140,7 +186,7 @@ class TestNotableClass:
         assert notable.sources == []
         assert notable.verified is False
 
-    def test_notable_is_birth_property(self):
+    def test_notable_is_birth_property(self, test_location_null):
         """Test is_birth property."""
         birth = Notable(
             name="Birth Test",
@@ -150,13 +196,13 @@ class TestNotableClass:
             day=1,
             hour=0,
             minute=0,
-            location_input=(0.0, 0.0),
+            location_input=test_location_null,
             category="test",
         )
         assert birth.is_birth is True
         assert birth.is_event is False
 
-    def test_notable_is_event_property(self):
+    def test_notable_is_event_property(self, test_location_null):
         """Test is_event property."""
         event = Notable(
             name="Event Test",
@@ -166,13 +212,13 @@ class TestNotableClass:
             day=1,
             hour=0,
             minute=0,
-            location_input=(0.0, 0.0),
+            location_input=test_location_null,
             category="eclipse",
         )
         assert event.is_event is True
         assert event.is_birth is False
 
-    def test_notable_repr(self):
+    def test_notable_repr(self, test_location_null):
         """Test string representation."""
         notable = Notable(
             name="Test Person",
@@ -182,7 +228,7 @@ class TestNotableClass:
             day=1,
             hour=0,
             minute=0,
-            location_input=(0.0, 0.0),
+            location_input=test_location_null,
             category="scientist",
         )
         assert repr(notable) == "<Notable: Test Person (scientist)>"
@@ -494,7 +540,7 @@ class TestNotableWithChartLocation:
 class TestErrorHandling:
     """Test error handling in Notable system."""
 
-    def test_notable_with_invalid_date(self):
+    def test_notable_with_invalid_date(self, test_location_null):
         """Test Notable creation with invalid date raises error."""
         with pytest.raises(ValueError):
             Notable(
@@ -505,7 +551,7 @@ class TestErrorHandling:
                 day=1,
                 hour=0,
                 minute=0,
-                location_input=(0.0, 0.0),
+                location_input=test_location_null,
                 category="test",
             )
 
@@ -520,33 +566,11 @@ class TestErrorHandling:
                 day=1,
                 hour=0,
                 minute=0,
-                location_input=(100.0, 0.0),  # Invalid latitude
+                location_input={
+                    "latitude": 100.0,  # Invalid latitude
+                    "longitude": 0.0,
+                    "timezone": "UTC",
+                    "name": "Invalid",
+                },
                 category="test",
             )
-
-
-# Fixtures for use across tests
-@pytest.fixture
-def sample_notable():
-    """Create a sample Notable for testing."""
-    return Notable(
-        name="Test Person",
-        event_type="birth",
-        year=1990,
-        month=6,
-        day=15,
-        hour=12,
-        minute=30,
-        location_input=(40.7128, -74.0060),
-        category="test",
-        subcategories=["example"],
-        notable_for="Testing purposes",
-        data_quality="C",
-        verified=False,
-    )
-
-
-@pytest.fixture
-def registry():
-    """Get the NotableRegistry instance."""
-    return get_notable_registry()
