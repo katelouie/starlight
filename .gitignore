@@ -34,3 +34,6 @@ env/
 
 # Ignore the caching system
 .cache/
+
+# Ignore coverage files
+.coverage
