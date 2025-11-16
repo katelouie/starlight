@@ -15,8 +15,8 @@ from geopy.exc import GeocoderUnavailable
 from geopy.geocoders import Nominatim
 from timezonefinder import TimezoneFinder
 
-from starlight.cache import cached
 from starlight.core.models import ChartDateTime, ChartLocation
+from starlight.utils.cache import cached
 
 # Define the messy input types we'll accept
 DateTimeInput = dt.datetime | ChartDateTime | dict[str, Any]

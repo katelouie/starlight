@@ -10,7 +10,6 @@ import datetime as dt
 import pytz
 import swisseph as swe
 
-from starlight.cache import cached
 from starlight.core.config import CalculationConfig
 from starlight.core.models import (
     CalculatedChart,
@@ -34,6 +33,7 @@ from starlight.core.protocols import (
 from starlight.engines.ephemeris import SwissEphemerisEngine
 from starlight.engines.houses import PlacidusHouses
 from starlight.engines.orbs import SimpleOrbEngine  # PIVOT: New default orb engine
+from starlight.utils.cache import cached
 
 
 class ChartBuilder:

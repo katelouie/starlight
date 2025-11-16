@@ -4,7 +4,6 @@ from dataclasses import replace
 
 import swisseph as swe
 
-from starlight.cache import cached
 from starlight.core.models import (
     CelestialPosition,
     ChartDateTime,
@@ -12,6 +11,7 @@ from starlight.core.models import (
     HouseCusps,
     ObjectType,
 )
+from starlight.utils.cache import cached
 
 # Swiss Ephemeris house system codes
 HOUSE_SYSTEM_CODES = {

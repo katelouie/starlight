@@ -5,7 +5,6 @@ from pathlib import Path
 
 import swisseph as swe
 
-from starlight.cache import cached
 from starlight.core.models import (
     CelestialPosition,
     ChartDateTime,
@@ -13,6 +12,7 @@ from starlight.core.models import (
     ObjectType,
 )
 from starlight.core.registry import get_object_info
+from starlight.utils.cache import cached
 
 
 def _set_ephemeris_path() -> None:
