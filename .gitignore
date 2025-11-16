@@ -7,7 +7,7 @@ __pycache__/
 .DS_Store
 
 # Ignore most ephemeris data (334MB total), but include essential files for 1800-2400 CE
-data/
+/data/
 
 # Include essential ephemeris files for basic functionality (covers 1800-2400 CE, ~7.8MB total)
 !data/swisseph/
@@ -17,7 +17,15 @@ data/
 !data/swisseph/ephe/semo_18.se1
 !data/swisseph/ephe/semo_24.se1
 !data/swisseph/ephe/seas_18.se1
+!data/swisseph/ephe/seas_24.se1
 !data/README.md
+
+# Include notable births and events data (package assets)
+!/data/notables/
+!/data/notables/births/
+!/data/notables/births/*.yaml
+!/data/notables/events/
+!/data/notables/events/*.yaml
 
 # Ignore experimentation area
 dev_experiments/
