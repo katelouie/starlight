@@ -685,3 +685,355 @@ def search_objects(query: str) -> list[CelestialObjectInfo]:
             results.append(obj_info)
 
     return results
+
+
+# ============================================================================
+# ASPECT REGISTRY
+# ============================================================================
+
+
+@dataclass(frozen=True)
+class AspectInfo:
+    """
+    Complete metadata for an astrological aspect.
+
+    This represents everything we know about an aspect - from its technical
+    name and exact angle to its glyph, color, and visualization metadata.
+    """
+
+    # Core Identity
+    name: str  # Primary canonical name (e.g., "Conjunction", "Trine")
+    angle: float  # Exact angle in degrees (0, 60, 90, 120, 180, etc.)
+
+    # Classification
+    category: str  # "Major", "Minor", "Harmonic"
+    family: str | None = None  # "Ptolemaic", "Quintile Series", "Septile Series", etc.
+
+    # Visual Representation
+    glyph: str = ""  # Unicode astrological symbol (e.g., "☌", "□", "△")
+    color: str = "#CCCCCC"  # Default hex color for visualization
+
+    # Default Orb Settings
+    default_orb: float = 2.0  # Default orb allowance in degrees
+
+    # Alternative Names & Documentation
+    aliases: list[str] = field(
+        default_factory=list
+    )  # Alternative names (e.g., ["Inconjunct"] for Quincunx)
+    description: str = ""  # Human-readable explanation
+
+    # Visualization Settings (Optional/Advanced)
+    metadata: dict[str, Any] = field(
+        default_factory=dict
+    )  # Extensible for line_width, dash_pattern, opacity, etc.
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.angle}°)"
+
+
+ASPECT_REGISTRY: dict[str, AspectInfo] = {
+    # ========================================================================
+    # MAJOR ASPECTS (Ptolemaic)
+    # ========================================================================
+    "Conjunction": AspectInfo(
+        name="Conjunction",
+        angle=0.0,
+        category="Major",
+        family="Ptolemaic",
+        glyph="☌",
+        color="#34495E",
+        default_orb=8.0,
+        aliases=["Conjunct"],  # Legacy compatibility
+        description="Two planets in the same zodiacal position, blending and merging their energies.",
+        metadata={"line_width": 2.0, "dash_pattern": "1,0", "opacity": 0.8},
+    ),
+    "Sextile": AspectInfo(
+        name="Sextile",
+        angle=60.0,
+        category="Major",
+        family="Ptolemaic",
+        glyph="⚹",
+        color="#27AE60",
+        default_orb=6.0,
+        description="A harmonious 60° aspect indicating opportunity, cooperation, and ease.",
+        metadata={"line_width": 1.5, "dash_pattern": "6,2", "opacity": 0.7},
+    ),
+    "Square": AspectInfo(
+        name="Square",
+        angle=90.0,
+        category="Major",
+        family="Ptolemaic",
+        glyph="□",
+        color="#F39C12",
+        default_orb=8.0,
+        description="A challenging 90° aspect creating tension, friction, and motivation to act.",
+        metadata={"line_width": 1.5, "dash_pattern": "4,2", "opacity": 0.8},
+    ),
+    "Trine": AspectInfo(
+        name="Trine",
+        angle=120.0,
+        category="Major",
+        family="Ptolemaic",
+        glyph="△",
+        color="#3498DB",
+        default_orb=8.0,
+        description="A flowing 120° aspect indicating harmony, talent, and natural ability.",
+        metadata={"line_width": 2.0, "dash_pattern": "1,0", "opacity": 0.8},
+    ),
+    "Opposition": AspectInfo(
+        name="Opposition",
+        angle=180.0,
+        category="Major",
+        family="Ptolemaic",
+        glyph="☍",
+        color="#E74C3C",
+        default_orb=8.0,
+        description="A polarizing 180° aspect representing awareness through contrast and balance.",
+        metadata={"line_width": 2.0, "dash_pattern": "1,0", "opacity": 0.8},
+    ),
+    # ========================================================================
+    # MINOR ASPECTS
+    # ========================================================================
+    "Semisextile": AspectInfo(
+        name="Semisextile",
+        angle=30.0,
+        category="Minor",
+        glyph="⚺",
+        color="#95A5A6",
+        default_orb=3.0,
+        aliases=["Semi-Sextile"],  # Hyphenated variant
+        description="A subtle 30° aspect indicating slight friction requiring minor adjustments.",
+        metadata={"line_width": 0.8, "dash_pattern": "3,3", "opacity": 0.6},
+    ),
+    "Semisquare": AspectInfo(
+        name="Semisquare",
+        angle=45.0,
+        category="Minor",
+        glyph="∠",
+        color="#E67E22",
+        default_orb=3.0,
+        aliases=["Semi-Square", "Octile"],
+        description="A mildly challenging 45° aspect creating irritation and the need for action.",
+        metadata={"line_width": 0.8, "dash_pattern": "3,3", "opacity": 0.6},
+    ),
+    "Sesquisquare": AspectInfo(
+        name="Sesquisquare",
+        angle=135.0,
+        category="Minor",
+        glyph="⚼",
+        color="#D68910",
+        default_orb=3.0,
+        aliases=["Sesquiquadrate", "Trioctile"],
+        description="A moderately challenging 135° aspect creating tension and restlessness.",
+        metadata={"line_width": 0.8, "dash_pattern": "3,3", "opacity": 0.6},
+    ),
+    "Quincunx": AspectInfo(
+        name="Quincunx",
+        angle=150.0,
+        category="Minor",
+        glyph="⚻",
+        color="#9B59B6",
+        default_orb=3.0,
+        aliases=["Inconjunct"],
+        description="A complex 150° aspect requiring adjustment, adaptation, and integration.",
+        metadata={"line_width": 1.0, "dash_pattern": "2,2", "opacity": 0.7},
+    ),
+    # ========================================================================
+    # QUINTILE FAMILY (Harmonic 5)
+    # ========================================================================
+    "Quintile": AspectInfo(
+        name="Quintile",
+        angle=72.0,
+        category="Harmonic",
+        family="Quintile Series",
+        glyph="Q",
+        color="#16A085",
+        default_orb=1.0,
+        description="A creative 72° aspect (H5) indicating talent, skill, and unique gifts.",
+        metadata={"line_width": 0.8, "dash_pattern": "2,4", "opacity": 0.5},
+    ),
+    "Biquintile": AspectInfo(
+        name="Biquintile",
+        angle=144.0,
+        category="Harmonic",
+        family="Quintile Series",
+        glyph="bQ",
+        color="#138D75",
+        default_orb=1.0,
+        description="A creative 144° aspect (H5) emphasizing artistic expression and innovation.",
+        metadata={"line_width": 0.8, "dash_pattern": "2,4", "opacity": 0.5},
+    ),
+    # ========================================================================
+    # SEPTILE FAMILY (Harmonic 7)
+    # ========================================================================
+    "Septile": AspectInfo(
+        name="Septile",
+        angle=51.42857,  # 360/7
+        category="Harmonic",
+        family="Septile Series",
+        glyph="S",
+        color="#8E44AD",
+        default_orb=1.0,
+        description="A mystical 51.43° aspect (H7) indicating fate, destiny, and spiritual purpose.",
+        metadata={"line_width": 0.6, "dash_pattern": "1,5", "opacity": 0.4},
+    ),
+    "Biseptile": AspectInfo(
+        name="Biseptile",
+        angle=102.85714,  # 360*2/7
+        category="Harmonic",
+        family="Septile Series",
+        glyph="bS",
+        color="#7D3C98",
+        default_orb=1.0,
+        description="A mystical 102.86° aspect (H7) emphasizing karmic patterns and destiny.",
+        metadata={"line_width": 0.6, "dash_pattern": "1,5", "opacity": 0.4},
+    ),
+    "Triseptile": AspectInfo(
+        name="Triseptile",
+        angle=154.28571,  # 360*3/7
+        category="Harmonic",
+        family="Septile Series",
+        glyph="tS",
+        color="#6C3483",
+        default_orb=1.0,
+        description="A mystical 154.29° aspect (H7) indicating fated encounters and spiritual gifts.",
+        metadata={"line_width": 0.6, "dash_pattern": "1,5", "opacity": 0.4},
+    ),
+    # ========================================================================
+    # NOVILE FAMILY (Harmonic 9)
+    # ========================================================================
+    "Novile": AspectInfo(
+        name="Novile",
+        angle=40.0,
+        category="Harmonic",
+        family="Novile Series",
+        glyph="N",
+        color="#2980B9",
+        default_orb=1.0,
+        description="A spiritual 40° aspect (H9) indicating completion, perfection, and higher wisdom.",
+        metadata={"line_width": 0.6, "dash_pattern": "1,5", "opacity": 0.4},
+    ),
+    "Binovile": AspectInfo(
+        name="Binovile",
+        angle=80.0,
+        category="Harmonic",
+        family="Novile Series",
+        glyph="bN",
+        color="#21618C",
+        default_orb=1.0,
+        aliases=["Seminovile"],
+        description="A spiritual 80° aspect (H9) emphasizing joy, bliss, and divine connection.",
+        metadata={"line_width": 0.6, "dash_pattern": "1,5", "opacity": 0.4},
+    ),
+    "Quadnovile": AspectInfo(
+        name="Quadnovile",
+        angle=160.0,
+        category="Harmonic",
+        family="Novile Series",
+        glyph="qN",
+        color="#1A5276",
+        default_orb=1.0,
+        description="A spiritual 160° aspect (H9) indicating spiritual mastery and enlightenment.",
+        metadata={"line_width": 0.6, "dash_pattern": "1,5", "opacity": 0.4},
+    ),
+}
+
+
+# ============================================================================
+# ASPECT REGISTRY HELPER FUNCTIONS
+# ============================================================================
+
+
+def get_aspect_info(name: str) -> AspectInfo | None:
+    """
+    Get aspect information by name.
+
+    Args:
+        name: The aspect name to look up (e.g., "Conjunction", "Trine")
+
+    Returns:
+        AspectInfo object if found, None otherwise
+    """
+    return ASPECT_REGISTRY.get(name)
+
+
+def get_aspect_by_alias(alias: str) -> AspectInfo | None:
+    """
+    Get aspect information by alias.
+
+    Args:
+        alias: An alternative name for the aspect (e.g., "Conjunct", "Inconjunct")
+
+    Returns:
+        AspectInfo object if found, None otherwise
+    """
+    alias_lower = alias.lower()
+    for aspect_info in ASPECT_REGISTRY.values():
+        if alias_lower in [a.lower() for a in aspect_info.aliases]:
+            return aspect_info
+    return None
+
+
+def get_aspects_by_category(category: str) -> list[AspectInfo]:
+    """
+    Get all aspects in a specific category.
+
+    Args:
+        category: The category to filter by ("Major", "Minor", "Harmonic")
+
+    Returns:
+        List of AspectInfo matching the category
+    """
+    return [
+        aspect_info
+        for aspect_info in ASPECT_REGISTRY.values()
+        if aspect_info.category == category
+    ]
+
+
+def get_aspects_by_family(family: str) -> list[AspectInfo]:
+    """
+    Get all aspects in a specific family.
+
+    Args:
+        family: The family to filter by (e.g., "Ptolemaic", "Quintile Series", "Septile Series")
+
+    Returns:
+        List of AspectInfo matching the family
+    """
+    return [
+        aspect_info
+        for aspect_info in ASPECT_REGISTRY.values()
+        if aspect_info.family == family
+    ]
+
+
+def search_aspects(query: str) -> list[AspectInfo]:
+    """
+    Search for aspects by name, alias, or description.
+
+    Args:
+        query: Search string (case-insensitive)
+
+    Returns:
+        List of matching AspectInfo objects
+    """
+    query_lower = query.lower()
+    results = []
+
+    for aspect_info in ASPECT_REGISTRY.values():
+        # Check name
+        if query_lower in aspect_info.name.lower():
+            results.append(aspect_info)
+            continue
+
+        # Check aliases
+        if any(query_lower in alias.lower() for alias in aspect_info.aliases):
+            results.append(aspect_info)
+            continue
+
+        # Check description
+        if query_lower in aspect_info.description.lower():
+            results.append(aspect_info)
+
+    return results

@@ -6,6 +6,7 @@ different systems for calculating aspect orbs.
 """
 
 from starlight.core.models import CelestialPosition
+from starlight.core.registry import ASPECT_REGISTRY
 
 # --- Engine 1: The Simple Default ---
 
@@ -25,22 +26,14 @@ class SimpleOrbEngine:
     ) -> None:
         """
         Args:
-            orb_map: A dictionary of {aspect_name: orb_value}. Uses a default set
-                if None.
+            orb_map: A dictionary of {aspect_name: orb_value}. If None, uses
+                default orbs from the aspect registry.
             fallback_orb: Configurable default orb for unmapped aspects
         """
+        # Use registry default orbs if no custom map provided
         self._orbs = orb_map or {
-            "Conjunction": 8.0,
-            "Sextile": 6.0,
-            "Square": 8.0,
-            "Trine": 8.0,
-            "Opposition": 8.0,
-            "Quincunx": 3.0,
-            "Semisquare": 3.0,
-            "Sesquisquare": 3.0,
-            "Semisextile": 3.0,
-            "Quintile": 1.0,
-            "Biquintile": 1.0,
+            aspect_info.name: aspect_info.default_orb
+            for aspect_info in ASPECT_REGISTRY.values()
         }
         self._default_orb = fallback_orb or 2.0  # Fallback for unlisted aspects
 

@@ -10,15 +10,15 @@ class AspectConfig:
     Will be passed directly into the AspectEngine.
     """
 
-    # Which aspects to calculate and their angles
-    aspects: dict[str, int] = field(
-        default_factory=lambda: {
-            "Conjunction": 0,
-            "Sextile": 60,
-            "Square": 90,
-            "Trine": 120,
-            "Opposition": 180,
-        }
+    # Which aspects to calculate (by name - angles are looked up from registry)
+    aspects: list[str] = field(
+        default_factory=lambda: [
+            "Conjunction",
+            "Sextile",
+            "Square",
+            "Trine",
+            "Opposition",
+        ]
     )
 
     # Which object types to include in aspect calculations

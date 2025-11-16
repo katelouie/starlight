@@ -9,6 +9,7 @@ from typing import Union
 from rich.console import Console
 from rich.table import Table
 
+from starlight.core.registry import get_aspect_by_alias, get_aspect_info
 from starlight.objects import (
     ASPECTS,
     format_long,
@@ -16,13 +17,42 @@ from starlight.objects import (
     get_ephemeris_object,
 )
 
-ASPECT_COLORS = {
-    "Conjunct": "white",
-    "Square": "red",
-    "Opposition": "red",
-    "Sextile": "green",
-    "Trine": "green",
-}
+
+def get_aspect_color_for_terminal(aspect_name: str) -> str:
+    """
+    Get terminal color name for an aspect based on registry color.
+
+    Maps hex colors from the aspect registry to terminal color names.
+
+    Args:
+        aspect_name: Aspect name (e.g., "Conjunction", "Conjunct")
+
+    Returns:
+        Terminal color name (e.g., "red", "green", "white")
+    """
+    # Try exact name first
+    aspect_info = get_aspect_info(aspect_name)
+    if not aspect_info:
+        # Try as alias (e.g., "Conjunct" → "Conjunction")
+        aspect_info = get_aspect_by_alias(aspect_name)
+
+    if not aspect_info:
+        return "white"  # Default fallback
+
+    # Map hex colors to terminal color names
+    color_map = {
+        "#E74C3C": "red",      # Opposition, Square (challenging)
+        "#F39C12": "red",      # Square (also challenging)
+        "#3498DB": "green",    # Trine (harmonious)
+        "#27AE60": "green",    # Sextile (harmonious)
+        "#34495E": "white",    # Conjunction (neutral)
+        "#9B59B6": "magenta",  # Quincunx
+        "#95A5A6": "white",    # Semisextile
+        "#E67E22": "yellow",   # Semisquare
+        "#D68910": "yellow",   # Sesquisquare
+    }
+
+    return color_map.get(aspect_info.color, "white")
 
 
 def create_table_sect(chart, plain: bool = True) -> str:
@@ -265,7 +295,7 @@ def create_table_aspects(chart, plain: bool, fmt: str = "plain") -> Union[Table,
                                 name2 = get_ephemeris_object(other_obj.swe)["alias"]
                             else:
                                 name2 = get_ephemeris_object(other_obj.name)["alias"]
-                            color = ASPECT_COLORS.get(a, "white")
+                            color = get_aspect_color_for_terminal(a)
                             if fmt == "word":
                                 output += f"{name1} is {a} {name2} ({round(aspect[1])}° orb {aspect[3]}).\n"
                             else:

@@ -10,6 +10,7 @@ from itertools import combinations
 from starlight.core.config import AspectConfig
 from starlight.core.models import Aspect, CelestialPosition, ObjectType
 from starlight.core.protocols import OrbEngine
+from starlight.core.registry import get_aspect_by_alias, get_aspect_info
 
 # --- Helper Functions (Shared Logic) ---
 
@@ -106,8 +107,19 @@ class ModernAspectEngine:
         for obj1, obj2 in combinations(valid_objects, 2):
             distance = _angular_distance(obj1.longitude, obj2.longitude)
 
-            # 3. Check against each aspect angle in our config
-            for aspect_name, aspect_angle in self._config.aspects.items():
+            # 3. Check against each aspect in our config
+            for aspect_name in self._config.aspects:
+                # Look up the aspect angle from the registry
+                aspect_info = get_aspect_info(aspect_name)
+                if not aspect_info:
+                    # Try as alias
+                    aspect_info = get_aspect_by_alias(aspect_name)
+
+                if not aspect_info:
+                    # Skip unknown aspects
+                    continue
+
+                aspect_angle = aspect_info.angle
                 actual_orb = abs(distance - aspect_angle)
 
                 # 4. Ask the OrbEngine for the allowance

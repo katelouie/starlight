@@ -12,6 +12,7 @@ from typing import Any, Protocol
 
 from starlight.core.models import (
     Aspect,
+    CalculatedChart,
     CelestialPosition,
     ChartDateTime,
     ChartLocation,
@@ -219,5 +220,88 @@ class ChartComponent(Protocol):
 
         Returns:
             List of additional CelestialPosition objects
+        """
+        ...
+
+
+class ReportSection(Protocol):
+    """
+    Protocol for report sections.
+
+    Each section knows how to extract data from a CalculatedChart
+    and format it into a standardized structure that renderers can consume.
+
+    Why a protocol?
+    - Extensibility: Users can create custom sections
+    - Type safety: MyPy/Pyright can verify implementations
+    - No inheritance required: Keep components lightweight
+    """
+
+    @property
+    def section_name(self) -> str:
+        """
+        Human-readable name for this section.
+
+        Used as a header in rendered output.
+        """
+        ...
+
+    def generate_data(self, chart: CalculatedChart) -> dict[str, Any]:
+        """
+        Extract and structure data from the chart.
+
+        Returns a standardized dictionary format that renderers understand:
+        {
+            "type": "table" | "text" | "key_value",
+            "headers": [...],      # For tables
+            "rows": [...],         # For tables
+            "text": "...",         # For text blocks
+            "data": {...},         # For key-value pairs
+        }
+
+        Args:
+            chart: The calculated chart to extract data from
+
+        Returns:
+            Structured data dictionary
+        """
+        ...
+
+
+class ReportRenderer(Protocol):
+    """
+    Protocol for output renderers.
+
+    Renderers take structured section data and format it for a specific
+    output medium (terminal, plain text, HTML, etc.).
+
+    Why separate renderers?
+    - Same data, multiple output formats
+    - Easy to add new formats without touching section code
+    - Testable in isolation
+    """
+
+    def render_section(self, section_name: str, section_data: dict[str, Any]) -> str:
+        """
+        Render a single section.
+
+        Args:
+            section_name: Header for the section
+            section_data: Structured data from section.generate_data()
+
+        Returns:
+            Formatted string for this section
+        """
+        ...
+
+    def render_report(self, sections: list[tuple[str, dict[str, Any]]]) -> str:
+        """
+        Render a complete report with multiple sections.
+
+        Args:
+            sections: List of (section_name, section_data) tuples
+
+        Returns:
+            Complete formatted report
         """
         ...

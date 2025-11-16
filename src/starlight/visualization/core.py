@@ -14,7 +14,12 @@ from typing import Any, Protocol
 import svgwrite
 
 from starlight.core.models import CalculatedChart
-from starlight.core.registry import get_object_info
+from starlight.core.registry import (
+    ASPECT_REGISTRY,
+    get_aspect_by_alias,
+    get_aspect_info,
+    get_object_info,
+)
 
 # Legacy glyph dictionaries - kept for backwards compatibility
 # Prefer using the registry via get_glyph() helper function
@@ -67,20 +72,6 @@ ANGLE_GLYPHS = {
     "Vertex": "Vx",
 }
 
-ASPECT_GLYPHS = {
-    # === Major Aspects (Ptolemaic) ===
-    "Conjunction": "☌",  # 0°
-    "Sextile": "⚹",  # 60°
-    "Square": "□",  # 90°
-    "Trine": "△",  # 120°
-    "Opposition": "☍",  # 180°
-    # === Minor Aspects ===
-    "Quincunx": "⚻",  # 150° (Also known as Inconjunct)
-    "Semi-Sextile": "⚺",  # 30°
-    "Semi-Square": "∠",  # 45°
-    "Sesquiquadrate": "⚼",  # 135° (Also known as Sesquisquare)
-}
-
 
 def get_glyph(object_name: str) -> dict[str, str]:
     """
@@ -126,6 +117,30 @@ def get_display_name(object_name: str) -> str:
     if obj_info:
         return obj_info.display_name
     return object_name
+
+
+def get_aspect_glyph(aspect_name: str) -> str:
+    """
+    Get the glyph for an astrological aspect.
+
+    Args:
+        aspect_name: Aspect name (e.g., "Conjunction", "Trine", "Conjunct")
+
+    Returns:
+        Unicode glyph string or abbreviation if not found
+    """
+    # Try exact name first
+    aspect_info = get_aspect_info(aspect_name)
+    if aspect_info and aspect_info.glyph:
+        return aspect_info.glyph
+
+    # Try as alias (e.g., "Conjunct" → "Conjunction")
+    aspect_info = get_aspect_by_alias(aspect_name)
+    if aspect_info and aspect_info.glyph:
+        return aspect_info.glyph
+
+    # Fallback: use first 3 characters
+    return aspect_name[:3]
 
 
 class ChartRenderer:
@@ -216,12 +231,16 @@ class ChartRenderer:
                 "retro_color": "#E74C3C",
             },
             "aspects": {
-                "Conjunct": {"color": "#34495E", "width": 2.0, "dash": "1,0"},
-                "Opposition": {"color": "#E74C3C", "width": 2.0, "dash": "1,0"},
-                "Square": {"color": "#F39C12", "width": 1.5, "dash": "4,2"},
-                "Trine": {"color": "#3498DB", "width": 2.0, "dash": "1,0"},
-                "Sextile": {"color": "#27AE60", "width": 1.5, "dash": "6,2"},
-                "Quincunx": {"color": "#9B59B6", "width": 1.0, "dash": "2,2"},
+                **{
+                    aspect_info.name: {
+                        "color": aspect_info.color,
+                        "width": aspect_info.metadata.get("line_width", 1.5),
+                        "dash": aspect_info.metadata.get("dash_pattern", "1,0"),
+                    }
+                    for aspect_info in ASPECT_REGISTRY.values()
+                    if aspect_info.category
+                    in ["Major", "Minor"]  # Only visualize major/minor
+                },
                 "default": {"color": "#BDC3C7", "width": 0.5, "dash": "2,2"},
                 "line_color": "#BBBBBB",
                 "background_color": "#FFFFFF",

@@ -229,6 +229,10 @@ class ArabicPart(Object):
         self._make_sign_pos()  # Add sign positioning
 
 
+# DEPRECATED: Use starlight.core.registry.ASPECT_REGISTRY instead.
+# This constant is kept for backward compatibility with legacy code only.
+# The aspect registry provides comprehensive metadata including glyphs, colors,
+# harmonics, and visualization settings.
 ASPECTS = {
     "Conjunct": {"degree": 0, "orb": 8},
     "Sextile": {"degree": 60, "orb": 8},
