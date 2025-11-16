@@ -9,6 +9,7 @@ import datetime as dt
 from typing import Any
 
 from starlight.core.models import CalculatedChart, ObjectType
+from starlight.core.registry import get_aspects_by_category
 
 
 class ChartOverviewSection:
@@ -176,3 +177,153 @@ class AspectSection:
         Args:
             mode: "all", "major", "minor", or "harmonic"
         """
+        if mode not in ("all", "major", "minor", "harmonic"):
+            raise ValueError(
+                f"mode must be 'all', 'major', 'minor', or 'harmonic', got {mode}"
+            )
+        if sort_by not in ("orb", "planet", "aspect_type"):
+            raise ValueError(
+                f"sort_by must be 'orb', 'planet', or 'aspect_type', got {sort_by}"
+            )
+
+        self.mode = mode
+        self.orb_display = orbs
+        self.sort_by = sort_by
+
+    @property
+    def section_name(self) -> str:
+        if self.mode == "major":
+            return "Major Aspects"
+        elif self.mode == "minor":
+            return "Minor Aspects"
+        elif self.mode == "harmonic":
+            return "Harmonic Aspects"
+        return "Aspects"
+
+    def generate_data(self, chart: CalculatedChart) -> dict[str, Any]:
+        """Generate aspects table."""
+        # Filer aspects based on mode
+        aspects = chart.aspects
+        aspect_category = self.mode.title()
+        allowed_aspects = [a.name for a in get_aspects_by_category(aspect_category)]
+
+        aspects = [a for a in aspects if a.aspect_name in allowed_aspects]
+
+        # Sort aspects
+        if self.sort_by == "orb":
+            aspects = sorted(aspects, key=lambda a: a.orb)
+        elif self.sort_by == "aspect_type":
+            aspects = sorted(aspects, key=lambda a: a.aspect_name)
+        # planet sort: keep as-is (usually sorted by first planet already)
+
+        # Build headers
+        headers = ["Planet 1", "Aspect", "Planet 2"]
+        if self.orb_display:
+            headers.append("Orb")
+            headers.append("Applying")
+
+        # Build rows
+        rows = []
+        for aspect in aspects:
+            row = [aspect.object1.name, aspect.aspect_name, aspect.object2.name]
+
+            if self.orb_display:
+                row.append(f"{aspect.orb:.2f}°")
+
+                # Applying/separating
+                if aspect.is_applying is None:
+                    row.append("—")
+                elif aspect.is_applying:
+                    row.append("A→")  # Applying
+                else:
+                    row.append("←S")  # Separating
+
+            rows.append(row)
+
+        return {"type": "table", "headers": headers, "rows": rows}
+
+
+class MidpointSection:
+    """
+    Table of midpoints.
+
+    Shows:
+    - Midpoint pair (e.g., "Sun/Moon")
+    - Degree position
+    - Sign
+    """
+
+    CORE_OBJECTS = {"Sun", "Moon", "ASC", "MC"}
+
+    def __init__(self, mode: str = "all", threshold: int | None = None) -> None:
+        """
+        Initialize midpoint section.
+
+        Args:
+            mode: "all" or "core" (only Sun/Moon/ASC/MC midpoints)
+            threshold: Only show top N midpoints
+        """
+        if mode not in ("all", "core"):
+            raise ValueError(f"mode must be 'all' or 'core', got {mode}")
+
+        self.mode = mode
+        self.threshold = threshold
+
+    @property
+    def section_name(self) -> str:
+        if self.mode == "core_only":
+            return "Core Midpoints (Sun/Moon/ASC/MC)"
+        return "Midpoints"
+
+    def generate_data(self, chart: CalculatedChart) -> dict[str, Any]:
+        """Generate midpoints table."""
+        # Get midpoints
+        midpoints = [p for p in chart.positions if p.object_type == ObjectType.MIDPOINT]
+        # Filter to core midpoints if requested
+        if self.mode == "core":
+            midpoints = [mp for mp in midpoints if self._is_core_midpoint(mp.name)]
+        # Apply threshold (limit to top N)
+        if self.threshold:
+            midpoints = midpoints[: self.threshold]
+        # Build table
+        headers = ["Midpoint", "Position"]
+        rows = []
+
+        for mp in midpoints:
+            # Parse midpoint name (e.g., "Midpoint:Sun/Moon")
+            name_parts = mp.name.split(":")
+            if len(name_parts) > 1:
+                pair_name = name_parts[1]
+            else:
+                pair_name = mp.name
+
+            # Position
+            degree = int(mp.sign_degree)
+            minute = int((mp.sign_degree % 1) * 60)
+            position = f"{degree}° {mp.sign} {minute:02d}'"
+
+            rows.append([pair_name, position])
+
+        return {
+            "type": "table",
+            "headers": headers,
+            "rows": rows,
+        }
+
+    def _is_core_midpoint(self, midpoint_name: str) -> bool:
+        """Check if midpoint involves core objects."""
+        # Midpoint name format: "Midpoint:Sun/Moon" or "Midpoint:Sun/Moon (indirect)"
+        if ":" not in midpoint_name:
+            return False
+
+        pair_part = midpoint_name.split(":")[1]
+        # Remove "(indirect)" if present
+        pair_part = pair_part.replace(" (indirect)", "")
+
+        # Split pair
+        objects = pair_part.split("/")
+        if len(objects) != 2:
+            return False
+
+        # Check if both are core objects
+        return all(obj in self.CORE_OBJECTS for obj in objects)

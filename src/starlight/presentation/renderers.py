@@ -1,111 +1,227 @@
 """
-Report Renderers
+Output renderers for reports.
 
-This module provides concrete renderer classes.
-Each class knows how to format a single "report section"
-(like a header or a table) into a specific output.
+Renderers take structured data from sections and format it for different
+output mediums (terminal with Rich, plain text, PDF, HTML, etc.).
 """
 
 from typing import Any
 
-from rich.console import Console, Group
-from rich.panel import Panel
-from rich.table import Table
-from rich.text import Text
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich.text import Text
 
-# --- Rich (Pretty Terminal) Renderer ---
-
-
-class RichReportRenderer:
-    """Renders report sections using the 'rich' library."""
-
-    def render_header(self, header_data: dict[str, Any]) -> Panel:
-        """Renders the header as a rich Panel."""
-        header_text = Text.assemble(
-            (f"{header_data['name']}\n", "bold white"),
-            (f"{header_data['datetime']}\n", "dim"),
-            (f"{header_data['location']}\n", "dim"),
-            (f"House System: {header_data['house_system']}", "dim italic"),
-        )
-        return Panel(
-            header_text, title=header_data["title"], expand=False, padding=(1, 2)
-        )
-
-    def render_table(self, table_data: dict[str, Any]) -> Table:
-        """Renders a data block as a rich Table."""
-        table = Table(
-            title=table_data.get("title"), title_style="bold magenta", padding=(0, 1)
-        )
-
-        for header in table_data.get("headers", []):
-            justify = "right" if header in ("Position", "Orb") else "left"
-            style = "bold cyan" if header in ("Object", "Angle", "Point") else ""
-            table.add_column(header, justify=justify, style=style, no_wrap=True)
-
-        for row in table_data.get("rows", []):
-            table.add_row(*row)
-
-        return table
-
-    def render_group(self, renderables: list[Any]) -> Group:
-        """Groups multiple rich renderables for printing."""
-        return Group(*renderables)
+    RICH_AVAILABLE = True
+except ImportError:
+    RICH_AVAILABLE = False
 
 
-class PlainTextReportRenderer:
+class RichTableRenderer:
     """
-    Renders report sections as clean, plain-text strings.
+    Renderer using the Rich library for beautiful terminal output.
+
+    Requires: pip install rich
+
+    Features:
+    - Colored tables with borders
+    - Automatic column width adjustment
+    - Unicode box characters
     """
 
-    def __init__(self, col_width: int = 18):
-        self.col_width = col_width  # Simple width for alignment
+    def __init__(self) -> None:
+        """Initialize Rich renderer."""
+        if not RICH_AVAILABLE:
+            raise ImportError(
+                "Rich library not available. Install with: pip install rich"
+            )
 
-    def _divider(self, char: str = "-") -> str:
-        # Simple divider, can be made smarter
-        return char * (self.col_width * 3 + 4)
+        self.console = Console()
 
-    def render_header(self, header_data: Dict[str, Any]) -> str:
-        """Renders the header as text."""
+    def render_section(self, section_name: str, section_data: dict[str, Any]) -> str:
+        """Render a single section with Rich."""
+        data_type = section_data.get("type")
+
+        if data_type == "table":
+            return self._render_table(section_name, section_data)
+        elif data_type == "key_value":
+            return self._render_key_value(section_name, section_data)
+        elif data_type == "text":
+            return self._render_text(section_name, section_data)
+        else:
+            return f"Unknown section type: {data_type}"
+
+    def render_report(self, sections: list[tuple[str, dict[str, Any]]]) -> str:
+        """
+        Render complete report.
+
+        Why capture to string instead of direct print?
+        - Allows testing
+        - User can print or save to file
+        - More flexible
+        """
+        output_parts = []
+
+        for section_name, section_data in sections:
+            # Render section header
+            header = Text(f"\n{section_name}", style="bold cyan")
+            output_parts.append(header)
+            output_parts.append(Text("─" * len(section_name), style="cyan"))
+
+            # Render section content
+            content = self.render_section(section_name, section_data)
+            output_parts.append(content)
+
+        # Use Rich console to render to string
+        with self.console.capture() as capture:
+            for part in output_parts:
+                if isinstance(part, str):
+                    self.console.print(part)
+                else:
+                    self.console.print(part)
+
+        return capture.get()
+
+    def _render_table(self, section_name: str, data: dict[str, Any]) -> str:
+        """Render table data with Rich."""
+        table = Table(title=None, show_header=True, header_style="bold magenta")
+
+        # Add columns
+        for header in data["headers"]:
+            table.add_column(header)
+
+        # Add rows
+        for row in data["rows"]:
+            # Convert all values to strings
+            str_row = [str(cell) for cell in row]
+            table.add_row(*str_row)
+
+        with self.console.capture() as capture:
+            self.console.print(table)
+
+        return capture.get()
+
+    def _render_key_value(self, section_name: str, data: dict[str, Any]) -> str:
+        """Render key-value data."""
+        output = []
+
+        for key, value in data["data"].items():
+            # Format: "Key: Value" with key in bold
+            line = Text()
+            line.append(f"{key}: ", style="bold")
+            line.append(str(value))
+            output.append(line)
+
+        with self.console.capture() as capture:
+            for line in output:
+                self.console.print(line)
+
+        return capture.get()
+
+    def _render_text(self, section_name: str, data: dict[str, Any]) -> str:
+        """Render plain text block."""
+        return data.get("text", "")
+
+
+class PlainTextRenderer:
+    """
+    Plain text renderer with no dependencies.
+
+    Creates simple ASCII tables and formatted text suitable for:
+    - Log files
+    - Email
+    - Systems without Rich library
+    - Piping to other tools
+    """
+
+    def render_section(self, section_name: str, section_data: dict[str, Any]) -> str:
+        """Render a single section as plain text."""
+        data_type = section_data.get("type")
+
+        if data_type == "table":
+            return self._render_table(section_name, section_data)
+        elif data_type == "key_value":
+            return self._render_key_value(section_name, section_data)
+        elif data_type == "text":
+            return section_data.get("text", "")
+        else:
+            return f"Unknown section type: {data_type}"
+
+    def render_report(self, sections: list[tuple[str, dict[str, Any]]]) -> str:
+        """Render complete report as plain text."""
+        parts = []
+
+        for section_name, section_data in sections:
+            # Section header
+            parts.append(f"\n{section_name}")
+            parts.append("=" * len(section_name))
+
+            # Section content
+            content = self.render_section(section_name, section_data)
+            parts.append(content)
+            parts.append("")  # Blank line between sections
+
+        return "\n".join(parts)
+
+    def _render_table(self, section_name: str, data: dict[str, Any]) -> str:
+        """
+        Render ASCII table.
+
+        Algorithm:
+        1. Calculate column widths based on content
+        2. Create header row with separators
+        3. Create data rows
+        4. Use | and - for borders
+        """
+        headers = data["headers"]
+        rows = data["rows"]
+
+        # Convert all cells to strings
+        str_rows = [[str(cell) for cell in row] for row in rows]
+
+        # Calculate column widths
+        col_widths = []
+        for i, header in enumerate(headers):
+            # Start with header width
+            width = len(header)
+
+            # Check all row values
+            for row in str_rows:
+                if i < len(row):
+                    width = max(width, len(row[i]))
+
+            col_widths.append(width)
+
+        # Build table
         lines = []
-        lines.append(self._divider("="))
-        lines.append(f"| {header_data['title'].upper()} |")
-        lines.append(self._divider("="))
-        lines.append(header_data["name"])
-        lines.append(header_data["datetime"])
-        lines.append(header_data["location"])
-        lines.append(f"House System: {header_data['house_system']}")
-        lines.append(self._divider())
+
+        # Header row
+        header_cells = [h.ljust(w) for h, w in zip(headers, col_widths)]
+        lines.append("| " + " | ".join(header_cells) + " |")
+
+        # Separator
+        separator_cells = ["-" * w for w in col_widths]
+        lines.append("|-" + "-|-".join(separator_cells) + "-|")
+
+        # Data rows
+        for row in str_rows:
+            # Pad row if needed
+            padded_row = row + [""] * (len(headers) - len(row))
+
+            row_cells = [cell.ljust(w) for cell, w in zip(padded_row, col_widths)]
+            lines.append("| " + " | ".join(row_cells) + " |")
+
         return "\n".join(lines)
 
-    def render_table(self, table_data: Dict[str, Any]) -> str:
-        """Renders a data block as a text table."""
+    def _render_key_value(self, section_name: str, data: dict[str, Any]) -> str:
+        """Render key-value pairs."""
         lines = []
-        title = table_data.get("title")
-        if title:
-            lines.append(f"\n--- {title} ---")
 
-        headers = table_data.get("headers", [])
-        if not headers:
-            return "\n".join(lines)
+        # Find longest key for alignment
+        max_key_len = max(len(k) for k in data["data"].keys())
 
-        num_cols = len(headers)
-
-        # Header
-        header_str = " | ".join(h.ljust(self.col_width) for h in headers)
-        lines.append(header_str)
-        lines.append("-" * len(header_str))
-
-        # Rows
-        for row in table_data.get("rows", []):
-            # Truncate or pad each item in the row
-            formatted_row = [
-                str(item).ljust(self.col_width)[: self.col_width] for item in row
-            ]
-            row_str = " | ".join(formatted_row)
-            lines.append(row_str)
+        for key, value in data["data"].items():
+            # Right-align keys for neat columns
+            lines.append(f"{key.rjust(max_key_len)}: {value}")
 
         return "\n".join(lines)
-
-    def render_group(self, renderables: List[str]) -> str:
-        """Joins multiple text sections into a single string."""
-        return "\n\n".join(renderables)

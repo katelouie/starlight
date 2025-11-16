@@ -95,7 +95,7 @@ class ReportBuilder:
     def with_aspects(
         self,
         mode: str = "all",
-        orb_display: bool = True,
+        orbs: bool = True,
         sort_by: str = "orb",  # or "planet" or "aspect_type"
     ) -> "ReportBuilder":
         """
@@ -127,7 +127,7 @@ class ReportBuilder:
         Add midpoints table.
 
         Args:
-            mode: "all" or "core_only" (Sun/Moon/ASC/MC midpoints)
+            mode: "all" or "core" (Sun/Moon/ASC/MC midpoints)
             threshold: Only show top N midpoints by importance
 
         Returns:
