@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added aspect registry helper functions: `get_aspect_info()`, `get_aspect_by_alias()`, `get_aspects_by_category()`, `get_aspects_by_family()`, `search_aspects()`
 - Added 80 comprehensive tests for both registries (celestial objects + aspects)
 - Added Notables registry for notable births and events
+- Added tests for Notables and optimized their usage to use pre-known timezones
 
 #### Engines & Calculators
 
