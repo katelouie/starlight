@@ -6,11 +6,19 @@ build-backend = "setuptools.build_meta"
 name = "starlight"
 version = "0.1.0"
 description = "A modern Python library for astrological chart calculation and visualization, built on the Swiss Ephemeris for astronomical accuracy."
-authors = [{name = "Kate Louie", email = "katehlouie@gmail.com"}]
-license = {text = "MIT"}
+authors = [{ name = "Kate Louie", email = "katehlouie@gmail.com" }]
+license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.11"
-keywords = ["astrology", "horoscope", "chart", "swiss-ephemeris", "astronomy", "natal-chart", "arabic-parts"]
+keywords = [
+    "astrology",
+    "horoscope",
+    "chart",
+    "swiss-ephemeris",
+    "astronomy",
+    "natal-chart",
+    "arabic-parts",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -41,10 +49,7 @@ dev = [
     "mypy>=1.8.0",
     "pre-commit>=3.6.0",
 ]
-docs = [
-    "mkdocs>=1.5.0",
-    "mkdocs-material>=9.5.0",
-]
+docs = ["mkdocs>=1.5.0", "mkdocs-material>=9.5.0"]
 
 [project.urls]
 Homepage = "https://github.com/katelouie/starlight"
@@ -53,7 +58,7 @@ Documentation = "https://github.com/katelouie/starlight"
 "Bug Tracker" = "https://github.com/katelouie/starlight/issues"
 
 [project.scripts]
-starlight = "starlight.cli:main"
+starlight = "starlight.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -93,9 +98,9 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501",  # line too long, handled by black
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
+    "E501", # line too long, handled by black
+    "B008", # do not perform function calls in argument defaults
+    "C901", # too complex
 ]
 
 [tool.ruff.per-file-ignores]
@@ -137,7 +142,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "-ra -q --strict-markers --strict-config"
+addopts = "-ra -v --tb=short --cov=src --cov-report=term-missing --strict-markers --strict-config"
 testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
@@ -146,8 +151,12 @@ python_functions = ["test_*"]
 [tool.coverage.run]
 source = ["src"]
 branch = true
+omit = ["*/tests/*", "*/test_*.py", "*/__pycache__/*"]
 
 [tool.coverage.report]
+precision = 2
+show_missing = true
+skip_covered = false
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -159,4 +168,9 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "class .*\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
+    "if TYPE_CHECKING:",
+    "\\.\\.\\.",                  # Ellipsis in protocol methods
 ]
+
+[tool.coverage.html]
+directory = "htmlcov"
