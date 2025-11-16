@@ -19,8 +19,6 @@ from starlight.core.models import (
     HouseCusps,
 )
 from starlight.core.native import Native
-
-# --- Engine Protocols (for Type Hinting) ---
 from starlight.core.protocols import (
     AspectEngine,
     ChartComponent,
@@ -28,12 +26,10 @@ from starlight.core.protocols import (
     HouseSystemEngine,
     OrbEngine,
 )
-
-# --- Default Engine Implementations ---
 from starlight.engines.ephemeris import SwissEphemerisEngine
 from starlight.engines.houses import PlacidusHouses
-from starlight.engines.orbs import SimpleOrbEngine  # PIVOT: New default orb engine
-from starlight.utils.cache import cached
+from starlight.engines.orbs import SimpleOrbEngine
+from starlight.utils.cache import Cache, cached, get_default_cache
 
 
 class ChartBuilder:
@@ -73,6 +69,9 @@ class ChartBuilder:
 
         # Additional components
         self._components: list[ChartComponent] = []
+
+        # Cache management
+        self._cache: Cache | None = None
 
     @classmethod
     def from_native(cls, native: Native) -> "ChartBuilder":
@@ -225,6 +224,10 @@ class ChartBuilder:
                 self._orb_engine,  # Pass the configured orb engine
             )
 
+        # Add cache statistics to the metadata
+        cache_stats = self._get_cache().get_stats()
+        component_metadata["cache_stats"] = cache_stats
+
         # Step 7: Build final chart
         return CalculatedChart(
             datetime=self._datetime,
@@ -235,3 +238,51 @@ class ChartBuilder:
             aspects=tuple(aspects),
             metadata=component_metadata,
         )
+
+    def with_cache(
+        self,
+        cache: Cache | None = None,
+        enabled: bool = True,
+        cache_dir: str = ".cache",
+        max_age_seconds: int = 86400,
+    ) -> "ChartBuilder":
+        """
+        Configure caching for this chart calculation.
+
+        Args:
+            cache: Custom cache instance (creates new one if None)
+            enabled: Whether to enable caching
+            cache_dir: Cache directory
+            max_age_seconds: Maximum cache age
+
+        Returns:
+            Self for chaining
+
+        Examples:
+            # Disable caching for this chart
+            chart = ChartBuilder.from_native(native).with_cache(enabled=False).calculate()
+
+            # Use custom cache directory
+            chart = ChartBuilder.from_native(native).with_cache(cache_dir="/tmp/my_cache").calculate()
+
+            # Use shared cache instance
+            my_cache = Cache(cache_dir="/shared/cache")
+            chart1 = ChartBuilder.from_native(n1).with_cache(cache=my_cache).calculate()
+            chart2 = ChartBuilder.from_native(n2).with_cache(cache=my_cache).calculate()
+        """
+        if cache is not None:
+            self._cache = cache
+        else:
+            self._cache = Cache(
+                cache_dir=cache_dir,
+                max_age_seconds=max_age_seconds,
+                enabled=enabled,
+            )
+
+        return self
+
+    def _get_cache(self) -> Cache:
+        """Get the cache instance for this builder."""
+        if self._cache is None:
+            return get_default_cache()
+        return self._cache

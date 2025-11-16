@@ -50,7 +50,10 @@ def get_object_sort_key(position):
         return (type_rank, registry_index)
 
     # Fallback to Swiss Ephemeris ID
-    if hasattr(position, "swiss_ephemeris_id") and position.swiss_ephemeris_id is not None:
+    if (
+        hasattr(position, "swiss_ephemeris_id")
+        and position.swiss_ephemeris_id is not None
+    ):
         return (type_rank, 10000 + position.swiss_ephemeris_id)
 
     # Final fallback: alphabetical by name
@@ -459,3 +462,35 @@ class MidpointSection:
 
         # Check if both are core objects
         return all(obj in self.CORE_OBJECTS for obj in objects)
+
+
+class CacheInfoSection:
+    """Display cache statistics in reports."""
+
+    @property
+    def section_name(self) -> str:
+        return "Cache Statistics"
+
+    def generate_data(self, chart: CalculatedChart) -> dict[str, Any]:
+        """Generate cache info from chart metadata."""
+        cache_stats = chart.metadata.get("cache_stats", {})
+
+        if not cache_stats.get("enabled", False):
+            return {"type": "text", "text": "Caching is disabled for this chart."}
+
+        data = {
+            "Cache Directory": cache_stats.get("cache_directory", "N/A"),
+            "Max Age": f"{cache_stats.get('max_age_seconds', 0) / 3600:.1f} hours",
+            "Total Files": cache_stats.get("total_cached_files", 0),
+            "Total Size": f"{cache_stats.get('cache_size_mb', 0)} MB",
+        }
+
+        # Add breakdown by type
+        by_type = cache_stats.get("by_type", {})
+        for cache_type, count in by_type.items():
+            data[f"{cache_type.title()} Files"] = count
+
+        return {
+            "type": "key_value",
+            "data": data,
+        }
