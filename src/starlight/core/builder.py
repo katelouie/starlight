@@ -26,6 +26,7 @@ from starlight.core.protocols import (
     HouseSystemEngine,
     OrbEngine,
 )
+from starlight.data import get_notable_registry
 from starlight.engines.ephemeris import SwissEphemerisEngine
 from starlight.engines.houses import PlacidusHouses
 from starlight.engines.orbs import SimpleOrbEngine
@@ -82,6 +83,39 @@ class ChartBuilder:
         # The Native object has already done all the processing.
         # We just pass its clean attributes to our "pro chef" __init__.
         return cls(native.datetime, native.location)
+
+    @classmethod
+    def from_notable(cls, name: str) -> "ChartBuilder":
+        """
+        Create a ChartBuilder from the notable registry by name.
+
+        This is a convenience method that looks up a famous birth or event
+        from the curated registry and creates a chart for it.
+
+        Args:
+            name: Name of person or event (case-insensitive)
+
+        Returns:
+            ChartBuilder instance ready to build
+
+        Raises:
+            ValueError: If name not found in registry
+
+        Example:
+            >>> chart = ChartBuilder.from_notable("Albert Einstein").build()
+            >>> chart = ChartBuilder.from_notable("marie curie").build()
+        """
+        registry = get_notable_registry()
+        notable = registry.get_by_name(name)
+        if notable is None:
+            available = len(registry)
+            raise ValueError(
+                f"No notable found: '{name}'. "
+                f"Registry contains {available} entries. "
+                f"Use get_notable_registry().get_all() to see available notables."
+            )
+        # Notable IS-A Native, so we can use from_native!
+        return cls.from_native(notable)
 
     # ---- Fluent configuration methods ---
     def with_ephemeris(self, engine: EphemerisEngine) -> "ChartBuilder":

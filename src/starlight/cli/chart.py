@@ -1,5 +1,6 @@
 """Chart generation commands."""
 
+import json
 from pathlib import Path
 
 import click
@@ -35,16 +36,22 @@ def chart_from_registry_cmd(name, output, house_system, output_format):
         starlight chart from-registry "Albert Einstein" -o einstein.svg
     """
     from starlight.core.builder import ChartBuilder
+    from starlight.data.registry import get_notable_registry
     from starlight.presentation.builder import ReportBuilder
     from starlight.visualization.drawing import draw_chart
 
     try:
+        registry = get_notable_registry()
+        notable = registry.get_by_name(name)
         # Build chart
-        chart = (
-            ChartBuilder.from_birth_registry(name)
-            .with_house_system(house_system)
-            .build()
-        )
+        if notable:
+            chart = (
+                ChartBuilder.from_native(notable)
+                .with_house_systems([house_system])
+                .calculate()
+            )
+        else:
+            raise ValueError(f"No Notable event or birth data exists for {name}")
 
         if output_format == "svg":
             output_path = output or f"{name.lower().replace(' ', '_')}.svg"
@@ -52,22 +59,22 @@ def chart_from_registry_cmd(name, output, house_system, output_format):
             click.echo(f"✅ Chart saved to: {output_path}")
 
         elif output_format == "terminal":
-            report = (
-                ReportBuilder.from_chart(chart)
+            _report = (
+                ReportBuilder()
+                .from_chart(chart)
                 .with_chart_overview()
                 .with_planet_positions()
                 .with_aspects()
-                .render("terminal")
+                .render("rich_table")
             )
 
         elif output_format == "json":
             # Export as JSON
-            import json
-
             output_path = output or f"{name.lower().replace(' ', '_')}.json"
-            # ... implement JSON export
-            click.echo(f"✅ Chart data saved to: {output_path}")
+            # TODO:... implement JSON export
+            # click.echo(f"✅ Chart data saved to: {output_path}")
+            click.echo("❌ JSON output via CLI command not yet implemented.")
 
     except ValueError as e:
         click.echo(f"❌ Error: {e}", err=True)
-        raise click.Abort()
+        raise click.Abort() from ValueError

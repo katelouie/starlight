@@ -25,6 +25,7 @@
 - [ ] Add sidereal
 - [ ] Add Vedic
 - [ ] Declinations
+- [ ] Add more notable people and events to data registry
 
 ## Testing
 

@@ -209,6 +209,106 @@ class Native:
         raise ValueError("Could not parse datetime input.")
 
 
+class Notable(Native):
+    """
+    A Native with curated metadata from the registry.
+
+    Represents famous births and notable events. The base Native class
+    handles all datetime/location parsing - Notable just adds metadata.
+
+    Example:
+        >>> notable = Notable(
+        ...     name="Albert Einstein",
+        ...     event_type="birth",
+        ...     year=1879, month=3, day=14, hour=11, minute=30,
+        ...     location_input="Ulm, Germany",
+        ...     category="scientist"
+        ... )
+        >>> chart = ChartBuilder.from_native(notable).calculate()
+    """
+
+    # Metadata fields
+    name: str
+    event_type: str  # "birth" or "event"
+    category: str
+    subcategories: list[str] | None
+    notable_for: str
+    astrological_notes: str
+    data_quality: str
+    sources: list[str] | None
+    verified: bool
+
+    def __init__(
+        self,
+        name: str,
+        event_type: str,
+        year: int,
+        month: int,
+        day: int,
+        hour: int,
+        minute: int,
+        location_input: LocationInput,  # Reuse Native's type!
+        category: str,
+        subcategories: list[str] | None = None,
+        notable_for: str = "",
+        astrological_notes: str = "",
+        data_quality: str = "C",
+        sources: list[str] | None = None,
+        verified: bool = False,
+    ):
+        """
+        Create Notable from structured data.
+
+        The datetime is assumed to be in LOCAL time for the location,
+        and Native will handle timezone conversion automatically.
+
+        Args:
+            name: Name of person or event
+            event_type: "birth" or "event"
+            year, month, day, hour, minute: Local time components
+            location_input: Location (string name, (lat, lon) tuple, or ChartLocation)
+            category: Primary category (scientist, artist, leader, etc.)
+            subcategories: Optional subcategories
+            notable_for: Brief description of why this person/event is notable
+            astrological_notes: Astrological observations
+            data_quality: Rodden rating (AA, A, B, C, DD)
+            sources: List of data sources
+            verified: Whether data has been verified
+        """
+        # Create naive datetime (local time)
+        local_dt = dt.datetime(year, month, day, hour, minute)
+
+        # Let Native handle ALL the parsing!
+        super().__init__(
+            datetime_input=local_dt,  # Naive datetime
+            location_input=location_input,  # String, tuple, or ChartLocation
+        )
+
+        # Add our metadata
+        self.name = name
+        self.event_type = event_type
+        self.category = category
+        self.subcategories = subcategories or []
+        self.notable_for = notable_for
+        self.astrological_notes = astrological_notes
+        self.data_quality = data_quality
+        self.sources = sources or []
+        self.verified = verified
+
+    @property
+    def is_birth(self) -> bool:
+        """Check if this is a birth record."""
+        return self.event_type == "birth"
+
+    @property
+    def is_event(self) -> bool:
+        """Check if this is an event record."""
+        return self.event_type == "event"
+
+    def __repr__(self) -> str:
+        return f"<Notable: {self.name} ({self.category})>"
+
+
 # --- Geocoding Helper ---
 @cached(cache_type="geocoding", max_age_seconds=604800)
 def _cached_geocode(location_name: str) -> dict:
