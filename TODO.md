@@ -6,6 +6,7 @@
 - [ ] Add PDF and HTML report options.
 - [ ] Add dignity report section (with essential and accidental modes).
 - [ ] Add midpoint aspect report section.
+- [ ] Add aspect pattern report section.
 
 ## Chart Visualization
 
