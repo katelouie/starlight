@@ -21,7 +21,15 @@ from .core import (
     get_glyph,
     get_display_name,
 )
-from .palettes import ZodiacPalette, get_palette_colors
+from .palettes import (
+    AspectPalette,
+    PlanetGlyphPalette,
+    ZodiacPalette,
+    get_aspect_palette_colors,
+    get_palette_colors,
+    get_planet_glyph_color,
+    get_sign_info_color,
+)
 
 
 class ZodiacLayer:
@@ -50,8 +58,14 @@ class ZodiacLayer:
         style = renderer.style["zodiac"]
         style.update(self.style)
 
+        # Use renderer's zodiac palette if layer palette not explicitly set
+        active_palette = self.palette
+        if active_palette == ZodiacPalette.GREY and renderer.zodiac_palette:
+            # If layer is using default and renderer has a palette, use renderer's
+            active_palette = ZodiacPalette(renderer.zodiac_palette)
+
         # Get colors for the palette
-        sign_colors = get_palette_colors(self.palette)
+        sign_colors = get_palette_colors(active_palette)
 
         # Draw 12 zodiac sign wedges (30° each)
         for sign_index in range(12):
@@ -423,9 +437,17 @@ class PlanetLayer:
             glyph_info = get_glyph(planet.name)
             x, y = renderer.polar_to_cartesian(adjusted_long, base_radius)
 
-            color = (
-                style["retro_color"] if planet.is_retrograde else style["glyph_color"]
-            )
+            # Determine glyph color using planet glyph palette if available
+            if renderer.planet_glyph_palette:
+                planet_palette = PlanetGlyphPalette(renderer.planet_glyph_palette)
+                base_color = get_planet_glyph_color(
+                    planet.name, planet_palette, style["glyph_color"]
+                )
+            else:
+                base_color = style["glyph_color"]
+
+            # Override with retro color if retrograde
+            color = style["retro_color"] if planet.is_retrograde else base_color
 
             if glyph_info["type"] == "svg":
                 # Render SVG image
@@ -479,9 +501,23 @@ class PlanetLayer:
                 )
             )
 
-            # Sign glyph
+            # Sign glyph - with optional adaptive coloring
             sign_glyph = ZODIAC_GLYPHS[int(planet.longitude // 30)]
+            sign_index = int(planet.longitude // 30)
             x_sign, y_sign = renderer.polar_to_cartesian(adjusted_long, sign_radius)
+
+            # Use adaptive sign color if enabled
+            if renderer.color_sign_info and renderer.zodiac_palette:
+                zodiac_pal = ZodiacPalette(renderer.zodiac_palette)
+                sign_color = get_sign_info_color(
+                    sign_index,
+                    zodiac_pal,
+                    renderer.style["background_color"],
+                    min_contrast=4.5,
+                )
+            else:
+                sign_color = style["info_color"]
+
             dwg.add(
                 dwg.text(
                     sign_glyph,
@@ -489,7 +525,7 @@ class PlanetLayer:
                     text_anchor="middle",
                     dominant_baseline="central",
                     font_size=style["info_size"],
-                    fill=style["info_color"],
+                    fill=sign_color,
                     font_family=renderer.style["font_family_glyphs"],
                 )
             )
@@ -664,6 +700,20 @@ class AspectLayer:
     ) -> None:
         style = renderer.style["aspects"].copy()
         style.update(self.style)
+
+        # Use renderer's aspect palette if available
+        if renderer.aspect_palette:
+            aspect_palette = AspectPalette(renderer.aspect_palette)
+            aspect_colors = get_aspect_palette_colors(aspect_palette)
+
+            # Update style with palette colors
+            for aspect_name, color in aspect_colors.items():
+                if aspect_name not in style:
+                    style[aspect_name] = {}
+                if isinstance(style[aspect_name], dict):
+                    style[aspect_name]["color"] = color
+                else:
+                    style[aspect_name] = {"color": color, "width": 1.5, "dash": "1,0"}
 
         radius = renderer.radii["aspect_ring_inner"]
 
