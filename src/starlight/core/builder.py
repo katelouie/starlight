@@ -21,6 +21,7 @@ from starlight.core.models import (
 from starlight.core.native import Native
 from starlight.core.protocols import (
     AspectEngine,
+    ChartAnalyzer,
     ChartComponent,
     EphemerisEngine,
     HouseSystemEngine,
@@ -70,6 +71,9 @@ class ChartBuilder:
 
         # Additional components
         self._components: list[ChartComponent] = []
+
+        # Analyzers
+        self._analyzers: list[ChartAnalyzer] = []
 
         # Cache management
         self._cache: Cache | None = None
@@ -158,6 +162,14 @@ class ChartBuilder:
     def add_component(self, component: ChartComponent) -> "ChartBuilder":
         """Add an additional calculation component (e.g. ArabicParts)."""
         self._components.append(component)
+        return self
+
+    def add_analyzer(self, analyzer: ChartAnalyzer) -> "ChartBuilder":
+        """
+        Adds a data analyzer to the calculation pipeline.
+        (e.g., PatternDetector)
+        """
+        self._analyzers.append(analyzer)
         return self
 
     # --- Calculation ---
@@ -258,9 +270,26 @@ class ChartBuilder:
                 self._orb_engine,  # Pass the configured orb engine
             )
 
+        # Run analyzers
+        # --- Create a "provisional" chart object ---
+        # Analyzers need the *full chart* to work on.
+        provisional_chart = CalculatedChart(
+            datetime=self._datetime,
+            location=self._location,
+            positions=tuple(positions),
+            house_systems=house_systems_map,
+            house_placements=house_placements_map,
+            aspects=tuple(aspects),
+            metadata=component_metadata,  # Start with component metadata
+        )
+
+        final_metadata = component_metadata.copy()
+        for analyzer in self._analyzers:
+            final_metadata[analyzer.metadata_name] = analyzer.analyze(provisional_chart)
+
         # Add cache statistics to the metadata
         cache_stats = self._get_cache().get_stats()
-        component_metadata["cache_stats"] = cache_stats
+        final_metadata["cache_stats"] = cache_stats
 
         # Step 7: Build final chart
         return CalculatedChart(
@@ -270,7 +299,7 @@ class ChartBuilder:
             house_systems=house_systems_map,
             house_placements=house_placements_map,
             aspects=tuple(aspects),
-            metadata=component_metadata,
+            metadata=final_metadata,
         )
 
     def with_cache(

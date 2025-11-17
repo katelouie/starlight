@@ -281,6 +281,42 @@ class Aspect:
 
 
 @dataclass(frozen=True)
+class AspectPattern:
+    """
+    Represents a detected aspect pattern in a chart.
+    (e.g., Grand Trine, T-Square, Yod, etc.)
+    """
+
+    name: str
+    planets: list[CelestialPosition]
+    aspects: list[Aspect]
+    element: str | None = None  # eg Fire
+    quality: str | None = None  # eg Cardinal
+
+    def __str__(self) -> str:
+        planet_names = ", ".join([p.name for p in self.planets])
+        return f"{self.name} ({planet_names})"
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to dictionary for storage/JSON."""
+        return {
+            "name": self.name,
+            "planets": [p.name for p in self.planets],
+            "aspects": [a.description for a in self.aspects],
+            "element": self.element,
+            "quality": self.quality,
+            "focal_planet": self.focal_planet,
+        }
+
+    @property
+    def focal_planet(self) -> CelestialPosition | None:
+        """Get the focal/apex planet for patterns that have one."""
+        if self.name in ("T-Square", "Yod"):
+            return self.planets[2]  # Last planet is apex
+        return None
+
+
+@dataclass(frozen=True)
 class CalculatedChart:
     """
     Complete calculated chart - the final output.
@@ -576,7 +612,11 @@ class CalculatedChart:
                 "name": self.location.name,
             },
             "house_systems": {
-                system_name: list(house_cusps.cusps)
+                system_name: {
+                    "cusps": list(house_cusps.cusps),
+                    "signs": house_cusps.signs,
+                    "sign_degrees": house_cusps.sign_degrees,
+                }
                 for system_name, house_cusps in self.house_systems.items()
             },
             "default_house_system": self.default_house_system,
@@ -604,9 +644,16 @@ class CalculatedChart:
             ],
         }
 
-        # add metadata (including dignities)
+        # add metadata
         if self.metadata:
-            base_dict["metadata"] = self.metadata
+            base_dict["metadata"] = {}
+            for key, value in self.metadata.items():
+                if key == "aspect_patterns":
+                    serialized = [ap.to_dict() for ap in value]
+                    base_dict["metadata"][key] = serialized
+                else:
+                    # Dignities or otherwise
+                    base_dict["metadata"][key] = value
 
         return base_dict
 

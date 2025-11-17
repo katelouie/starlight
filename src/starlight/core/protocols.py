@@ -305,3 +305,33 @@ class ReportRenderer(Protocol):
             Complete formatted report
         """
         ...
+
+
+class ChartAnalyzer(Protocol):
+    """
+    Protocol for chart analysis components.
+
+    Analyzers examine a calculated chart and return findings.
+    """
+
+    @property
+    def analyzer_name(self) -> str:
+        """Name of this analyzer."""
+        ...
+
+    @property
+    def metadata_name(self) -> str:
+        """Name that the metadata should be store under"""
+        ...
+
+    def analyze(self, chart: CalculatedChart) -> list | dict:
+        """
+        Analyze the chart.
+
+        Args:
+            chart: Chart to analyze
+
+        Returns:
+            Dict of findings (type depends on analyzer)
+        """
+        ...
