@@ -172,6 +172,7 @@ The package includes:
   - `data/swisseph/ephe/semo_18.se1` (moon 1800-1999)
   - `data/swisseph/ephe/semo_24.se1` (moon 2000-2399)
   - `data/swisseph/ephe/seas_18.se1` (asteroids 1800-1999)
+  - Additional ephemeris files can be downloaded via CLI: `starlight ephemeris download`
 - **Metadata**: README.md, LICENSE, CHANGELOG.md
 - **Tests**: All test files (users can run tests if desired)
 

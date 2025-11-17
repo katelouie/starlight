@@ -4,9 +4,14 @@ include LICENSE
 include CHANGELOG.md
 include pyproject.toml
 
-# Include Swiss Ephemeris data files (essential for 1800-2400 CE, ~7.8MB)
-recursive-include data/swisseph/ephe *.se1
+# Include only essential Swiss Ephemeris data files (covers 1800-2400 CE, ~3.5MB)
+# Additional ephemeris data can be downloaded via CLI: starlight ephemeris download
 include data/README.md
+include data/swisseph/ephe/sepl_18.se1
+include data/swisseph/ephe/sepl_24.se1
+include data/swisseph/ephe/semo_18.se1
+include data/swisseph/ephe/semo_24.se1
+include data/swisseph/ephe/seas_18.se1
 
 # Include notable births/events data if present
 recursive-include data/notables *.yaml *.yml
