@@ -188,9 +188,6 @@ class HouseCusps:
 
     system: str
     cusps: tuple[float, ...]  # 12 cusps, 0-360 degrees
-    signs: list
-    sign_degrees: list
-    houses: list
 
     def __post_init__(self) -> None:
         """Validate cusp count."""

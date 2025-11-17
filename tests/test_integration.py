@@ -61,7 +61,7 @@ def test_chart_to_dict():
     # Verify structure
     assert data["location"]["name"] == "Test"
     assert len(data["positions"]) > 0
-    assert len(data["house_systems"]["Placidus"]) == 12
+    assert len(data["house_systems"]["Placidus"]["cusps"]) == 12
 
 
 def test_different_house_systems():
@@ -118,6 +118,7 @@ def test_points_and_nodes_object_types():
     vertex = chart.get_object("Vertex")
     assert vertex is not None, "Vertex should exist"
     from starlight.core.models import ObjectType
+
     assert vertex.object_type == ObjectType.POINT, "Vertex should be POINT type"
 
     # Verify Mean Apogee (Lilith) exists and is a POINT type
@@ -127,8 +128,18 @@ def test_points_and_nodes_object_types():
 
     # Test that aspects include nodes and points
     # Find any aspect involving a node or point
-    node_aspects = [a for a in chart.aspects if a.object1.name in ["True Node", "South Node"] or a.object2.name in ["True Node", "South Node"]]
-    point_aspects = [a for a in chart.aspects if a.object1.name in ["Vertex", "Mean Apogee"] or a.object2.name in ["Vertex", "Mean Apogee"]]
+    node_aspects = [
+        a
+        for a in chart.aspects
+        if a.object1.name in ["True Node", "South Node"]
+        or a.object2.name in ["True Node", "South Node"]
+    ]
+    point_aspects = [
+        a
+        for a in chart.aspects
+        if a.object1.name in ["Vertex", "Mean Apogee"]
+        or a.object2.name in ["Vertex", "Mean Apogee"]
+    ]
 
     # We should have SOME aspects involving nodes/points (depending on the chart)
     # Just verify the engine doesn't error out - we may or may not have aspects
