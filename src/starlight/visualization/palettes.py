@@ -5,10 +5,9 @@ Defines color schemes for the zodiac wheel visualization, aspect lines,
 planet glyphs, and color utilities for adaptive theming.
 """
 
-from enum import Enum
 import colorsys
-
-from starlight.utils.cache import cached
+from enum import Enum
+from functools import lru_cache
 
 
 class ZodiacPalette(str, Enum):
@@ -76,12 +75,13 @@ SIGN_MODALITIES = {
 }
 
 
-@cached(cache_type="general", max_age_seconds=3600)
+@lru_cache(maxsize=128)
 def get_palette_colors(palette: ZodiacPalette) -> list[str]:
     """
     Get the color list for a zodiac wheel palette.
 
     Returns a list of 12 colors (one per sign, starting with Aries).
+    Results are cached in memory for performance.
 
     Args:
         palette: The palette to use
@@ -408,7 +408,7 @@ class AspectPalette(str, Enum):
     TURBO = "turbo"
 
 
-@cached(cache_type="general", max_age_seconds=3600)
+@lru_cache(maxsize=128)
 def get_aspect_palette_colors(palette: AspectPalette) -> dict[str, str]:
     """
     Get aspect colors for a given palette.
@@ -416,6 +416,7 @@ def get_aspect_palette_colors(palette: AspectPalette) -> dict[str, str]:
     Returns a dictionary mapping aspect names to hex colors.
     Includes: Conjunction, Sextile, Square, Trine, Opposition,
               and minor aspects (Semisextile, Semisquare, Sesquisquare, Quincunx)
+    Results are cached in memory for performance.
 
     Args:
         palette: The aspect palette to use
