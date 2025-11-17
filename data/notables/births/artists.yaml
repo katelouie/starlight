@@ -1,0 +1,44 @@
+- name: Frida Kahlo
+  event_type: birth
+  year: 1907
+  month: 7
+  day: 6
+  hour: 8
+  minute: 30
+  latitude: 19.3467
+  longitude: -99.1618
+  location_name: Coyoacán, Mexico
+  timezone: America/Mexico_City
+  category: artist
+  subcategories:
+  - painter
+  - surrealist
+  notable_for: Iconic self-portraits and Mexican folk art
+  astrological_notes: Cancer Sun with Leo Rising - tests artistic creativity and emotional
+    intensity
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false
+- name: Pablo Picasso
+  event_type: birth
+  year: 1881
+  month: 10
+  day: 25
+  hour: 23
+  minute: 15
+  latitude: 36.7213
+  longitude: -4.4213
+  location_name: Málaga, Spain
+  timezone: Europe/Madrid
+  category: artist
+  subcategories:
+  - painter
+  - sculptor
+  - cubist
+  notable_for: Co-founder of Cubism, revolutionary modern artist
+  astrological_notes: Scorpio Sun - tests artistic revolution and creative transformation
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false
