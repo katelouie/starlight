@@ -7,13 +7,12 @@ the zodiac wheel visualization.
 
 from datetime import datetime
 
-from starlight import ChartBuilder, draw_chart
+from starlight import ChartBuilder, Native, draw_chart
 from starlight.visualization import ZodiacPalette
 
 # Create a sample chart
-chart = ChartBuilder.from_native(
-    datetime(1994, 1, 6, 11, 47), "Palo Alto, CA"
-).calculate()
+native = Native(datetime(1994, 1, 6, 11, 47), "Seattle, WA")
+chart = ChartBuilder.from_native(native).calculate()
 
 # Generate charts with each palette
 palettes = [
