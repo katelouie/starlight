@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Indirect midpoint calculation (opposite point)
   - Creates `MidpointPosition` instances with component object references
 - Added PhaseData data model, and added phase data to relevant planets and asteroids under CelestialPosition.phase during ephemeris engine call.
+- Added Comparison charts for transits, synastry and progressions.
 
 #### Chart Building & Calculation
 

@@ -1,0 +1,44 @@
+- name: Martin Luther King Jr.
+  event_type: birth
+  year: 1929
+  month: 1
+  day: 15
+  hour: 12
+  minute: 0
+  latitude: 33.749
+  longitude: -84.388
+  location_name: Atlanta, Georgia, USA
+  timezone: America/New_York
+  category: leader
+  subcategories:
+  - civil_rights
+  - minister
+  - activist
+  notable_for: Leader of American civil rights movement
+  astrological_notes: Capricorn Sun - tests leadership and social justice themes
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false
+- name: Winston Churchill
+  event_type: birth
+  year: 1874
+  month: 11
+  day: 30
+  hour: 1
+  minute: 30
+  latitude: 51.8412
+  longitude: -1.3617
+  location_name: Blenheim Palace, England
+  timezone: Europe/London
+  category: leader
+  subcategories:
+  - statesman
+  - author
+  notable_for: British Prime Minister during World War II
+  astrological_notes: Sagittarius Sun with Leo Rising - tests wartime leadership and
+    oratory skills
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false
