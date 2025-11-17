@@ -39,46 +39,120 @@ for theme in ChartTheme:
 print("\nAll theme charts generated successfully!")
 
 # ============================================================================
-# Advanced: Custom combinations of theme + palette
+# Advanced: Theme-Coordinated Palette Combinations
 # ============================================================================
 
 print("\n" + "=" * 70)
-print("Advanced Examples: Themes with Custom Palettes")
+print("Advanced Examples: Theme-Coordinated Palettes")
 print("=" * 70 + "\n")
 
-# Example 1: Dark theme with rainbow zodiac
+print("Each theme now has coordinated palette variants that harmonize")
+print("with its color story:\n")
+
+# Dark theme with coordinated palettes
 draw_chart(
     chart,
-    filename="examples/chart_examples/dark_rainbow.svg",
+    filename="examples/chart_examples/dark_rainbow_dark.svg",
+    theme="dark",
+    zodiac_palette="rainbow_dark",
+)
+print("✓ Dark theme + Rainbow Dark palette → dark_rainbow_dark.svg")
+
+draw_chart(
+    chart,
+    filename="examples/chart_examples/dark_elemental_dark.svg",
+    theme="dark",
+    zodiac_palette="elemental_dark",
+)
+print("✓ Dark theme + Elemental Dark palette → dark_elemental_dark.svg")
+
+# Midnight theme with coordinated palettes
+draw_chart(
+    chart,
+    filename="examples/chart_examples/midnight_rainbow_midnight.svg",
+    theme="midnight",
+    zodiac_palette="rainbow_midnight",
+)
+print("✓ Midnight theme + Rainbow Midnight palette → midnight_rainbow_midnight.svg")
+
+draw_chart(
+    chart,
+    filename="examples/chart_examples/midnight_elemental_midnight.svg",
+    theme="midnight",
+    zodiac_palette="elemental_midnight",
+)
+print("✓ Midnight theme + Elemental Midnight palette → midnight_elemental_midnight.svg")
+
+# Neon theme with coordinated palettes
+draw_chart(
+    chart,
+    filename="examples/chart_examples/neon_rainbow_neon.svg",
+    theme="neon",
+    zodiac_palette="rainbow_neon",
+)
+print("✓ Neon theme + Rainbow Neon palette → neon_rainbow_neon.svg")
+
+draw_chart(
+    chart,
+    filename="examples/chart_examples/neon_elemental_neon.svg",
+    theme="neon",
+    zodiac_palette="elemental_neon",
+)
+print("✓ Neon theme + Elemental Neon palette → neon_elemental_neon.svg")
+
+# Sepia theme with coordinated palettes
+draw_chart(
+    chart,
+    filename="examples/chart_examples/sepia_rainbow_sepia.svg",
+    theme="sepia",
+    zodiac_palette="rainbow_sepia",
+)
+print("✓ Sepia theme + Rainbow Sepia palette → sepia_rainbow_sepia.svg")
+
+draw_chart(
+    chart,
+    filename="examples/chart_examples/sepia_elemental_sepia.svg",
+    theme="sepia",
+    zodiac_palette="elemental_sepia",
+)
+print("✓ Sepia theme + Elemental Sepia palette → sepia_elemental_sepia.svg")
+
+# Celestial theme with coordinated palette
+draw_chart(
+    chart,
+    filename="examples/chart_examples/celestial_rainbow_celestial.svg",
+    theme="celestial",
+    zodiac_palette="rainbow_celestial",
+)
+print("✓ Celestial theme + Rainbow Celestial palette → celestial_rainbow_celestial.svg")
+
+print("\n" + "=" * 70)
+print("Mix & Match: Custom Combinations")
+print("=" * 70 + "\n")
+
+# You can also mix and match any theme with any palette
+draw_chart(
+    chart,
+    filename="examples/chart_examples/dark_rainbow_base.svg",
     theme="dark",
     zodiac_palette="rainbow",
 )
-print("✓ Dark theme + Rainbow palette → dark_rainbow.svg")
+print("✓ Dark theme + Base Rainbow palette → dark_rainbow_base.svg")
 
-# Example 2: Midnight theme with elemental zodiac
 draw_chart(
     chart,
-    filename="examples/chart_examples/midnight_elemental.svg",
+    filename="examples/chart_examples/midnight_elemental_base.svg",
     theme="midnight",
     zodiac_palette="elemental",
 )
-print("✓ Midnight theme + Elemental palette → midnight_elemental.svg")
+print("✓ Midnight theme + Base Elemental palette → midnight_elemental_base.svg")
 
-# Example 3: Neon theme (already uses rainbow by default, but let's try elemental)
-draw_chart(
-    chart,
-    filename="examples/chart_examples/neon_elemental.svg",
-    theme="neon",
-    zodiac_palette="elemental",
-)
-print("✓ Neon theme + Elemental palette → neon_elemental.svg")
-
-# Example 4: Theme with custom style overrides
+# Example with custom style overrides
 draw_chart(
     chart,
     filename="examples/chart_examples/custom_styled.svg",
     theme="celestial",
-    zodiac_palette="rainbow",
+    zodiac_palette="rainbow_celestial",
     style_config={
         "planets": {
             "glyph_color": "#FFFFFF",  # Override planet color to pure white
@@ -86,7 +160,7 @@ draw_chart(
         }
     },
 )
-print("✓ Celestial theme + Rainbow palette + Custom styles → custom_styled.svg")
+print("✓ Celestial + Rainbow Celestial + Custom styles → custom_styled.svg")
 
 print("\nDone! Check examples/chart_examples/ for all generated charts.")
 
