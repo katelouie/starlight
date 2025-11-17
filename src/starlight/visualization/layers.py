@@ -159,11 +159,28 @@ class ZodiacLayer:
                 )
             )
 
-            # Glyph
+            # Glyph with optional adaptive coloring
             glyph_deg = (i * 30.0) + 15.0
             x_glyph, y_glyph = renderer.polar_to_cartesian(
                 glyph_deg, renderer.radii["zodiac_glyph"]
             )
+
+            # Use adaptive glyph color if enabled
+            if renderer.color_zodiac_glyphs and renderer.zodiac_palette:
+                from .palettes import ZodiacPalette, adjust_color_for_contrast
+
+                zodiac_pal = ZodiacPalette(active_palette)
+                # Get the sign's background color
+                sign_bg_color = sign_colors[i]
+                # Adjust the default glyph color for contrast against the sign background
+                glyph_color = adjust_color_for_contrast(
+                    style["glyph_color"],
+                    sign_bg_color,
+                    min_contrast=4.5,
+                )
+            else:
+                glyph_color = style["glyph_color"]
+
             dwg.add(
                 dwg.text(
                     ZODIAC_GLYPHS[i],
@@ -171,7 +188,7 @@ class ZodiacLayer:
                     text_anchor="middle",
                     dominant_baseline="central",
                     font_size=style["glyph_size"],
-                    fill=style["glyph_color"],
+                    fill=glyph_color,
                     font_family=renderer.style["font_family_glyphs"],
                 )
             )

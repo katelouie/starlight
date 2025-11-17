@@ -162,6 +162,7 @@ class ChartRenderer:
         aspect_palette: str | None = None,
         planet_glyph_palette: str | None = None,
         color_sign_info: bool = False,
+        color_zodiac_glyphs: bool = False,
     ) -> None:
         """
         Initialize the chart renderer.
@@ -177,6 +178,7 @@ class ChartRenderer:
             aspect_palette: Optional aspect palette override (e.g., "plasma", "blues").
             planet_glyph_palette: Optional planet glyph palette override (e.g., "element", "chakra").
             color_sign_info: If True, color sign glyphs in info stack based on zodiac palette.
+            color_zodiac_glyphs: If True, adapt zodiac wheel glyph colors to their backgrounds.
         """
         self.size = size
         self.center = size // 2
@@ -187,6 +189,7 @@ class ChartRenderer:
         self.aspect_palette = aspect_palette
         self.planet_glyph_palette = planet_glyph_palette
         self.color_sign_info = color_sign_info
+        self.color_zodiac_glyphs = color_zodiac_glyphs
 
         # Define the radial structure of the chart
         # These are proportional to canvas size for scalability
