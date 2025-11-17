@@ -15,6 +15,7 @@ Thank you for your interest in contributing to Starlight! We welcome contributio
 - [Code Style](#code-style)
 - [Creating Extensions](#creating-extensions)
 - [Documentation](#documentation)
+- [Publishing to PyPI](#publishing-to-pypi)
 - [Pull Request Process](#pull-request-process)
 - [Getting Help](#getting-help)
 
@@ -773,6 +774,18 @@ If your contribution adds a major feature, update the README:
 - Add to feature list
 - Add a progressive example
 - Update comparison table if relevant
+
+---
+
+## Publishing to PyPI
+
+**For maintainers only**: Instructions for publishing new releases to PyPI can be found in [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+Key points:
+- Version is defined in `src/starlight/__init__.py`
+- Releases are automated via GitHub Actions
+- Swiss Ephemeris data files (~3.5MB) are automatically included
+- Always test on TestPyPI first for major releases
 
 ---
 

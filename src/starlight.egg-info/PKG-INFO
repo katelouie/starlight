@@ -3,7 +3,7 @@ Name: starlight
 Version: 0.2.0
 Summary: A modern Python library for astrological chart calculation and visualization, built on the Swiss Ephemeris for astronomical accuracy.
 Author-email: Kate Louie <katehlouie@gmail.com>
-License: MIT
+License-Expression: MIT
 Project-URL: Homepage, https://github.com/katelouie/starlight
 Project-URL: Repository, https://github.com/katelouie/starlight
 Project-URL: Documentation, https://github.com/katelouie/starlight
@@ -12,7 +12,6 @@ Keywords: astrology,horoscope,chart,swiss-ephemeris,astronomy,natal-chart,arabic
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
 Classifier: Intended Audience :: Science/Research
-Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
