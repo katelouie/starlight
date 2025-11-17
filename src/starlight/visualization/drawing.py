@@ -17,6 +17,7 @@ from .layers import (
     ZodiacLayer,
 )
 from .moon_phase import MoonPhaseLayer
+from .palettes import ZodiacPalette
 
 
 def draw_chart(
@@ -24,6 +25,7 @@ def draw_chart(
     filename: str = "chart.svg",
     size: int = 600,
     moon_phase: bool = True,
+    zodiac_palette: ZodiacPalette | str = ZodiacPalette.GREY,
 ) -> str:
     """
     Draws a standard natal chart.
@@ -36,6 +38,7 @@ def draw_chart(
         filename: The output filename (e.g., "natal_chart.svg").
         size: The pixel dimensions of the (square) chart.
         moon_phase: Whether to show moon phase.
+        zodiac_palette: Color palette for zodiac wheel (grey, rainbow, elemental, cardinality).
 
     Returns:
         The filename of the saved chart.
@@ -61,7 +64,7 @@ def draw_chart(
 
     # Assemble the layers in draw order (background to foreground)
     layers: list[IRenderLayer] = [
-        ZodiacLayer(),
+        ZodiacLayer(palette=zodiac_palette),
         HouseCuspLayer(house_system_name=chart.default_house_system),
         AspectLayer(),
         PlanetLayer(planet_set=planets_to_draw, radius_key="planet_ring"),
@@ -82,11 +85,23 @@ def draw_chart(
 
 
 def draw_chart_with_multiple_houses(
-    chart: CalculatedChart, filename: str = "multi_house_chart.svg", size: int = 600
+    chart: CalculatedChart,
+    filename: str = "multi_house_chart.svg",
+    size: int = 600,
+    zodiac_palette: ZodiacPalette | str = ZodiacPalette.GREY,
 ) -> str:
     """
     Example of the new system's flexibility:
     Draws a natal chart with two house systems overlaid.
+
+    Args:
+        chart: The CalculatedChart object from the ChartBuilder.
+        filename: The output filename.
+        size: The pixel dimensions of the (square) chart.
+        zodiac_palette: Color palette for zodiac wheel (grey, rainbow, elemental, cardinality).
+
+    Returns:
+        The filename of the saved chart.
     """
     asc_object = chart.get_object("ASC")
     rotation_angle = asc_object.longitude if asc_object else 0.0
@@ -111,7 +126,7 @@ def draw_chart_with_multiple_houses(
     system2_name = system_names[1] if len(system_names) > 1 else system_names[0]
 
     layers: list[IRenderLayer] = [
-        ZodiacLayer(),
+        ZodiacLayer(palette=zodiac_palette),
         # --- The only change is here ---
         # Add the first house system (default style)
         HouseCuspLayer(house_system_name=system1_name),
