@@ -4,7 +4,14 @@ MANIFEST.in
 README.md
 pyproject.toml
 data/README.md
+data/notables/births/artists.yaml
+data/notables/births/leaders.yaml
+data/notables/births/media.yaml
+data/notables/births/polymaths.yml
+data/notables/births/scientists.yaml
+data/notables/births/writers.yaml
 data/swisseph/ephe/seas_18.se1
+data/swisseph/ephe/seas_24.se1
 data/swisseph/ephe/semo_18.se1
 data/swisseph/ephe/semo_24.se1
 data/swisseph/ephe/sepl_18.se1

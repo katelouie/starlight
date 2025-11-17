@@ -166,13 +166,15 @@ python -m twine upload dist/*
 The package includes:
 
 - **Python source code**: All modules in `src/starlight/`
-- **Swiss Ephemeris data**: Essential data files (~3.5MB) for 1800-2400 CE
+- **Swiss Ephemeris data**: Essential data files (~3.7MB) for 1800-2400 CE
   - `data/swisseph/ephe/sepl_18.se1` (planets 1800-1999)
   - `data/swisseph/ephe/sepl_24.se1` (planets 2000-2399)
   - `data/swisseph/ephe/semo_18.se1` (moon 1800-1999)
   - `data/swisseph/ephe/semo_24.se1` (moon 2000-2399)
   - `data/swisseph/ephe/seas_18.se1` (asteroids 1800-1999)
+  - `data/swisseph/ephe/seas_24.se1` (asteroids 2000-2399)
   - Additional ephemeris files can be downloaded via CLI: `starlight ephemeris download`
+- **Notable births data**: Curated database of famous births with verified birth data
 - **Metadata**: README.md, LICENSE, CHANGELOG.md
 - **Tests**: All test files (users can run tests if desired)
 
