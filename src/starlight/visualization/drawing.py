@@ -51,6 +51,7 @@ def draw_chart(
     aspect_palette: str | None = None,
     planet_glyph_palette: str | None = None,
     color_sign_info: bool = False,
+    color_zodiac_glyphs: bool = False,
     style_config: dict | None = None,
 ) -> str:
     """
@@ -101,6 +102,9 @@ def draw_chart(
                               If not specified, uses the theme's default palette.
         color_sign_info: If True, color sign glyphs in info stack based on zodiac palette
                          with adaptive contrast. Default False.
+        color_zodiac_glyphs: If True, adapt zodiac wheel glyph colors for contrast against
+                             their sign backgrounds. Useful for bright palettes like viridis
+                             or plasma where glyphs may blend in. Default False.
         style_config: Optional style overrides for fine-tuning.
 
     Returns:
@@ -159,6 +163,7 @@ def draw_chart(
         aspect_palette=aspect_palette,
         planet_glyph_palette=planet_glyph_palette,
         color_sign_info=color_sign_info,
+        color_zodiac_glyphs=color_zodiac_glyphs,
     )
 
     # Create SVG drawing
