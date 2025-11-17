@@ -11,6 +11,7 @@ from .layers import (
 )
 from .moon_phase import MoonPhaseLayer
 from .palettes import ZodiacPalette
+from .themes import ChartTheme
 
 __all__ = [
     "ChartRenderer",
@@ -22,4 +23,5 @@ __all__ = [
     "AspectLayer",
     "MoonPhaseLayer",
     "ZodiacPalette",
+    "ChartTheme",
 ]

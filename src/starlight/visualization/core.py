@@ -156,6 +156,7 @@ class ChartRenderer:
         self,
         size: int = 600,
         rotation: float = 0.0,
+        theme: str | None = None,
         style_config: dict[str, Any] | None = None,
     ) -> None:
         """
@@ -165,6 +166,8 @@ class ChartRenderer:
             size: The canvas size in pixels.
             rotation: The astrological longitude (in degrees) to fix
                       at the 9 o'clock position. Defaults to 0 (Aries).
+            theme: Optional theme name (e.g., "dark", "midnight", "neon").
+                   If provided, loads theme styling. Can still be overridden by style_config.
             style_config: Optional style overrides.
         """
         self.size = size
@@ -185,7 +188,16 @@ class ChartRenderer:
             "synastry_planet_ring_outer": size * 0.35,
         }
 
-        self.style = self._get_default_style()
+        # Load theme if specified, otherwise use default
+        if theme:
+            from .themes import ChartTheme, get_theme_style
+
+            theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
+            self.style = get_theme_style(theme_enum)
+        else:
+            self.style = self._get_default_style()
+
+        # Apply style overrides
         if style_config:
             # Deep merge dictionaries
             for key, value in style_config.items():
