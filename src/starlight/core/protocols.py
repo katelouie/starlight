@@ -129,6 +129,15 @@ class OrbEngine(Protocol):
         ...
 
 
+class CrossChartAspectEngine(Protocol):
+    """
+    Protocol for calculating aspects between two charts.
+
+    This is separate from AspectEngine to allow different
+    orb configurations and aspect sets for cross-chart work.
+    """
+
+
 class AspectEngine(Protocol):
     """
     Protocol for aspect calculation engines.

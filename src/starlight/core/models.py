@@ -9,7 +9,7 @@ They represent the OUTPUT of calculations, not the process.
 import datetime as dt
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 
 def longitude_to_sign_and_degree(longitude: float) -> tuple[str, float]:
@@ -53,6 +53,14 @@ class ObjectType(Enum):
     ARABIC_PART = "arabic_part"
     MIDPOINT = "midpoint"
     FIXED_STAR = "fixed_star"
+
+
+class ComparisonType(Enum):
+    """Type of chart comparison."""
+
+    SYNASTRY = "synastry"
+    TRANSIT = "transit"
+    PROGRESSION = "progression"
 
 
 @dataclass(frozen=True)
@@ -728,3 +736,59 @@ class PhaseData:
 
     def __str__(self) -> str:
         return f"Phase: {self.phase_name} ({self.illuminated_fraction:.1%} illuminated)"
+
+
+@dataclass(frozen=True)
+class ComparisonAspect(Aspect):
+    """Aspect between objects from two different charts.
+
+    This extends the base Aspect model with comparison-specific metadata.
+    """
+
+    # Core aspect data
+    object1: CelestialPosition  # From chart1 (native/inner)
+    object2: CelestialPosition  # From chart2 (partner/transit/outer)
+    aspect_name: str
+    aspect_degree: int
+    orb: float
+
+    # Comparison-specific metadata
+    is_applying: bool | None = None
+    chart1_to_chart2: bool = True
+
+    # Synastry-specific: which chart's house the aspect "lands in"
+    in_chart1_house: int | None = None
+    in_chart2_house: int | None = None
+
+    @property
+    def description(self) -> str:
+        direction = "A→B" if self.chart1_to_chart2 else "A←B"
+        applying = (
+            " (applying)"
+            if self.is_applying
+            else " (separating)"
+            if self.is_applying is not None
+            else ""
+        )
+        return f"{self.object1.name} {direction} {self.aspect_name} {direction} {self.object2.name} (orb: {self.orb:.2f}°){applying}"
+
+
+@dataclass(frozen=True)
+class HouseOverlay:
+    """
+    Represents one chart's planets falling in another chart's houses.
+    """
+
+    planet_name: str
+    planet_owner: Literal["chart1", "chart2"]
+    falls_in_house: int  # 1-12
+    house_owner: Literal["chart1", "chart2"]
+    planet_position: CelestialPosition
+
+    @property
+    def description(self) -> str:
+        owner_name = "Person A" if self.planet_owner == "chart1" else "Person B"
+        house_owner_name = (
+            "Person A's" if self.house_owner == "chart1" else "Person B's"
+        )
+        return f"{owner_name}'s {self.planet_name} in {house_owner_name} house {self.falls_in_house}"

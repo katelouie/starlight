@@ -20,6 +20,13 @@ __version__ = "0.2.0"
 # Allow: from starlight.engines import PlacidusHouses
 from starlight import components, engines, presentation, visualization
 from starlight.core.builder import ChartBuilder
+from starlight.core.comparison import (
+    Comparison,
+    ComparisonAspect,
+    ComparisonBuilder,
+    ComparisonType,
+    HouseOverlay,
+)
 from starlight.core.models import (
     Aspect,
     CalculatedChart,
@@ -80,4 +87,9 @@ __all__ = [
     "components",
     "visualization",
     "presentation",
+    "Comparison",
+    "ComparisonBuilder",
+    "ComparisonType",
+    "ComparisonAspect",
+    "HouseOverlay",
 ]

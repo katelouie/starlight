@@ -221,3 +221,124 @@ class HarmonicAspectEngine:
                     break
 
         return aspects
+
+
+class CrossChartAspectEngine:
+    """
+    Calculate aspects between two separate charts.
+
+    Unlike ModernAspectEngine which finds all aspects within a single chart
+    (using combinations of all positions), this engine specifically handles
+    cross-chart scenarios where we want aspects BETWEEN chart1 objects and
+    chart2 objects (but not within each chart).
+
+    Use cases:
+    - Synastry: Person A's planets aspecting Person B's planets
+    - Transits: Current sky aspecting natal chart
+    - Progressions: Progressed chart aspecting natal chart
+
+    The key difference: controlled iteration. We only check pairs where
+    one object is from chart1 and the other is from chart2. This prevents:
+    - Object identity collision (same planet in both charts)
+    - Redundant calculation (internal aspects already calculated separately)
+    - Incorrect filtering (can't distinguish sources after merging lists)
+    """
+
+    def __init__(self, config: AspectConfig | None = None):
+        """
+        Initialize the cross-chart aspect engine.
+
+        Args:
+            config: An AspectConfig object defining which aspect angles
+                    and object types to use. If None, a default
+                    AspectConfig is created.
+        """
+        self._config = config or AspectConfig()
+
+    def calculate_cross_aspects(
+        self,
+        chart1_positions: list[CelestialPosition],
+        chart2_positions: list[CelestialPosition],
+        orb_engine: OrbEngine,
+    ) -> list[Aspect]:
+        """
+        Calculate aspects between two sets of positions.
+
+        This only calculates aspects WHERE one object is from chart1
+        and the other is from chart2. Internal aspects within each
+        chart are NOT calculated by this method.
+
+        Args:
+            chart1_positions: Positions from first chart (e.g., natal/inner)
+            chart2_positions: Positions from second chart (e.g., transit/outer)
+            orb_engine: The OrbEngine that will provide orb allowances
+
+        Returns:
+            List of Aspect objects representing cross-chart aspects
+
+        Example:
+            >>> engine = CrossChartAspectEngine()
+            >>> orb_engine = SimpleOrbEngine()
+            >>> aspects = engine.calculate_cross_aspects(
+            ...     natal_chart.positions,
+            ...     transit_chart.positions,
+            ...     orb_engine
+            ... )
+            >>> # Gets natal Sun trine transit Jupiter, etc.
+            >>> # Does NOT get natal Sun trine natal Moon (internal)
+        """
+        aspects = []
+
+        # 1. Filter positions based on config
+        valid_types = {ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT}
+        if self._config.include_angles:
+            valid_types.add(ObjectType.ANGLE)
+        if self._config.include_asteroids:
+            valid_types.add(ObjectType.ASTEROID)
+
+        chart1_objects = [p for p in chart1_positions if p.object_type in valid_types]
+        chart2_objects = [p for p in chart2_positions if p.object_type in valid_types]
+
+        # 2. Controlled iteration: chart1 × chart2 only
+        for obj1 in chart1_objects:
+            for obj2 in chart2_objects:
+                distance = _angular_distance(obj1.longitude, obj2.longitude)
+
+                # 3. Check each aspect from config
+                for aspect_name in self._config.aspects:
+                    # Look up aspect angle from registry
+                    aspect_info = get_aspect_info(aspect_name)
+                    if not aspect_info:
+                        # Try as alias
+                        aspect_info = get_aspect_by_alias(aspect_name)
+
+                    if not aspect_info:
+                        # Skip unknown aspects
+                        continue
+
+                    aspect_angle = aspect_info.angle
+                    actual_orb = abs(distance - aspect_angle)
+
+                    # 4. Ask OrbEngine for allowance
+                    orb_allowance = orb_engine.get_orb_allowance(
+                        obj1, obj2, aspect_name
+                    )
+
+                    # 5. If close enough, create the aspect
+                    if actual_orb <= orb_allowance:
+                        is_applying = _is_applying(obj1, obj2, aspect_angle, distance)
+
+                        aspect = Aspect(
+                            object1=obj1,
+                            object2=obj2,
+                            aspect_name=aspect_name,
+                            aspect_degree=aspect_angle,
+                            orb=actual_orb,
+                            is_applying=is_applying,
+                        )
+                        aspects.append(aspect)
+
+                        # Only one aspect per pair
+                        break
+
+        return aspects

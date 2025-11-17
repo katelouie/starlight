@@ -9,6 +9,7 @@ Exports the fundamental classes for working with charts:
 """
 
 from starlight.core.builder import ChartBuilder
+from starlight.core.comparison import Comparison, ComparisonBuilder
 from starlight.core.config import CalculationConfig
 from starlight.core.models import (
     Aspect,
