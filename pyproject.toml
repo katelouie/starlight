@@ -7,7 +7,7 @@ name = "starlight"
 dynamic = ["version"]
 description = "A modern Python library for astrological chart calculation and visualization, built on the Swiss Ephemeris for astronomical accuracy."
 authors = [{ name = "Kate Louie", email = "katehlouie@gmail.com" }]
-license = { text = "MIT" }
+license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = [
@@ -23,7 +23,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -68,6 +67,10 @@ where = ["src"]
 
 [tool.setuptools.package-dir]
 "" = "src"
+
+[tool.setuptools.package-data]
+"*" = ["*.yaml", "*.yml"]
+# Swiss Ephemeris data files will be included via MANIFEST.in
 
 # Tool configurations
 [tool.black]

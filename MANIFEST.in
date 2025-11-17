@@ -1,0 +1,18 @@
+# Include metadata files
+include README.md
+include LICENSE
+include CHANGELOG.md
+include pyproject.toml
+
+# Include Swiss Ephemeris data files (essential for 1800-2400 CE, ~7.8MB)
+recursive-include data/swisseph/ephe *.se1
+include data/README.md
+
+# Include notable births/events data if present
+recursive-include data/notables *.yaml *.yml
+
+# Exclude unnecessary files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude .DS_Store
+global-exclude *.so
