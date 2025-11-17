@@ -21,10 +21,13 @@ from .core import ChartRenderer
 
 class MoonPhaseLayer:
     """
-    Renders the moon phase in the center of the chart.
+    Renders the moon phase on the chart.
 
     This layer draws an accurate representation of the moon's current phase
     using curved terminator lines to show the illuminated portion.
+
+    The moon can be positioned in the center or in any corner, and can
+    optionally display the phase name as a text label.
     """
 
     DEFAULT_STYLE = {
@@ -34,15 +37,32 @@ class MoonPhaseLayer:
         "lit_color": "#F8F9FA",
         "shadow_color": "#2C3E50",
         "opacity": 0.95,
+        "label_color": "#2C3E50",
+        "label_size": "14px",
+        "label_offset": 8,  # Pixels below moon symbol
     }
 
-    def __init__(self, style_override: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        position: str = "center",
+        show_label: bool = False,
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
         """
         Initialize moon phase layer.
 
         Args:
+            position: Where to place the moon phase symbol.
+                Options: "center", "top-left", "top-right", "bottom-left", "bottom-right"
+            show_label: Whether to display the phase name below the moon
             style_override: Optional style overrides
         """
+        valid_positions = ["center", "top-left", "top-right", "bottom-left", "bottom-right"]
+        if position not in valid_positions:
+            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+
+        self.position = position
+        self.show_label = show_label
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
 
     def render(
@@ -81,13 +101,56 @@ class MoonPhaseLayer:
         )
 
         if moon_group:
-            # Position at chart center
-            centered_group = dwg.g(
-                transform=f"translate({renderer.center}, {renderer.center})"
-            )
+            # Calculate position based on position setting
+            x, y = self._get_position_coordinates(renderer)
+
+            # Position the moon
+            positioned_group = dwg.g(transform=f"translate({x}, {y})")
             for element in moon_group.elements:
-                centered_group.add(element)
-            dwg.add(centered_group)
+                positioned_group.add(element)
+            dwg.add(positioned_group)
+
+            # Add label if requested
+            if self.show_label:
+                label_y = y + self.style["size"] + self.style["label_offset"]
+                dwg.add(
+                    dwg.text(
+                        phase_data.phase_name,
+                        insert=(x, label_y),
+                        text_anchor="middle",
+                        dominant_baseline="hanging",
+                        font_size=self.style["label_size"],
+                        fill=self.style["label_color"],
+                        font_family=renderer.style["font_family_text"],
+                        font_weight="bold",
+                    )
+                )
+
+    def _get_position_coordinates(self, renderer: ChartRenderer) -> tuple[float, float]:
+        """
+        Calculate the (x, y) coordinates for moon placement based on position setting.
+
+        Args:
+            renderer: ChartRenderer instance
+
+        Returns:
+            Tuple of (x, y) coordinates
+        """
+        margin = 60  # Pixels from edge
+
+        if self.position == "center":
+            return (renderer.center, renderer.center)
+        elif self.position == "top-left":
+            return (margin, margin)
+        elif self.position == "top-right":
+            return (renderer.size - margin, margin)
+        elif self.position == "bottom-left":
+            return (margin, renderer.size - margin)
+        elif self.position == "bottom-right":
+            return (renderer.size - margin, renderer.size - margin)
+        else:
+            # Fallback to center
+            return (renderer.center, renderer.center)
 
     def _create_moon_phase_symbol(
         self,
