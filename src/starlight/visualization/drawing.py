@@ -12,6 +12,7 @@ from .core import ChartRenderer, IRenderLayer
 from .layers import (
     AngleLayer,
     AspectLayer,
+    ChartInfoLayer,
     HouseCuspLayer,
     PlanetLayer,
     ZodiacLayer,
@@ -26,6 +27,11 @@ def draw_chart(
     filename: str = "chart.svg",
     size: int = 600,
     moon_phase: bool = True,
+    moon_phase_position: str = "center",
+    moon_phase_label: bool = False,
+    chart_info: bool = False,
+    chart_info_position: str = "top-left",
+    chart_info_fields: list[str] | None = None,
     theme: ChartTheme | str | None = None,
     zodiac_palette: ZodiacPalette | str | None = None,
     aspect_palette: str | None = None,
@@ -44,6 +50,15 @@ def draw_chart(
         filename: The output filename (e.g., "natal_chart.svg").
         size: The pixel dimensions of the (square) chart.
         moon_phase: Whether to show moon phase.
+        moon_phase_position: Position of moon phase symbol.
+            Options: "center", "top-left", "top-right", "bottom-left", "bottom-right"
+        moon_phase_label: Whether to show the phase name below the moon symbol.
+        chart_info: Whether to show chart metadata (name, location, date/time, etc.).
+        chart_info_position: Position of chart info block.
+            Options: "top-left", "top-right", "bottom-left", "bottom-right"
+        chart_info_fields: List of fields to display in chart info.
+            Options: "name", "location", "datetime", "timezone", "coordinates", "house_system"
+            If None, displays all except house_system.
         theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial,
                viridis, plasma, inferno, magma, cividis, turbo).
                If not specified, uses classic theme.
@@ -116,8 +131,22 @@ def draw_chart(
         AngleLayer(),
     ]
 
+    # Add moon phase layer if requested
     if moon_phase:
-        layers.insert(3, MoonPhaseLayer())  # Insert before PlanetLayer
+        moon_layer = MoonPhaseLayer(
+            position=moon_phase_position,
+            show_label=moon_phase_label,
+        )
+        layers.insert(3, moon_layer)  # Insert before PlanetLayer
+
+    # Add chart info layer if requested
+    if chart_info:
+        info_layer = ChartInfoLayer(
+            position=chart_info_position,
+            fields=chart_info_fields,
+        )
+        # Add chart info as the last layer (on top of everything)
+        layers.append(info_layer)
 
     # Tell each layer to render itself
     for layer in layers:

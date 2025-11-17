@@ -686,6 +686,144 @@ class PlanetLayer:
             }
 
 
+class ChartInfoLayer:
+    """
+    Renders chart metadata information in a corner of the chart.
+
+    Displays native name, location, date/time, timezone, and coordinates.
+    """
+
+    DEFAULT_STYLE = {
+        "text_color": "#333333",
+        "text_size": "11px",
+        "line_height": 14,  # Pixels between lines
+        "font_weight": "normal",
+    }
+
+    def __init__(
+        self,
+        position: str = "top-left",
+        fields: list[str] | None = None,
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize chart info layer.
+
+        Args:
+            position: Where to place the info block.
+                Options: "top-left", "top-right", "bottom-left", "bottom-right"
+            fields: List of fields to display. Options:
+                "name", "location", "datetime", "timezone", "coordinates", "house_system"
+                If None, displays: ["name", "location", "datetime", "timezone", "coordinates"]
+            style_override: Optional style overrides
+        """
+        valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
+        if position not in valid_positions:
+            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+
+        self.position = position
+        self.fields = fields or ["name", "location", "datetime", "timezone", "coordinates"]
+        self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        """Render chart information."""
+        # Build info text lines
+        lines = []
+
+        # Check for name in metadata or as attribute
+        if "name" in self.fields:
+            name = chart.metadata.get("name") if hasattr(chart, "metadata") else None
+            if name:
+                lines.append(name)
+
+        if "location" in self.fields and chart.location:
+            location_name = getattr(chart.location, "name", None)
+            if location_name:
+                lines.append(location_name)
+
+        if "datetime" in self.fields and chart.datetime:
+            if chart.datetime.local_datetime:
+                dt_str = chart.datetime.local_datetime.strftime("%B %d, %Y  %I:%M:%S %p")
+            else:
+                dt_str = chart.datetime.utc_datetime.strftime("%B %d, %Y  %H:%M:%S UTC")
+            lines.append(dt_str)
+
+        if "timezone" in self.fields and chart.location:
+            timezone = getattr(chart.location, "timezone", None)
+            if timezone:
+                lines.append(f"Timezone: {timezone}")
+
+        if "coordinates" in self.fields and chart.location:
+            lat = chart.location.latitude
+            lon = chart.location.longitude
+            lat_dir = "N" if lat >= 0 else "S"
+            lon_dir = "E" if lon >= 0 else "W"
+            lines.append(f"{abs(lat):.2f}°{lat_dir}, {abs(lon):.2f}°{lon_dir}")
+
+        if "house_system" in self.fields:
+            house_system = getattr(chart, "default_house_system", None)
+            if house_system:
+                lines.append(f"Houses: {house_system}")
+
+        if not lines:
+            return
+
+        # Calculate position
+        x, y = self._get_position_coordinates(renderer, len(lines))
+
+        # Determine text anchor based on position
+        if "right" in self.position:
+            text_anchor = "end"
+        else:
+            text_anchor = "start"
+
+        # Render each line
+        for i, line in enumerate(lines):
+            line_y = y + (i * self.style["line_height"])
+            dwg.add(
+                dwg.text(
+                    line,
+                    insert=(x, line_y),
+                    text_anchor=text_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+    def _get_position_coordinates(
+        self, renderer: ChartRenderer, num_lines: int
+    ) -> tuple[float, float]:
+        """
+        Calculate the (x, y) coordinates for info block placement.
+
+        Args:
+            renderer: ChartRenderer instance
+            num_lines: Number of text lines to display
+
+        Returns:
+            Tuple of (x, y) coordinates
+        """
+        margin = 20  # Pixels from edge
+        total_height = num_lines * self.style["line_height"]
+
+        if self.position == "top-left":
+            return (margin, margin)
+        elif self.position == "top-right":
+            return (renderer.size - margin, margin)
+        elif self.position == "bottom-left":
+            return (margin, renderer.size - margin - total_height)
+        elif self.position == "bottom-right":
+            return (renderer.size - margin, renderer.size - margin - total_height)
+        else:
+            # Fallback to top-left
+            return (margin, margin)
+
+
 class AspectLayer:
     """Renders the aspect lines within the chart."""
 

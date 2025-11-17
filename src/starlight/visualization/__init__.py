@@ -5,6 +5,7 @@ from .drawing import draw_chart
 from .layers import (
     AngleLayer,
     AspectLayer,
+    ChartInfoLayer,
     HouseCuspLayer,
     PlanetLayer,
     ZodiacLayer,
@@ -21,6 +22,7 @@ __all__ = [
     "AngleLayer",
     "PlanetLayer",
     "AspectLayer",
+    "ChartInfoLayer",
     "MoonPhaseLayer",
     "ZodiacPalette",
     "ChartTheme",
