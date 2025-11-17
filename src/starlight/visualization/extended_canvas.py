@@ -1,0 +1,384 @@
+"""
+Extended canvas layers for position tables and aspectarian grids.
+
+These layers render tabular data outside the main chart wheel,
+requiring an extended canvas with additional space.
+"""
+
+from typing import Any
+
+import svgwrite
+
+from starlight.core.models import CalculatedChart, ObjectType
+from starlight.core.registry import get_aspect_info
+
+from .core import ChartRenderer, get_glyph
+
+
+class PositionTableLayer:
+    """
+    Renders a table of planetary positions.
+
+    Shows planet name, sign, degree, house, and speed in a tabular format.
+    Respects chart theme colors.
+    """
+
+    DEFAULT_STYLE = {
+        "text_color": "#333333",
+        "header_color": "#222222",
+        "text_size": "10px",
+        "header_size": "11px",
+        "line_height": 16,
+        "col_spacing": 70,  # Pixels between columns
+        "font_weight": "normal",
+        "header_weight": "bold",
+        "show_speed": True,
+        "show_house": True,
+    }
+
+    def __init__(
+        self,
+        x_offset: float = 0,
+        y_offset: float = 0,
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize position table layer.
+
+        Args:
+            x_offset: X position offset from canvas origin
+            y_offset: Y position offset from canvas origin
+            style_override: Optional style overrides
+        """
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        """Render position table."""
+        # Get planets to display (planets, nodes, major points)
+        positions = [
+            p
+            for p in chart.positions
+            if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT)
+            and p.name != "Earth"
+        ]
+
+        # Sort by object type priority, then name
+        type_priority = {
+            ObjectType.PLANET: 0,
+            ObjectType.NODE: 1,
+            ObjectType.POINT: 2,
+        }
+        positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+
+        # Build table
+        x_start = self.x_offset
+        y_start = self.y_offset
+
+        # Header row
+        headers = ["Planet", "Sign", "Degree"]
+        if self.style["show_house"]:
+            headers.append("House")
+        if self.style["show_speed"]:
+            headers.append("Speed")
+
+        # Render headers
+        for i, header in enumerate(headers):
+            x = x_start + (i * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    header,
+                    insert=(x, y_start),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["header_size"],
+                    fill=self.style["header_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["header_weight"],
+                )
+            )
+
+        # Render data rows
+        for row_idx, pos in enumerate(positions):
+            y = y_start + ((row_idx + 1) * self.style["line_height"])
+
+            # Column 0: Planet name + glyph
+            glyph_info = get_glyph(pos.name)
+            if glyph_info["type"] == "unicode":
+                planet_text = f"{glyph_info['value']} {pos.name}"
+            else:
+                planet_text = pos.name
+
+            # Add retrograde symbol if applicable
+            if pos.is_retrograde:
+                planet_text += " ℞"
+
+            dwg.add(
+                dwg.text(
+                    planet_text,
+                    insert=(x_start, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 1: Sign
+            x_sign = x_start + self.style["col_spacing"]
+            dwg.add(
+                dwg.text(
+                    pos.sign,
+                    insert=(x_sign, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 2: Degree
+            degrees = int(pos.sign_degree)
+            minutes = int((pos.sign_degree % 1) * 60)
+            degree_text = f"{degrees}°{minutes:02d}'"
+            x_degree = x_start + (2 * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    degree_text,
+                    insert=(x_degree, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 3: House (if enabled)
+            col_offset = 3
+            if self.style["show_house"]:
+                house = self._get_house_placement(chart, pos)
+                x_house = x_start + (col_offset * self.style["col_spacing"])
+                dwg.add(
+                    dwg.text(
+                        str(house) if house else "-",
+                        insert=(x_house, y),
+                        text_anchor="start",
+                        dominant_baseline="hanging",
+                        font_size=self.style["text_size"],
+                        fill=self.style["text_color"],
+                        font_family=renderer.style["font_family_text"],
+                        font_weight=self.style["font_weight"],
+                    )
+                )
+                col_offset += 1
+
+            # Column 4: Speed (if enabled)
+            if self.style["show_speed"]:
+                speed_text = f"{pos.speed_longitude:.2f}"
+                x_speed = x_start + (col_offset * self.style["col_spacing"])
+                dwg.add(
+                    dwg.text(
+                        speed_text,
+                        insert=(x_speed, y),
+                        text_anchor="start",
+                        dominant_baseline="hanging",
+                        font_size=self.style["text_size"],
+                        fill=self.style["text_color"],
+                        font_family=renderer.style["font_family_text"],
+                        font_weight=self.style["font_weight"],
+                    )
+                )
+
+    def _get_house_placement(
+        self, chart: CalculatedChart, position
+    ) -> int | None:
+        """Get house placement for a position."""
+        if not chart.default_house_system or not chart.house_placements:
+            return None
+
+        placements = chart.house_placements.get(chart.default_house_system, {})
+        return placements.get(position.name)
+
+
+class AspectarianLayer:
+    """
+    Renders an aspectarian grid (triangle aspect table).
+
+    Shows aspects between all planets in a classic triangle grid format.
+    Respects chart theme colors.
+    """
+
+    DEFAULT_STYLE = {
+        "text_color": "#333333",
+        "header_color": "#222222",
+        "grid_color": "#CCCCCC",
+        "text_size": "10px",
+        "header_size": "10px",
+        "cell_size": 24,  # Size of each grid cell
+        "font_weight": "normal",
+        "header_weight": "bold",
+        "show_grid": True,
+    }
+
+    def __init__(
+        self,
+        x_offset: float = 0,
+        y_offset: float = 0,
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize aspectarian layer.
+
+        Args:
+            x_offset: X position offset from canvas origin
+            y_offset: Y position offset from canvas origin
+            style_override: Optional style overrides
+        """
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        """Render aspectarian grid."""
+        # Get planets only (not angles or points)
+        planets = [
+            p
+            for p in chart.positions
+            if p.object_type == ObjectType.PLANET and p.name != "Earth"
+        ]
+
+        # Sort by traditional order
+        planet_order = [
+            "Sun",
+            "Moon",
+            "Mercury",
+            "Venus",
+            "Mars",
+            "Jupiter",
+            "Saturn",
+            "Uranus",
+            "Neptune",
+            "Pluto",
+        ]
+        planets.sort(key=lambda p: planet_order.index(p.name) if p.name in planet_order else 99)
+
+        # Build aspect lookup
+        aspect_lookup = {}
+        for aspect in chart.aspects:
+            key1 = (aspect.object1.name, aspect.object2.name)
+            key2 = (aspect.object2.name, aspect.object1.name)
+            aspect_lookup[key1] = aspect
+            aspect_lookup[key2] = aspect
+
+        # Render grid
+        cell_size = self.style["cell_size"]
+        x_start = self.x_offset
+        y_start = self.y_offset
+
+        # Column headers (top)
+        for col_idx in range(len(planets) - 1):
+            planet = planets[col_idx]
+            glyph_info = get_glyph(planet.name)
+            glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else planet.name[:2]
+
+            x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+            y = y_start
+
+            dwg.add(
+                dwg.text(
+                    glyph,
+                    insert=(x, y),
+                    text_anchor="middle",
+                    dominant_baseline="hanging",
+                    font_size=self.style["header_size"],
+                    fill=self.style["header_color"],
+                    font_family=renderer.style["font_family_glyphs"],
+                    font_weight=self.style["header_weight"],
+                )
+            )
+
+        # Row headers (left) and grid cells
+        for row_idx in range(1, len(planets)):
+            planet_row = planets[row_idx]
+            glyph_info = get_glyph(planet_row.name)
+            glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else planet_row.name[:2]
+
+            y_row = y_start + (row_idx * cell_size) + (cell_size / 2)
+
+            # Row header
+            dwg.add(
+                dwg.text(
+                    glyph,
+                    insert=(x_start, y_row),
+                    text_anchor="start",
+                    dominant_baseline="middle",
+                    font_size=self.style["header_size"],
+                    fill=self.style["header_color"],
+                    font_family=renderer.style["font_family_glyphs"],
+                    font_weight=self.style["header_weight"],
+                )
+            )
+
+            # Grid cells (only lower triangle)
+            for col_idx in range(row_idx):
+                planet_col = planets[col_idx]
+
+                x_cell = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                y_cell = y_row
+
+                # Draw grid lines if enabled
+                if self.style["show_grid"]:
+                    # Cell border
+                    cell_x = x_start + ((col_idx + 1) * cell_size)
+                    cell_y = y_start + (row_idx * cell_size)
+
+                    dwg.add(
+                        dwg.rect(
+                            insert=(cell_x, cell_y),
+                            size=(cell_size, cell_size),
+                            fill="none",
+                            stroke=self.style["grid_color"],
+                            stroke_width=0.5,
+                        )
+                    )
+
+                # Check for aspect
+                aspect_key = (planet_row.name, planet_col.name)
+                if aspect_key in aspect_lookup:
+                    aspect = aspect_lookup[aspect_key]
+                    aspect_info = get_aspect_info(aspect.aspect_name)
+
+                    if aspect_info and aspect_info.glyph:
+                        aspect_glyph = aspect_info.glyph
+                    else:
+                        aspect_glyph = aspect.aspect_name[:1]
+
+                    # Use aspect color if available
+                    if aspect_info and aspect_info.color:
+                        text_color = aspect_info.color
+                    else:
+                        text_color = self.style["text_color"]
+
+                    dwg.add(
+                        dwg.text(
+                            aspect_glyph,
+                            insert=(x_cell, y_cell),
+                            text_anchor="middle",
+                            dominant_baseline="middle",
+                            font_size=self.style["text_size"],
+                            fill=text_color,
+                            font_family=renderer.style["font_family_glyphs"],
+                            font_weight=self.style["font_weight"],
+                        )
+                    )

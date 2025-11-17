@@ -2,6 +2,7 @@
 
 from .core import ChartRenderer
 from .drawing import draw_chart
+from .extended_canvas import AspectarianLayer, PositionTableLayer
 from .layers import (
     AngleLayer,
     AspectCountsLayer,
@@ -26,10 +27,12 @@ __all__ = [
     "PlanetLayer",
     "AspectLayer",
     "AspectCountsLayer",
+    "AspectarianLayer",
     "ChartInfoLayer",
     "ChartShapeLayer",
     "ElementModalityTableLayer",
     "MoonPhaseLayer",
+    "PositionTableLayer",
     "ZodiacPalette",
     "ChartTheme",
 ]

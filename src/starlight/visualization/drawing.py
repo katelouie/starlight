@@ -9,6 +9,7 @@ to assemble and render chart drawings.
 from starlight.core.models import CalculatedChart, ObjectType
 
 from .core import ChartRenderer, IRenderLayer
+from .extended_canvas import AspectarianLayer, PositionTableLayer
 from .layers import (
     AngleLayer,
     AspectCountsLayer,
@@ -42,6 +43,9 @@ def draw_chart(
     chart_shape: bool = False,
     chart_shape_position: str = "bottom-right",
     auto_padding: bool = True,
+    extended_canvas: str | None = None,
+    show_position_table: bool = True,
+    show_aspectarian: bool = True,
     theme: ChartTheme | str | None = None,
     zodiac_palette: ZodiacPalette | str | None = None,
     aspect_palette: str | None = None,
@@ -79,6 +83,11 @@ def draw_chart(
         chart_shape_position: Position of chart shape info.
             Options: "top-left", "top-right", "bottom-left", "bottom-right"
         auto_padding: If True, automatically add padding when >2 corners are occupied.
+        extended_canvas: Extended canvas mode for position tables and aspectarian.
+            Options: None (disabled), "right", "left", "below"
+            When enabled, expands canvas to include tabular data alongside chart.
+        show_position_table: Whether to show position table in extended canvas.
+        show_aspectarian: Whether to show aspectarian grid in extended canvas.
         theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial,
                viridis, plasma, inferno, magma, cividis, turbo).
                If not specified, uses classic theme.
@@ -119,6 +128,27 @@ def draw_chart(
     else:
         zodiac_palette_str = zodiac_palette
 
+    # Calculate canvas dimensions and chart offset for extended canvas
+    canvas_width = size
+    canvas_height = size
+    chart_x_offset = 0
+    chart_y_offset = 0
+
+    if extended_canvas:
+        if extended_canvas == "right":
+            canvas_width = size + 450  # Add space on right
+            chart_x_offset = 0
+        elif extended_canvas == "left":
+            canvas_width = size + 450  # Add space on left
+            chart_x_offset = 450  # Shift chart to right
+        elif extended_canvas == "below":
+            canvas_height = size + 400  # Add space below
+            chart_y_offset = 0
+        else:
+            raise ValueError(
+                f"Invalid extended_canvas: {extended_canvas}. Must be 'right', 'left', or 'below'"
+            )
+
     # Create main renderer "canvas" with the rotation
     renderer = ChartRenderer(
         size=size,
@@ -131,8 +161,54 @@ def draw_chart(
         color_sign_info=color_sign_info,
     )
 
-    # Get the SVG drawing object
-    dwg = renderer.create_svg_drawing(filename)
+    # Create SVG drawing
+    if extended_canvas:
+        import svgwrite
+
+        dwg = svgwrite.Drawing(
+            filename=filename,
+            size=(f"{canvas_width}px", f"{canvas_height}px"),
+            viewBox=f"0 0 {canvas_width} {canvas_height}",
+            profile="full",
+        )
+
+        # Add background
+        dwg.add(
+            dwg.rect(
+                insert=(0, 0),
+                size=(f"{canvas_width}px", f"{canvas_height}px"),
+                fill=renderer.style["background_color"],
+            )
+        )
+
+        # Add chart borders at offset position
+        dwg.add(
+            dwg.circle(
+                center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                r=renderer.radii["outer_border"],
+                fill="none",
+                stroke=renderer.style["border_color"],
+                stroke_width=renderer.style["border_width"],
+            )
+        )
+        dwg.add(
+            dwg.circle(
+                center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                r=renderer.radii["aspect_ring_inner"],
+                fill="none",
+                stroke=renderer.style["border_color"],
+                stroke_width=renderer.style["border_width"],
+            )
+        )
+
+        # Store offset in renderer for layers to use
+        renderer.x_offset = chart_x_offset
+        renderer.y_offset = chart_y_offset
+    else:
+        # Standard canvas - use renderer's method
+        dwg = renderer.create_svg_drawing(filename)
+        renderer.x_offset = 0
+        renderer.y_offset = 0
 
     # Get the list of planets to draw (includes nodes and points)
     planets_to_draw = [
@@ -213,6 +289,52 @@ def draw_chart(
     # Tell each layer to render itself
     for layer in layers:
         layer.render(renderer, dwg, chart)
+
+    # Add extended canvas layers if requested
+    if extended_canvas and (show_position_table or show_aspectarian):
+        # Calculate positions for extended layers based on mode
+        if extended_canvas == "right":
+            table_x = size + 30  # 30px margin from chart
+            table_y = 30
+            aspectarian_x = size + 30
+            aspectarian_y = 300  # Below position table
+        elif extended_canvas == "left":
+            table_x = 30
+            table_y = 30
+            aspectarian_x = 30
+            aspectarian_y = 300
+        elif extended_canvas == "below":
+            table_x = 30
+            table_y = size + 30
+            aspectarian_x = 350  # To the right of position table
+            aspectarian_y = size + 30
+        else:
+            table_x = table_y = aspectarian_x = aspectarian_y = 0
+
+        # Adapt extended layer colors to theme
+        extended_style = {
+            "text_color": renderer.style.get("planets", {}).get("info_color", "#333333"),
+            "header_color": renderer.style.get("planets", {}).get("glyph_color", "#222222"),
+            "grid_color": renderer.style.get("zodiac", {}).get("line_color", "#CCCCCC"),
+        }
+
+        # Add position table
+        if show_position_table:
+            position_table = PositionTableLayer(
+                x_offset=table_x,
+                y_offset=table_y,
+                style_override=extended_style,
+            )
+            position_table.render(renderer, dwg, chart)
+
+        # Add aspectarian
+        if show_aspectarian:
+            aspectarian = AspectarianLayer(
+                x_offset=aspectarian_x,
+                y_offset=aspectarian_y,
+                style_override=extended_style,
+            )
+            aspectarian.render(renderer, dwg, chart)
 
     # Save the final SVG
     dwg.save()
