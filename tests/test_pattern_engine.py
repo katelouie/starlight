@@ -274,6 +274,9 @@ def test_yod_detection():
     - Two planets in sextile (60°)
     - A third planet (apex) quincunx (150°) to both
     Indicates a fated or karmic configuration.
+
+    NOTE: Quincunx is not included in default aspect configuration,
+    so we need to add it explicitly for this test.
     """
     # Create positions forming a Yod
     positions = [
@@ -292,12 +295,18 @@ def test_yod_detection():
         CelestialPosition(
             name="Saturn",
             object_type=ObjectType.PLANET,
-            longitude=150.0,  # 0° Virgo (150° from Sun - quincunx, 90° from Moon)
+            longitude=210.0,  # 0° Scorpio (quincunx to both Sun and Moon)
             speed_longitude=0.05,
         ),
     ]
 
-    aspect_engine = ModernAspectEngine()
+    # Create aspect engine with Quincunx included
+    from starlight.core.config import AspectConfig
+
+    config = AspectConfig(
+        aspects=["Conjunction", "Sextile", "Square", "Trine", "Opposition", "Quincunx"]
+    )
+    aspect_engine = ModernAspectEngine(config=config)
     orb_engine = SimpleOrbEngine()
     aspects = aspect_engine.calculate_aspects(positions, orb_engine)
 
