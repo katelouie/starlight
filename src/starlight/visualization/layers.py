@@ -21,12 +21,27 @@ from .core import (
     get_glyph,
     get_display_name,
 )
+from .palettes import ZodiacPalette, get_palette_colors
 
 
 class ZodiacLayer:
     """Renders the outer Zodiac ring, including glyphs and tick marks."""
 
-    def __init__(self, style_override: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self,
+        palette: ZodiacPalette | str = ZodiacPalette.GREY,
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize the zodiac layer.
+
+        Args:
+            palette: The color palette to use (ZodiacPalette enum or string)
+            style_override: Optional style overrides
+        """
+        self.palette = (
+            ZodiacPalette(palette) if isinstance(palette, str) else palette
+        )
         self.style = style_override or {}
 
     def render(
@@ -35,23 +50,45 @@ class ZodiacLayer:
         style = renderer.style["zodiac"]
         style.update(self.style)
 
-        # Draw the main zodiac ring background
-        dwg.add(
-            dwg.circle(
-                center=(renderer.center, renderer.center),
-                r=renderer.radii["zodiac_ring_outer"],
-                fill=style["ring_color"],
-                stroke="none",
+        # Get colors for the palette
+        sign_colors = get_palette_colors(self.palette)
+
+        # Draw 12 zodiac sign wedges (30° each)
+        for sign_index in range(12):
+            sign_start = sign_index * 30.0
+            sign_end = sign_start + 30.0
+            fill_color = sign_colors[sign_index]
+
+            # Create wedge path for this sign
+            # We need to draw an arc segment (annulus wedge) from sign_start to sign_end
+            x_outer_start, y_outer_start = renderer.polar_to_cartesian(
+                sign_start, renderer.radii["zodiac_ring_outer"]
             )
-        )
-        dwg.add(
-            dwg.circle(
-                center=(renderer.center, renderer.center),
-                r=renderer.radii["zodiac_ring_inner"],
-                fill=renderer.style["background_color"],  # Punch a hole
-                stroke="none",
+            x_outer_end, y_outer_end = renderer.polar_to_cartesian(
+                sign_end, renderer.radii["zodiac_ring_outer"]
             )
-        )
+            x_inner_start, y_inner_start = renderer.polar_to_cartesian(
+                sign_start, renderer.radii["zodiac_ring_inner"]
+            )
+            x_inner_end, y_inner_end = renderer.polar_to_cartesian(
+                sign_end, renderer.radii["zodiac_ring_inner"]
+            )
+
+            # Create path: outer arc + line + inner arc (reverse) + line back
+            # All signs are 30° so never need large arc flag
+            path_data = f"M {x_outer_start},{y_outer_start} "
+            path_data += f"A {renderer.radii['zodiac_ring_outer']},{renderer.radii['zodiac_ring_outer']} 0 0,0 {x_outer_end},{y_outer_end} "
+            path_data += f"L {x_inner_end},{y_inner_end} "
+            path_data += f"A {renderer.radii['zodiac_ring_inner']},{renderer.radii['zodiac_ring_inner']} 0 0,1 {x_inner_start},{y_inner_start} "
+            path_data += "Z"
+
+            dwg.add(
+                dwg.path(
+                    d=path_data,
+                    fill=fill_color,
+                    stroke="none",
+                )
+            )
 
         # Draw degree tick marks (5° increments within each sign)
         tick_color = style.get("line_color")
