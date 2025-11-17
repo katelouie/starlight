@@ -7,6 +7,7 @@
 - [ ] Add dignity report section (with essential and accidental modes).
 - [ ] Add midpoint aspect report section.
 - [ ] Add aspect pattern report section.
+- [ ] Add Comparison chart sections
 
 ## Chart Visualization
 
@@ -16,12 +17,14 @@
 - [ ] Add vedic square-type charts
 - [ ] Synastry square aspect table
 - [ ] Declinations
+- [ ] Add bi-wheel charts for Comparison charts
 
 ## Core Functions
 
-- [ ] Add synastry
+- [x] Add synastry
 - [ ] Add composite
-- [ ] Add transits
+- [x] Add transits
+- [x] Add progressions
 - [ ] Add returns (?)
 - [ ] Add sidereal
 - [ ] Add Vedic

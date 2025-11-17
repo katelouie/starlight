@@ -1,0 +1,66 @@
+- name: Albert Einstein
+  event_type: birth
+  year: 1879
+  month: 3
+  day: 14
+  hour: 11
+  minute: 30
+  latitude: 48.3984
+  longitude: 9.9916
+  location_name: Ulm, Germany
+  timezone: Europe/Berlin
+  category: scientist
+  subcategories:
+  - physicist
+  - theorist
+  notable_for: Theory of Relativity and contributions to quantum mechanics
+  astrological_notes: Pisces Sun with strong Sagittarius - tests fire/water balance
+    and scientific genius aspects
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false
+- name: Marie Curie
+  event_type: birth
+  year: 1867
+  month: 11
+  day: 7
+  hour: 12
+  minute: 0
+  latitude: 52.2297
+  longitude: 21.0122
+  location_name: Warsaw, Poland
+  timezone: Europe/Warsaw
+  category: scientist
+  subcategories:
+  - physicist
+  - chemist
+  notable_for: Pioneer in radioactivity research, first woman to win Nobel Prize
+  astrological_notes: Scorpio Sun - tests scientific breakthrough and transformational
+    themes
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false
+- name: Nikola Tesla
+  event_type: birth
+  year: 1856
+  month: 7
+  day: 10
+  hour: 0
+  minute: 0
+  latitude: 44.3514
+  longitude: 15.3109
+  location_name: Smiljan, Croatia
+  timezone: Europe/Zagreb
+  category: scientist
+  subcategories:
+  - inventor
+  - electrical_engineer
+  notable_for: Pioneer of alternating current and wireless technology
+  astrological_notes: Cancer Sun with midnight birth - tests electrical genius and
+    innovative aspects
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false

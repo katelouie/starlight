@@ -1,0 +1,22 @@
+- name: Maya Angelou
+  event_type: birth
+  year: 1928
+  month: 4
+  day: 4
+  hour: 14
+  minute: 10
+  latitude: 38.627
+  longitude: -90.1994
+  location_name: St. Louis, Missouri, USA
+  timezone: America/Chicago
+  category: writer
+  subcategories:
+  - poet
+  - author
+  - activist
+  notable_for: I Know Why the Caged Bird Sings and civil rights activism
+  astrological_notes: Aries Sun - tests literary genius and resilience themes
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false

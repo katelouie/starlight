@@ -1,0 +1,23 @@
+- name: Oprah Winfrey
+  event_type: birth
+  year: 1954
+  month: 1
+  day: 29
+  hour: 4
+  minute: 30
+  latitude: 33.0579
+  longitude: -89.5873
+  location_name: Kosciusko, Mississippi, USA
+  timezone: America/Chicago
+  category: media
+  subcategories:
+  - television
+  - entrepreneur
+  - philanthropist
+  notable_for: Media mogul and cultural icon
+  astrological_notes: Aquarius Sun with Sagittarius Rising - tests media influence
+    and humanitarian aspects
+  data_quality: C
+  sources:
+  - Starlight Test Suite
+  verified: false
