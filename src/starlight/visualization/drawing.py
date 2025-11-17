@@ -11,8 +11,11 @@ from starlight.core.models import CalculatedChart, ObjectType
 from .core import ChartRenderer, IRenderLayer
 from .layers import (
     AngleLayer,
+    AspectCountsLayer,
     AspectLayer,
     ChartInfoLayer,
+    ChartShapeLayer,
+    ElementModalityTableLayer,
     HouseCuspLayer,
     PlanetLayer,
     ZodiacLayer,
@@ -32,6 +35,13 @@ def draw_chart(
     chart_info: bool = False,
     chart_info_position: str = "top-left",
     chart_info_fields: list[str] | None = None,
+    aspect_counts: bool = False,
+    aspect_counts_position: str = "top-right",
+    element_modality_table: bool = False,
+    element_modality_position: str = "bottom-left",
+    chart_shape: bool = False,
+    chart_shape_position: str = "bottom-right",
+    auto_padding: bool = True,
     theme: ChartTheme | str | None = None,
     zodiac_palette: ZodiacPalette | str | None = None,
     aspect_palette: str | None = None,
@@ -59,6 +69,16 @@ def draw_chart(
         chart_info_fields: List of fields to display in chart info.
             Options: "name", "location", "datetime", "timezone", "coordinates", "house_system"
             If None, displays all except house_system.
+        aspect_counts: Whether to show aspect counts summary.
+        aspect_counts_position: Position of aspect counts.
+            Options: "top-left", "top-right", "bottom-left", "bottom-right"
+        element_modality_table: Whether to show element/modality cross-table.
+        element_modality_position: Position of element/modality table.
+            Options: "top-left", "top-right", "bottom-left", "bottom-right"
+        chart_shape: Whether to show chart shape detection.
+        chart_shape_position: Position of chart shape info.
+            Options: "top-left", "top-right", "bottom-left", "bottom-right"
+        auto_padding: If True, automatically add padding when >2 corners are occupied.
         theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial,
                viridis, plasma, inferno, magma, cividis, turbo).
                If not specified, uses classic theme.
@@ -139,14 +159,56 @@ def draw_chart(
         )
         layers.insert(3, moon_layer)  # Insert before PlanetLayer
 
+    # Count corner layers to determine if padding is needed
+    corner_layers_count = 0
+    corner_positions = set()
+
     # Add chart info layer if requested
     if chart_info:
         info_layer = ChartInfoLayer(
             position=chart_info_position,
             fields=chart_info_fields,
         )
-        # Add chart info as the last layer (on top of everything)
         layers.append(info_layer)
+        corner_layers_count += 1
+        corner_positions.add(chart_info_position)
+
+    # Add aspect counts layer if requested
+    if aspect_counts:
+        counts_layer = AspectCountsLayer(
+            position=aspect_counts_position,
+        )
+        layers.append(counts_layer)
+        corner_layers_count += 1
+        corner_positions.add(aspect_counts_position)
+
+    # Add element/modality table layer if requested
+    if element_modality_table:
+        table_layer = ElementModalityTableLayer(
+            position=element_modality_position,
+        )
+        layers.append(table_layer)
+        corner_layers_count += 1
+        corner_positions.add(element_modality_position)
+
+    # Add chart shape layer if requested
+    if chart_shape:
+        shape_layer = ChartShapeLayer(
+            position=chart_shape_position,
+        )
+        layers.append(shape_layer)
+        corner_layers_count += 1
+        corner_positions.add(chart_shape_position)
+
+    # Apply padding if auto_padding is enabled and >2 corners are occupied
+    # This is a simple approach - we just scale up the radii proportionally
+    # A more sophisticated approach would expand the canvas size
+    # For now, this keeps the chart centered with more breathing room
+    if auto_padding and corner_layers_count > 2:
+        # Add subtle padding by slightly reducing radii (keeps chart centered)
+        padding_factor = 0.95  # Reduce by 5%
+        for key in renderer.radii:
+            renderer.radii[key] *= padding_factor
 
     # Tell each layer to render itself
     for layer in layers:

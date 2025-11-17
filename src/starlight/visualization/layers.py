@@ -824,6 +824,401 @@ class ChartInfoLayer:
             return (margin, margin)
 
 
+class AspectCountsLayer:
+    """
+    Renders aspect counts summary in a corner of the chart.
+
+    Displays count of each aspect type with glyphs.
+    """
+
+    DEFAULT_STYLE = {
+        "text_color": "#333333",
+        "text_size": "11px",
+        "line_height": 14,
+        "font_weight": "normal",
+        "title_weight": "bold",
+    }
+
+    def __init__(
+        self,
+        position: str = "top-right",
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize aspect counts layer.
+
+        Args:
+            position: Where to place the info block.
+                Options: "top-left", "top-right", "bottom-left", "bottom-right"
+            style_override: Optional style overrides
+        """
+        valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
+        if position not in valid_positions:
+            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+
+        self.position = position
+        self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        """Render aspect counts."""
+        from starlight.core.registry import get_aspect_info
+
+        # Count aspects by type
+        aspect_counts = {}
+        for aspect in chart.aspects:
+            aspect_name = aspect.aspect_name
+            aspect_counts[aspect_name] = aspect_counts.get(aspect_name, 0) + 1
+
+        if not aspect_counts:
+            return
+
+        # Build lines
+        lines = []
+        lines.append("Aspects:")
+
+        # Sort by count (descending)
+        sorted_aspects = sorted(aspect_counts.items(), key=lambda x: x[1], reverse=True)
+
+        for aspect_name, count in sorted_aspects:
+            aspect_info = get_aspect_info(aspect_name)
+            if aspect_info and aspect_info.glyph:
+                glyph = aspect_info.glyph
+            else:
+                glyph = aspect_name[:3]
+
+            lines.append(f"{glyph} {aspect_name}: {count}")
+
+        # Calculate position
+        x, y = self._get_position_coordinates(renderer, len(lines))
+
+        # Determine text anchor based on position
+        if "right" in self.position:
+            text_anchor = "end"
+        else:
+            text_anchor = "start"
+
+        # Render each line
+        for i, line in enumerate(lines):
+            line_y = y + (i * self.style["line_height"])
+            font_weight = self.style["title_weight"] if i == 0 else self.style["font_weight"]
+
+            dwg.add(
+                dwg.text(
+                    line,
+                    insert=(x, line_y),
+                    text_anchor=text_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=font_weight,
+                )
+            )
+
+    def _get_position_coordinates(
+        self, renderer: ChartRenderer, num_lines: int
+    ) -> tuple[float, float]:
+        """Calculate position coordinates."""
+        margin = 20
+        total_height = num_lines * self.style["line_height"]
+
+        if self.position == "top-left":
+            return (margin, margin)
+        elif self.position == "top-right":
+            return (renderer.size - margin, margin)
+        elif self.position == "bottom-left":
+            return (margin, renderer.size - margin - total_height)
+        elif self.position == "bottom-right":
+            return (renderer.size - margin, renderer.size - margin - total_height)
+        else:
+            return (margin, margin)
+
+
+class ElementModalityTableLayer:
+    """
+    Renders element × modality cross-table in a corner.
+
+    Shows distribution of planets across elements (Fire, Earth, Air, Water)
+    and modalities (Cardinal, Fixed, Mutable).
+    """
+
+    DEFAULT_STYLE = {
+        "text_color": "#333333",
+        "text_size": "10px",
+        "line_height": 13,
+        "font_weight": "normal",
+        "title_weight": "bold",
+        "col_width": 28,  # Width for each column
+    }
+
+    # Element symbols (Unicode)
+    ELEMENT_SYMBOLS = {
+        "Fire": "🜂",
+        "Earth": "🜃",
+        "Air": "🜁",
+        "Water": "🜄",
+    }
+
+    def __init__(
+        self,
+        position: str = "bottom-left",
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize element/modality table layer.
+
+        Args:
+            position: Where to place the table.
+                Options: "top-left", "top-right", "bottom-left", "bottom-right"
+            style_override: Optional style overrides
+        """
+        valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
+        if position not in valid_positions:
+            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+
+        self.position = position
+        self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+    def _get_element_modality(self, sign: str) -> tuple[str, str]:
+        """
+        Get element and modality for a zodiac sign.
+
+        Args:
+            sign: Zodiac sign name
+
+        Returns:
+            Tuple of (element, modality)
+        """
+        sign_data = {
+            "Aries": ("Fire", "Cardinal"),
+            "Taurus": ("Earth", "Fixed"),
+            "Gemini": ("Air", "Mutable"),
+            "Cancer": ("Water", "Cardinal"),
+            "Leo": ("Fire", "Fixed"),
+            "Virgo": ("Earth", "Mutable"),
+            "Libra": ("Air", "Cardinal"),
+            "Scorpio": ("Water", "Fixed"),
+            "Sagittarius": ("Fire", "Mutable"),
+            "Capricorn": ("Earth", "Cardinal"),
+            "Aquarius": ("Air", "Fixed"),
+            "Pisces": ("Water", "Mutable"),
+        }
+        return sign_data.get(sign, ("Unknown", "Unknown"))
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        """Render element/modality cross-table."""
+        from starlight.core.models import ObjectType
+
+        # Get planets only (not angles, points, etc.)
+        planets = [
+            p
+            for p in chart.positions
+            if p.object_type == ObjectType.PLANET and p.name != "Earth"
+        ]
+
+        # Build cross-table
+        table = {
+            "Fire": {"Cardinal": 0, "Fixed": 0, "Mutable": 0},
+            "Earth": {"Cardinal": 0, "Fixed": 0, "Mutable": 0},
+            "Air": {"Cardinal": 0, "Fixed": 0, "Mutable": 0},
+            "Water": {"Cardinal": 0, "Fixed": 0, "Mutable": 0},
+        }
+
+        # Count planets
+        for planet in planets:
+            element, modality = self._get_element_modality(planet.sign)
+            if element != "Unknown" and modality != "Unknown":
+                table[element][modality] += 1
+
+        # Calculate position
+        num_lines = 5  # Header + 4 elements
+        x, y = self._get_position_coordinates(renderer, num_lines)
+
+        # Determine text anchor
+        if "right" in self.position:
+            text_anchor = "end"
+            col_offset_multiplier = -1
+        else:
+            text_anchor = "start"
+            col_offset_multiplier = 1
+
+        # Render table
+        col_width = self.style["col_width"]
+        line_height = self.style["line_height"]
+
+        # Header row
+        header_y = y
+        dwg.add(
+            dwg.text(
+                "     Card Fix Mut",
+                insert=(x, header_y),
+                text_anchor=text_anchor,
+                dominant_baseline="hanging",
+                font_size=self.style["text_size"],
+                fill=self.style["text_color"],
+                font_family=renderer.style["font_family_text"],
+                font_weight=self.style["title_weight"],
+            )
+        )
+
+        # Data rows
+        elements = ["Fire", "Earth", "Air", "Water"]
+        for i, element in enumerate(elements):
+            row_y = header_y + ((i + 1) * line_height)
+
+            # Element symbol + name
+            symbol = self.ELEMENT_SYMBOLS.get(element, element[0])
+            row_text = f"{symbol} {element[:2]}"
+
+            # Add counts
+            card_count = table[element]["Cardinal"]
+            fix_count = table[element]["Fixed"]
+            mut_count = table[element]["Mutable"]
+
+            row_text += f"   {card_count}   {fix_count}   {mut_count}"
+
+            dwg.add(
+                dwg.text(
+                    row_text,
+                    insert=(x, row_y),
+                    text_anchor=text_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+    def _get_position_coordinates(
+        self, renderer: ChartRenderer, num_lines: int
+    ) -> tuple[float, float]:
+        """Calculate position coordinates."""
+        margin = 20
+        total_height = num_lines * self.style["line_height"]
+
+        if self.position == "top-left":
+            return (margin, margin)
+        elif self.position == "top-right":
+            return (renderer.size - margin, margin)
+        elif self.position == "bottom-left":
+            return (margin, renderer.size - margin - total_height)
+        elif self.position == "bottom-right":
+            return (renderer.size - margin, renderer.size - margin - total_height)
+        else:
+            return (margin, margin)
+
+
+class ChartShapeLayer:
+    """
+    Renders chart shape information in a corner.
+
+    Displays the overall pattern/distribution of planets (Bundle, Bowl, Bucket, etc.).
+    """
+
+    DEFAULT_STYLE = {
+        "text_color": "#333333",
+        "text_size": "11px",
+        "line_height": 14,
+        "font_weight": "normal",
+        "title_weight": "bold",
+    }
+
+    def __init__(
+        self,
+        position: str = "bottom-right",
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize chart shape layer.
+
+        Args:
+            position: Where to place the info.
+                Options: "top-left", "top-right", "bottom-left", "bottom-right"
+            style_override: Optional style overrides
+        """
+        valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
+        if position not in valid_positions:
+            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+
+        self.position = position
+        self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        """Render chart shape information."""
+        from starlight.utils.chart_shape import detect_chart_shape, get_chart_shape_description
+
+        # Detect shape
+        shape, metadata = detect_chart_shape(chart)
+        description = get_chart_shape_description(shape, metadata)
+
+        # Build lines
+        lines = []
+        lines.append("Chart Shape:")
+        lines.append(shape)
+
+        # Add key metadata
+        if shape == "Bundle" and "leading_planet" in metadata:
+            lines.append(f"Led by {metadata['leading_planet']}")
+        elif shape == "Bowl" and "leading_planet" in metadata:
+            lines.append(f"Led by {metadata['leading_planet']}")
+        elif shape == "Bucket" and "handle" in metadata:
+            lines.append(f"Handle: {metadata['handle']}")
+        elif shape == "Locomotive" and "leading_planet" in metadata:
+            lines.append(f"Led by {metadata['leading_planet']}")
+
+        # Calculate position
+        x, y = self._get_position_coordinates(renderer, len(lines))
+
+        # Determine text anchor
+        if "right" in self.position:
+            text_anchor = "end"
+        else:
+            text_anchor = "start"
+
+        # Render each line
+        for i, line in enumerate(lines):
+            line_y = y + (i * self.style["line_height"])
+            font_weight = self.style["title_weight"] if i == 0 else self.style["font_weight"]
+
+            dwg.add(
+                dwg.text(
+                    line,
+                    insert=(x, line_y),
+                    text_anchor=text_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=font_weight,
+                )
+            )
+
+    def _get_position_coordinates(
+        self, renderer: ChartRenderer, num_lines: int
+    ) -> tuple[float, float]:
+        """Calculate position coordinates."""
+        margin = 20
+        total_height = num_lines * self.style["line_height"]
+
+        if self.position == "top-left":
+            return (margin, margin)
+        elif self.position == "top-right":
+            return (renderer.size - margin, margin)
+        elif self.position == "bottom-left":
+            return (margin, renderer.size - margin - total_height)
+        elif self.position == "bottom-right":
+            return (renderer.size - margin, renderer.size - margin - total_height)
+        else:
+            return (margin, margin)
+
+
 class AspectLayer:
     """Renders the aspect lines within the chart."""
 

@@ -4,8 +4,11 @@ from .core import ChartRenderer
 from .drawing import draw_chart
 from .layers import (
     AngleLayer,
+    AspectCountsLayer,
     AspectLayer,
     ChartInfoLayer,
+    ChartShapeLayer,
+    ElementModalityTableLayer,
     HouseCuspLayer,
     PlanetLayer,
     ZodiacLayer,
@@ -22,7 +25,10 @@ __all__ = [
     "AngleLayer",
     "PlanetLayer",
     "AspectLayer",
+    "AspectCountsLayer",
     "ChartInfoLayer",
+    "ChartShapeLayer",
+    "ElementModalityTableLayer",
     "MoonPhaseLayer",
     "ZodiacPalette",
     "ChartTheme",
