@@ -8,6 +8,8 @@ planet glyphs, and color utilities for adaptive theming.
 from enum import Enum
 import colorsys
 
+from starlight.utils.cache import cached
+
 
 class ZodiacPalette(str, Enum):
     """Available color palettes for the zodiac wheel."""
@@ -74,6 +76,7 @@ SIGN_MODALITIES = {
 }
 
 
+@cached(cache_type="general", max_age_seconds=3600)
 def get_palette_colors(palette: ZodiacPalette) -> list[str]:
     """
     Get the color list for a zodiac wheel palette.
@@ -405,6 +408,7 @@ class AspectPalette(str, Enum):
     TURBO = "turbo"
 
 
+@cached(cache_type="general", max_age_seconds=3600)
 def get_aspect_palette_colors(palette: AspectPalette) -> dict[str, str]:
     """
     Get aspect colors for a given palette.
