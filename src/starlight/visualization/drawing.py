@@ -18,6 +18,7 @@ from .layers import (
 )
 from .moon_phase import MoonPhaseLayer
 from .palettes import ZodiacPalette
+from .themes import ChartTheme, get_theme_default_palette
 
 
 def draw_chart(
@@ -25,7 +26,9 @@ def draw_chart(
     filename: str = "chart.svg",
     size: int = 600,
     moon_phase: bool = True,
-    zodiac_palette: ZodiacPalette | str = ZodiacPalette.GREY,
+    theme: ChartTheme | str | None = None,
+    zodiac_palette: ZodiacPalette | str | None = None,
+    style_config: dict | None = None,
 ) -> str:
     """
     Draws a standard natal chart.
@@ -38,7 +41,11 @@ def draw_chart(
         filename: The output filename (e.g., "natal_chart.svg").
         size: The pixel dimensions of the (square) chart.
         moon_phase: Whether to show moon phase.
+        theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial).
+               If not specified, uses classic theme.
         zodiac_palette: Color palette for zodiac wheel (grey, rainbow, elemental, cardinality).
+                        If not specified, uses the theme's default palette.
+        style_config: Optional style overrides for fine-tuning.
 
     Returns:
         The filename of the saved chart.
@@ -48,8 +55,21 @@ def draw_chart(
     asc_object = chart.get_object("ASC")
     rotation_angle = asc_object.longitude if asc_object else 0.0
 
+    # Determine theme and palette
+    if theme:
+        theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
+        # If no palette specified, use theme's default
+        if zodiac_palette is None:
+            zodiac_palette = get_theme_default_palette(theme_enum)
+    else:
+        # No theme specified, use classic defaults
+        if zodiac_palette is None:
+            zodiac_palette = ZodiacPalette.GREY
+
     # Create main renderer "canvas" with the rotation
-    renderer = ChartRenderer(size=size, rotation=rotation_angle)
+    renderer = ChartRenderer(
+        size=size, rotation=rotation_angle, theme=theme, style_config=style_config
+    )
 
     # Get the SVG drawing object
     dwg = renderer.create_svg_drawing(filename)
@@ -88,7 +108,9 @@ def draw_chart_with_multiple_houses(
     chart: CalculatedChart,
     filename: str = "multi_house_chart.svg",
     size: int = 600,
-    zodiac_palette: ZodiacPalette | str = ZodiacPalette.GREY,
+    theme: ChartTheme | str | None = None,
+    zodiac_palette: ZodiacPalette | str | None = None,
+    style_config: dict | None = None,
 ) -> str:
     """
     Example of the new system's flexibility:
@@ -98,7 +120,9 @@ def draw_chart_with_multiple_houses(
         chart: The CalculatedChart object from the ChartBuilder.
         filename: The output filename.
         size: The pixel dimensions of the (square) chart.
+        theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial).
         zodiac_palette: Color palette for zodiac wheel (grey, rainbow, elemental, cardinality).
+        style_config: Optional style overrides for fine-tuning.
 
     Returns:
         The filename of the saved chart.
@@ -106,7 +130,20 @@ def draw_chart_with_multiple_houses(
     asc_object = chart.get_object("ASC")
     rotation_angle = asc_object.longitude if asc_object else 0.0
 
-    renderer = ChartRenderer(size=size, rotation=rotation_angle)
+    # Determine theme and palette
+    if theme:
+        theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
+        # If no palette specified, use theme's default
+        if zodiac_palette is None:
+            zodiac_palette = get_theme_default_palette(theme_enum)
+    else:
+        # No theme specified, use classic defaults
+        if zodiac_palette is None:
+            zodiac_palette = ZodiacPalette.GREY
+
+    renderer = ChartRenderer(
+        size=size, rotation=rotation_angle, theme=theme, style_config=style_config
+    )
     dwg = renderer.create_svg_drawing(filename)
 
     # Get the list of planets to draw (includes nodes and points)
