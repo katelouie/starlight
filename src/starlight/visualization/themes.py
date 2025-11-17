@@ -10,7 +10,12 @@ from typing import Any
 
 from starlight.core.registry import ASPECT_REGISTRY
 
-from .palettes import ZodiacPalette
+from .palettes import (
+    AspectPalette,
+    PlanetGlyphPalette,
+    ZodiacPalette,
+    get_aspect_palette_colors,
+)
 
 
 class ChartTheme(str, Enum):
@@ -24,6 +29,14 @@ class ChartTheme(str, Enum):
     PASTEL = "pastel"
     CELESTIAL = "celestial"
 
+    # Data science themes
+    VIRIDIS = "viridis"
+    PLASMA = "plasma"
+    INFERNO = "inferno"
+    MAGMA = "magma"
+    CIVIDIS = "cividis"
+    TURBO = "turbo"
+
 
 # Default zodiac palette for each theme
 THEME_DEFAULT_PALETTES = {
@@ -34,6 +47,49 @@ THEME_DEFAULT_PALETTES = {
     ChartTheme.SEPIA: ZodiacPalette.GREY,
     ChartTheme.PASTEL: ZodiacPalette.RAINBOW,
     ChartTheme.CELESTIAL: ZodiacPalette.GREY,
+    # Data science themes
+    ChartTheme.VIRIDIS: ZodiacPalette.VIRIDIS,
+    ChartTheme.PLASMA: ZodiacPalette.PLASMA,
+    ChartTheme.INFERNO: ZodiacPalette.INFERNO,
+    ChartTheme.MAGMA: ZodiacPalette.MAGMA,
+    ChartTheme.CIVIDIS: ZodiacPalette.CIVIDIS,
+    ChartTheme.TURBO: ZodiacPalette.TURBO,
+}
+
+# Default aspect palette for each theme
+THEME_DEFAULT_ASPECT_PALETTES = {
+    ChartTheme.CLASSIC: AspectPalette.CLASSIC,
+    ChartTheme.DARK: AspectPalette.DARK,
+    ChartTheme.MIDNIGHT: AspectPalette.MIDNIGHT,
+    ChartTheme.NEON: AspectPalette.NEON,
+    ChartTheme.SEPIA: AspectPalette.SEPIA,
+    ChartTheme.PASTEL: AspectPalette.PASTEL,
+    ChartTheme.CELESTIAL: AspectPalette.CELESTIAL,
+    # Data science themes
+    ChartTheme.VIRIDIS: AspectPalette.VIRIDIS,
+    ChartTheme.PLASMA: AspectPalette.PLASMA,
+    ChartTheme.INFERNO: AspectPalette.INFERNO,
+    ChartTheme.MAGMA: AspectPalette.MAGMA,
+    ChartTheme.CIVIDIS: AspectPalette.CIVIDIS,
+    ChartTheme.TURBO: AspectPalette.TURBO,
+}
+
+# Default planet glyph palette for each theme
+THEME_DEFAULT_PLANET_PALETTES = {
+    ChartTheme.CLASSIC: PlanetGlyphPalette.DEFAULT,
+    ChartTheme.DARK: PlanetGlyphPalette.DEFAULT,
+    ChartTheme.MIDNIGHT: PlanetGlyphPalette.DEFAULT,
+    ChartTheme.NEON: PlanetGlyphPalette.RAINBOW,
+    ChartTheme.SEPIA: PlanetGlyphPalette.DEFAULT,
+    ChartTheme.PASTEL: PlanetGlyphPalette.DEFAULT,
+    ChartTheme.CELESTIAL: PlanetGlyphPalette.DEFAULT,
+    # Data science themes
+    ChartTheme.VIRIDIS: PlanetGlyphPalette.VIRIDIS,
+    ChartTheme.PLASMA: PlanetGlyphPalette.PLASMA,
+    ChartTheme.INFERNO: PlanetGlyphPalette.INFERNO,
+    ChartTheme.MAGMA: PlanetGlyphPalette.INFERNO,  # Magma similar to Inferno
+    ChartTheme.CIVIDIS: PlanetGlyphPalette.VIRIDIS,  # Cividis similar to Viridis
+    ChartTheme.TURBO: PlanetGlyphPalette.TURBO,
 }
 
 
@@ -61,6 +117,18 @@ def get_theme_style(theme: ChartTheme) -> dict[str, Any]:
         return _get_pastel_theme()
     elif theme == ChartTheme.CELESTIAL:
         return _get_celestial_theme()
+    elif theme == ChartTheme.VIRIDIS:
+        return _get_viridis_theme()
+    elif theme == ChartTheme.PLASMA:
+        return _get_plasma_theme()
+    elif theme == ChartTheme.INFERNO:
+        return _get_inferno_theme()
+    elif theme == ChartTheme.MAGMA:
+        return _get_magma_theme()
+    elif theme == ChartTheme.CIVIDIS:
+        return _get_cividis_theme()
+    elif theme == ChartTheme.TURBO:
+        return _get_turbo_theme()
     else:
         return _get_classic_theme()
 
@@ -76,6 +144,32 @@ def get_theme_default_palette(theme: ChartTheme) -> ZodiacPalette:
         Default ZodiacPalette for this theme
     """
     return THEME_DEFAULT_PALETTES.get(theme, ZodiacPalette.GREY)
+
+
+def get_theme_default_aspect_palette(theme: ChartTheme) -> AspectPalette:
+    """
+    Get the default aspect palette for a theme.
+
+    Args:
+        theme: The theme
+
+    Returns:
+        Default AspectPalette for this theme
+    """
+    return THEME_DEFAULT_ASPECT_PALETTES.get(theme, AspectPalette.CLASSIC)
+
+
+def get_theme_default_planet_palette(theme: ChartTheme) -> PlanetGlyphPalette:
+    """
+    Get the default planet glyph palette for a theme.
+
+    Args:
+        theme: The theme
+
+    Returns:
+        Default PlanetGlyphPalette for this theme
+    """
+    return THEME_DEFAULT_PLANET_PALETTES.get(theme, PlanetGlyphPalette.DEFAULT)
 
 
 # ============================================================================
@@ -430,6 +524,305 @@ def _get_celestial_theme() -> dict[str, Any]:
     }
 
 
+# ============================================================================
+# Data Science Themes
+# ============================================================================
+
+
+def _get_viridis_theme() -> dict[str, Any]:
+    """Viridis theme - perceptually uniform purple→green→yellow palette."""
+    aspect_colors = get_aspect_palette_colors(AspectPalette.VIRIDIS)
+    return {
+        "background_color": "#1C1C1C",
+        "border_color": "#414487",
+        "border_width": 1,
+        "font_family_glyphs": '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+        "font_family_text": '"Arial", "Helvetica", sans-serif',
+        "zodiac": {
+            "ring_color": "#262626",
+            "line_color": "#414487",
+            "glyph_color": "#FDE724",
+            "glyph_size": "20px",
+        },
+        "houses": {
+            "line_color": "#2A788E",
+            "line_width": 0.8,
+            "number_color": "#22A884",
+            "number_size": "11px",
+            "fill_alternate": True,
+            "fill_color_1": "#222222",
+            "fill_color_2": "#1C1C1C",
+        },
+        "angles": {
+            "line_color": "#7AD151",
+            "line_width": 2.5,
+            "glyph_color": "#FDE724",
+            "glyph_size": "12px",
+        },
+        "planets": {
+            "glyph_color": "#22A884",
+            "glyph_size": "32px",
+            "info_color": "#7AD151",
+            "info_size": "10px",
+            "retro_color": "#BBDF27",
+        },
+        "aspects": {
+            **{
+                name: {"color": color, "width": 1.5, "dash": "1,0"}
+                for name, color in aspect_colors.items()
+            },
+            "default": {"color": "#414487", "width": 0.5, "dash": "2,2"},
+            "line_color": "#2A788E",
+            "background_color": "#1C1C1C",
+        },
+    }
+
+
+def _get_plasma_theme() -> dict[str, Any]:
+    """Plasma theme - vibrant blue→purple→orange→yellow palette."""
+    aspect_colors = get_aspect_palette_colors(AspectPalette.PLASMA)
+    return {
+        "background_color": "#0D0887",
+        "border_color": "#6A00A8",
+        "border_width": 1,
+        "font_family_glyphs": '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+        "font_family_text": '"Arial", "Helvetica", sans-serif',
+        "zodiac": {
+            "ring_color": "#180C4E",
+            "line_color": "#B12A90",
+            "glyph_color": "#F0F921",
+            "glyph_size": "20px",
+        },
+        "houses": {
+            "line_color": "#CC4778",
+            "line_width": 0.8,
+            "number_color": "#FCA636",
+            "number_size": "11px",
+            "fill_alternate": True,
+            "fill_color_1": "#150A5F",
+            "fill_color_2": "#0D0887",
+        },
+        "angles": {
+            "line_color": "#FCCE25",
+            "line_width": 2.5,
+            "glyph_color": "#F0F921",
+            "glyph_size": "12px",
+        },
+        "planets": {
+            "glyph_color": "#E16462",
+            "glyph_size": "32px",
+            "info_color": "#FCA636",
+            "info_size": "10px",
+            "retro_color": "#F1844B",
+        },
+        "aspects": {
+            **{
+                name: {"color": color, "width": 1.5, "dash": "1,0"}
+                for name, color in aspect_colors.items()
+            },
+            "default": {"color": "#8F0DA4", "width": 0.5, "dash": "2,2"},
+            "line_color": "#B12A90",
+            "background_color": "#0D0887",
+        },
+    }
+
+
+def _get_inferno_theme() -> dict[str, Any]:
+    """Inferno theme - dramatic black→red→orange→yellow palette."""
+    aspect_colors = get_aspect_palette_colors(AspectPalette.INFERNO)
+    return {
+        "background_color": "#000004",
+        "border_color": "#781C6D",
+        "border_width": 1,
+        "font_family_glyphs": '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+        "font_family_text": '"Arial", "Helvetica", sans-serif',
+        "zodiac": {
+            "ring_color": "#1B0C41",
+            "line_color": "#A52C60",
+            "glyph_color": "#FCFFA4",
+            "glyph_size": "20px",
+        },
+        "houses": {
+            "line_color": "#CF4446",
+            "line_width": 0.8,
+            "number_color": "#FB9A06",
+            "number_size": "11px",
+            "fill_alternate": True,
+            "fill_color_1": "#1B0C41",
+            "fill_color_2": "#000004",
+        },
+        "angles": {
+            "line_color": "#F7D03C",
+            "line_width": 2.5,
+            "glyph_color": "#FCFFA4",
+            "glyph_size": "12px",
+        },
+        "planets": {
+            "glyph_color": "#ED6925",
+            "glyph_size": "32px",
+            "info_color": "#FB9A06",
+            "info_size": "10px",
+            "retro_color": "#F7D03C",
+        },
+        "aspects": {
+            **{
+                name: {"color": color, "width": 1.5, "dash": "1,0"}
+                for name, color in aspect_colors.items()
+            },
+            "default": {"color": "#781C6D", "width": 0.5, "dash": "2,2"},
+            "line_color": "#A52C60",
+            "background_color": "#000004",
+        },
+    }
+
+
+def _get_magma_theme() -> dict[str, Any]:
+    """Magma theme - subtle black→purple→pink→yellow palette."""
+    aspect_colors = get_aspect_palette_colors(AspectPalette.MAGMA)
+    return {
+        "background_color": "#000004",
+        "border_color": "#5F187F",
+        "border_width": 1,
+        "font_family_glyphs": '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+        "font_family_text": '"Arial", "Helvetica", sans-serif',
+        "zodiac": {
+            "ring_color": "#0B0924",
+            "line_color": "#7B2382",
+            "glyph_color": "#FCFDBF",
+            "glyph_size": "20px",
+        },
+        "houses": {
+            "line_color": "#982D80",
+            "line_width": 0.8,
+            "number_color": "#EB5760",
+            "number_size": "11px",
+            "fill_alternate": True,
+            "fill_color_1": "#0B0924",
+            "fill_color_2": "#000004",
+        },
+        "angles": {
+            "line_color": "#F8765C",
+            "line_width": 2.5,
+            "glyph_color": "#FCFDBF",
+            "glyph_size": "12px",
+        },
+        "planets": {
+            "glyph_color": "#D3436E",
+            "glyph_size": "32px",
+            "info_color": "#EB5760",
+            "info_size": "10px",
+            "retro_color": "#F8765C",
+        },
+        "aspects": {
+            **{
+                name: {"color": color, "width": 1.5, "dash": "1,0"}
+                for name, color in aspect_colors.items()
+            },
+            "default": {"color": "#5F187F", "width": 0.5, "dash": "2,2"},
+            "line_color": "#7B2382",
+            "background_color": "#000004",
+        },
+    }
+
+
+def _get_cividis_theme() -> dict[str, Any]:
+    """Cividis theme - CVD-optimized blue→yellow palette."""
+    aspect_colors = get_aspect_palette_colors(AspectPalette.CIVIDIS)
+    return {
+        "background_color": "#00204C",
+        "border_color": "#25567B",
+        "border_width": 1,
+        "font_family_glyphs": '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+        "font_family_text": '"Arial", "Helvetica", sans-serif',
+        "zodiac": {
+            "ring_color": "#00306E",
+            "line_color": "#4E6B7C",
+            "glyph_color": "#FFEA46",
+            "glyph_size": "20px",
+        },
+        "houses": {
+            "line_color": "#73807D",
+            "line_width": 0.8,
+            "number_color": "#C5AC83",
+            "number_size": "11px",
+            "fill_alternate": True,
+            "fill_color_1": "#00306E",
+            "fill_color_2": "#00204C",
+        },
+        "angles": {
+            "line_color": "#E5C482",
+            "line_width": 2.5,
+            "glyph_color": "#FFEA46",
+            "glyph_size": "12px",
+        },
+        "planets": {
+            "glyph_color": "#9B9680",
+            "glyph_size": "32px",
+            "info_color": "#C5AC83",
+            "info_size": "10px",
+            "retro_color": "#E5C482",
+        },
+        "aspects": {
+            **{
+                name: {"color": color, "width": 1.5, "dash": "1,0"}
+                for name, color in aspect_colors.items()
+            },
+            "default": {"color": "#4E6B7C", "width": 0.5, "dash": "2,2"},
+            "line_color": "#73807D",
+            "background_color": "#00204C",
+        },
+    }
+
+
+def _get_turbo_theme() -> dict[str, Any]:
+    """Turbo theme - Google's improved rainbow palette."""
+    aspect_colors = get_aspect_palette_colors(AspectPalette.TURBO)
+    return {
+        "background_color": "#1A1A2E",
+        "border_color": "#4662D7",
+        "border_width": 1,
+        "font_family_glyphs": '"Symbola", "Noto Sans Symbols", "Apple Symbols", "Segoe UI Symbol", serif',
+        "font_family_text": '"Arial", "Helvetica", sans-serif',
+        "zodiac": {
+            "ring_color": "#242438",
+            "line_color": "#1AE4B6",
+            "glyph_color": "#FABA39",
+            "glyph_size": "20px",
+        },
+        "houses": {
+            "line_color": "#72FE5E",
+            "line_width": 0.8,
+            "number_color": "#C8EF34",
+            "number_size": "11px",
+            "fill_alternate": True,
+            "fill_color_1": "#242438",
+            "fill_color_2": "#1A1A2E",
+        },
+        "angles": {
+            "line_color": "#FABA39",
+            "line_width": 2.5,
+            "glyph_color": "#FABA39",
+            "glyph_size": "12px",
+        },
+        "planets": {
+            "glyph_color": "#72FE5E",
+            "glyph_size": "32px",
+            "info_color": "#C8EF34",
+            "info_size": "10px",
+            "retro_color": "#F66B19",
+        },
+        "aspects": {
+            **{
+                name: {"color": color, "width": 1.5, "dash": "1,0"}
+                for name, color in aspect_colors.items()
+            },
+            "default": {"color": "#4662D7", "width": 0.5, "dash": "2,2"},
+            "line_color": "#1AE4B6",
+            "background_color": "#1A1A2E",
+        },
+    }
+
+
 def get_theme_description(theme: ChartTheme) -> str:
     """
     Get a human-readable description of a theme.
@@ -448,5 +841,12 @@ def get_theme_description(theme: ChartTheme) -> str:
         ChartTheme.SEPIA: "Sepia - Vintage aged paper with warm browns",
         ChartTheme.PASTEL: "Pastel - Soft gentle colors, light and airy",
         ChartTheme.CELESTIAL: "Celestial - Cosmic galaxy with deep purples and gold",
+        # Data science themes
+        ChartTheme.VIRIDIS: "Viridis - Perceptually uniform purple→green→yellow (colorblind-friendly)",
+        ChartTheme.PLASMA: "Plasma - Vibrant blue→purple→orange→yellow gradient",
+        ChartTheme.INFERNO: "Inferno - Dramatic black→red→orange→yellow fire palette",
+        ChartTheme.MAGMA: "Magma - Subtle black→purple→pink→yellow volcanic palette",
+        ChartTheme.CIVIDIS: "Cividis - Blue→yellow palette optimized for color vision deficiency",
+        ChartTheme.TURBO: "Turbo - Google's improved rainbow (high contrast)",
     }
     return descriptions.get(theme, "Unknown theme")

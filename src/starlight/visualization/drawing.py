@@ -28,6 +28,9 @@ def draw_chart(
     moon_phase: bool = True,
     theme: ChartTheme | str | None = None,
     zodiac_palette: ZodiacPalette | str | None = None,
+    aspect_palette: str | None = None,
+    planet_glyph_palette: str | None = None,
+    color_sign_info: bool = False,
     style_config: dict | None = None,
 ) -> str:
     """
@@ -41,10 +44,19 @@ def draw_chart(
         filename: The output filename (e.g., "natal_chart.svg").
         size: The pixel dimensions of the (square) chart.
         moon_phase: Whether to show moon phase.
-        theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial).
+        theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial,
+               viridis, plasma, inferno, magma, cividis, turbo).
                If not specified, uses classic theme.
-        zodiac_palette: Color palette for zodiac wheel (grey, rainbow, elemental, cardinality).
+        zodiac_palette: Color palette for zodiac wheel (grey, rainbow, elemental, cardinality,
+                        viridis, plasma, inferno, etc.).
                         If not specified, uses the theme's default palette.
+        aspect_palette: Color palette for aspect lines (classic, dark, viridis, plasma, etc.).
+                        If not specified, uses the theme's default palette.
+        planet_glyph_palette: Color palette for planet glyphs (default, element, sign_ruler,
+                              planet_type, luminaries, rainbow, chakra, viridis, etc.).
+                              If not specified, uses the theme's default palette.
+        color_sign_info: If True, color sign glyphs in info stack based on zodiac palette
+                         with adaptive contrast. Default False.
         style_config: Optional style overrides for fine-tuning.
 
     Returns:
@@ -66,9 +78,22 @@ def draw_chart(
         if zodiac_palette is None:
             zodiac_palette = ZodiacPalette.GREY
 
+    # Convert zodiac_palette to string if it's an enum
+    if hasattr(zodiac_palette, "value"):
+        zodiac_palette_str = zodiac_palette.value
+    else:
+        zodiac_palette_str = zodiac_palette
+
     # Create main renderer "canvas" with the rotation
     renderer = ChartRenderer(
-        size=size, rotation=rotation_angle, theme=theme, style_config=style_config
+        size=size,
+        rotation=rotation_angle,
+        theme=theme,
+        style_config=style_config,
+        zodiac_palette=zodiac_palette_str,
+        aspect_palette=aspect_palette,
+        planet_glyph_palette=planet_glyph_palette,
+        color_sign_info=color_sign_info,
     )
 
     # Get the SVG drawing object

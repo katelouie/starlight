@@ -158,6 +158,10 @@ class ChartRenderer:
         rotation: float = 0.0,
         theme: str | None = None,
         style_config: dict[str, Any] | None = None,
+        zodiac_palette: str | None = None,
+        aspect_palette: str | None = None,
+        planet_glyph_palette: str | None = None,
+        color_sign_info: bool = False,
     ) -> None:
         """
         Initialize the chart renderer.
@@ -169,10 +173,20 @@ class ChartRenderer:
             theme: Optional theme name (e.g., "dark", "midnight", "neon").
                    If provided, loads theme styling. Can still be overridden by style_config.
             style_config: Optional style overrides.
+            zodiac_palette: Optional zodiac palette override (e.g., "viridis", "rainbow").
+            aspect_palette: Optional aspect palette override (e.g., "plasma", "blues").
+            planet_glyph_palette: Optional planet glyph palette override (e.g., "element", "chakra").
+            color_sign_info: If True, color sign glyphs in info stack based on zodiac palette.
         """
         self.size = size
         self.center = size // 2
         self.rotation = rotation
+
+        # Store palette configurations
+        self.zodiac_palette = zodiac_palette
+        self.aspect_palette = aspect_palette
+        self.planet_glyph_palette = planet_glyph_palette
+        self.color_sign_info = color_sign_info
 
         # Define the radial structure of the chart
         # These are proportional to canvas size for scalability
@@ -190,12 +204,36 @@ class ChartRenderer:
 
         # Load theme if specified, otherwise use default
         if theme:
-            from .themes import ChartTheme, get_theme_style
+            from .themes import (
+                ChartTheme,
+                get_theme_default_aspect_palette,
+                get_theme_default_palette,
+                get_theme_default_planet_palette,
+                get_theme_style,
+            )
 
             theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
             self.style = get_theme_style(theme_enum)
+
+            # Set default palettes from theme if not explicitly provided
+            if self.zodiac_palette is None:
+                self.zodiac_palette = get_theme_default_palette(theme_enum).value
+            if self.aspect_palette is None:
+                self.aspect_palette = get_theme_default_aspect_palette(theme_enum).value
+            if self.planet_glyph_palette is None:
+                self.planet_glyph_palette = get_theme_default_planet_palette(
+                    theme_enum
+                ).value
         else:
             self.style = self._get_default_style()
+
+            # Set default palettes if not explicitly provided
+            if self.zodiac_palette is None:
+                self.zodiac_palette = "grey"
+            if self.aspect_palette is None:
+                self.aspect_palette = "classic"
+            if self.planet_glyph_palette is None:
+                self.planet_glyph_palette = "default"
 
         # Apply style overrides
         if style_config:
