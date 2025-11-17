@@ -15,18 +15,24 @@ from starlight.utils.cache import cached
 
 # Swiss Ephemeris house system codes
 HOUSE_SYSTEM_CODES = {
-    "Placidus": b"P",
-    "Koch": b"K",
-    "Porphyry": b"O",
-    "Regiomontanus": b"R",
+    "Alcabitius": b"B",
+    "APC": b"Y",
+    "Axial Rotation": b"X",
     "Campanus": b"C",
     "Equal": b"A",
     "Equal (MC)": b"D",
+    "Equal (Vertex)": b"E",
+    "Gauquelin": b"G",
+    "Horizontal": b"H",
+    "Koch": b"K",
+    "Krusinski": b"U",
+    "Morinus": b"M",
+    "Placidus": b"P",
+    "Porphyry": b"O",
+    "Regiomontanus": b"R",
+    "Topocentric": b"T",
     "Vehlow Equal": b"V",
     "Whole Sign": b"W",
-    "Alcabitius": b"B",
-    "Topocentric": b"T",
-    "Morinus": b"M",
 }
 
 
@@ -145,3 +151,115 @@ class EqualHouses(SwissHouseSystemBase):
     @property
     def system_name(self) -> str:
         return "Equal"
+
+
+class PorphyryHouses(SwissHouseSystemBase):
+    """Porphyry house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Porphyry"
+
+
+class RegiomontanusHouses(SwissHouseSystemBase):
+    """Regiomontanus house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Regiomontanus"
+
+
+class CampanusHouses(SwissHouseSystemBase):
+    """Campanus house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Campanus"
+
+
+class EqualMCHouses(SwissHouseSystemBase):
+    """Equal (MC) house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Equal (MC)"
+
+
+class VehlowEqualHouses(SwissHouseSystemBase):
+    """Vehlow Equal house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Vehlow Equal"
+
+
+class AlcabitiusHouses(SwissHouseSystemBase):
+    """Alcabitius house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Alcabitius"
+
+
+class TopocentricHouses(SwissHouseSystemBase):
+    """Topocentric house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Topocentric"
+
+
+class MorinusHouses(SwissHouseSystemBase):
+    """Morinus house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Morinus"
+
+
+class EqualVertexHouses(SwissHouseSystemBase):
+    """Equal (Vertex) house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Equal (Vertex)"
+
+
+class GauquelinHouses(SwissHouseSystemBase):
+    """Gauquelin house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Gauquelin"
+
+
+class HorizontalHouses(SwissHouseSystemBase):
+    """Horizontal house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Horizontal"
+
+
+class KrusinskiHouses(SwissHouseSystemBase):
+    """Krusinski house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Krusinski"
+
+
+class AxialRotationHouses(SwissHouseSystemBase):
+    """Axial Rotation house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "Axial Rotation"
+
+
+class APCHouses(SwissHouseSystemBase):
+    """APC house system engine."""
+
+    @property
+    def system_name(self) -> str:
+        return "APC"
