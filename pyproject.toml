@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "starlight"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A modern Python library for astrological chart calculation and visualization, built on the Swiss Ephemeris for astronomical accuracy."
 authors = [{ name = "Kate Louie", email = "katehlouie@gmail.com" }]
 license = { text = "MIT" }
@@ -56,6 +56,9 @@ Homepage = "https://github.com/katelouie/starlight"
 Repository = "https://github.com/katelouie/starlight"
 Documentation = "https://github.com/katelouie/starlight"
 "Bug Tracker" = "https://github.com/katelouie/starlight/issues"
+
+[tool.setuptools.dynamic]
+version = { attr = "starlight.__version__" }
 
 [project.scripts]
 starlight = "starlight.cli:cli"
