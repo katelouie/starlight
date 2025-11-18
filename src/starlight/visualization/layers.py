@@ -18,13 +18,14 @@ from .core import (
     PLANET_GLYPHS,
     ZODIAC_GLYPHS,
     ChartRenderer,
-    get_glyph,
     get_display_name,
+    get_glyph,
 )
 from .palettes import (
     AspectPalette,
     PlanetGlyphPalette,
     ZodiacPalette,
+    adjust_color_for_contrast,
     get_aspect_palette_colors,
     get_palette_colors,
     get_planet_glyph_color,
@@ -47,9 +48,7 @@ class ZodiacLayer:
             palette: The color palette to use (ZodiacPalette enum or string)
             style_override: Optional style overrides
         """
-        self.palette = (
-            ZodiacPalette(palette) if isinstance(palette, str) else palette
-        )
+        self.palette = ZodiacPalette(palette) if isinstance(palette, str) else palette
         self.style = style_override or {}
 
     def render(
@@ -167,8 +166,6 @@ class ZodiacLayer:
 
             # Use adaptive glyph color if enabled
             if renderer.color_zodiac_glyphs and renderer.zodiac_palette:
-                from .palettes import ZodiacPalette, adjust_color_for_contrast
-
                 zodiac_pal = ZodiacPalette(active_palette)
                 # Get the sign's background color
                 sign_bg_color = sign_colors[i]
@@ -736,10 +733,18 @@ class ChartInfoLayer:
         """
         valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
         if position not in valid_positions:
-            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+            raise ValueError(
+                f"Invalid position: {position}. Must be one of {valid_positions}"
+            )
 
         self.position = position
-        self.fields = fields or ["name", "location", "datetime", "timezone", "coordinates"]
+        self.fields = fields or [
+            "name",
+            "location",
+            "datetime",
+            "timezone",
+            "coordinates",
+        ]
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
 
     def render(
@@ -762,7 +767,9 @@ class ChartInfoLayer:
 
         if "datetime" in self.fields and chart.datetime:
             if chart.datetime.local_datetime:
-                dt_str = chart.datetime.local_datetime.strftime("%B %d, %Y  %I:%M:%S %p")
+                dt_str = chart.datetime.local_datetime.strftime(
+                    "%B %d, %Y  %I:%M:%S %p"
+                )
             else:
                 dt_str = chart.datetime.utc_datetime.strftime("%B %d, %Y  %H:%M:%S UTC")
             lines.append(dt_str)
@@ -871,7 +878,9 @@ class AspectCountsLayer:
         """
         valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
         if position not in valid_positions:
-            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+            raise ValueError(
+                f"Invalid position: {position}. Must be one of {valid_positions}"
+            )
 
         self.position = position
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
@@ -919,7 +928,9 @@ class AspectCountsLayer:
         # Render each line
         for i, line in enumerate(lines):
             line_y = y + (i * self.style["line_height"])
-            font_weight = self.style["title_weight"] if i == 0 else self.style["font_weight"]
+            font_weight = (
+                self.style["title_weight"] if i == 0 else self.style["font_weight"]
+            )
 
             dwg.add(
                 dwg.text(
@@ -993,7 +1004,9 @@ class ElementModalityTableLayer:
         """
         valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
         if position not in valid_positions:
-            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+            raise ValueError(
+                f"Invalid position: {position}. Must be one of {valid_positions}"
+            )
 
         self.position = position
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
@@ -1160,7 +1173,9 @@ class ChartShapeLayer:
         """
         valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
         if position not in valid_positions:
-            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+            raise ValueError(
+                f"Invalid position: {position}. Must be one of {valid_positions}"
+            )
 
         self.position = position
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
@@ -1169,7 +1184,10 @@ class ChartShapeLayer:
         self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
     ) -> None:
         """Render chart shape information."""
-        from starlight.utils.chart_shape import detect_chart_shape, get_chart_shape_description
+        from starlight.utils.chart_shape import (
+            detect_chart_shape,
+            get_chart_shape_description,
+        )
 
         # Detect shape
         shape, metadata = detect_chart_shape(chart)
@@ -1202,7 +1220,9 @@ class ChartShapeLayer:
         # Render each line
         for i, line in enumerate(lines):
             line_y = y + (i * self.style["line_height"])
-            font_weight = self.style["title_weight"] if i == 0 else self.style["font_weight"]
+            font_weight = (
+                self.style["title_weight"] if i == 0 else self.style["font_weight"]
+            )
 
             dwg.add(
                 dwg.text(

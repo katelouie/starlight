@@ -89,7 +89,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Customizable styles via style dictionaries
   - Chart inversion support
   - Automatic zodiac ring, house cusps, planet positions, and aspect grid rendering
-  - Added moon phase visualization to the chart.
+  - Added moon phase visualization to the chart (center and corners)
+  - Added chart corner information layers
+  - Added initial version of extended canvas with position tables and aspectarian
 
 #### Presentation & Reporting
 
