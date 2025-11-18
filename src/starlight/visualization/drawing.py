@@ -52,6 +52,7 @@ def draw_chart(
     planet_glyph_palette: str | None = None,
     color_sign_info: bool = False,
     style_config: dict | None = None,
+    house_systems: str | list[str] | None = None,  # Single name, list of names, or "all"
 ) -> str:
     """
     Draws a standard natal chart.
@@ -102,10 +103,17 @@ def draw_chart(
         color_sign_info: If True, color sign glyphs in info stack based on zodiac palette
                          with adaptive contrast. Default False.
         style_config: Optional style overrides for fine-tuning.
+        house_systems: House system(s) to overlay on the chart. Options:
+            - None (default): Use chart's default house system only
+            - Single system name (e.g., "Whole Sign"): Overlay that system
+            - List of names (e.g., ["Placidus", "Whole Sign"]): Overlay multiple systems
+            - "all": Display all available house systems from the chart
 
     Note:
         Zodiac wheel glyphs are automatically adapted for contrast against their
         sign backgrounds for accessibility (WCAG AA compliance). No configuration needed.
+        When multiple house systems are specified, the first is drawn with default style,
+        and additional systems are drawn with distinct styles (dashed lines, different colors).
 
     Returns:
         The filename of the saved chart.
@@ -250,14 +258,56 @@ def draw_chart(
         in (ObjectType.PLANET, ObjectType.ASTEROID, ObjectType.NODE, ObjectType.POINT)
     ]
 
+    # Determine which house systems to render
+    house_system_names = []
+    if house_systems is None:
+        # Default: use chart's default house system
+        house_system_names = [chart.default_house_system]
+    elif house_systems == "all":
+        # Use all available house systems from chart
+        house_system_names = list(chart.house_systems.keys())
+    elif isinstance(house_systems, str):
+        # Single house system specified
+        house_system_names = [house_systems]
+    else:
+        # List of house systems
+        house_system_names = house_systems
+
     # Assemble the layers in draw order (background to foreground)
     layers: list[IRenderLayer] = [
         ZodiacLayer(palette=zodiac_palette),
-        HouseCuspLayer(house_system_name=chart.default_house_system),
+    ]
+
+    # Add house cusp layers (first with default style, rest with distinct styles)
+    for i, system_name in enumerate(house_system_names):
+        if i == 0:
+            # First system uses default style
+            layers.append(HouseCuspLayer(house_system_name=system_name))
+        else:
+            # Additional systems use distinct styles
+            # Cycle through colors for multiple overlays
+            overlay_colors = ["#E74C3C", "#3498DB", "#2ECC71", "#F39C12", "#9B59B6"]
+            color = overlay_colors[(i - 1) % len(overlay_colors)]
+
+            layers.append(
+                HouseCuspLayer(
+                    house_system_name=system_name,
+                    style_override={
+                        "line_color": color,
+                        "line_width": 0.5,
+                        "line_dash": "5,5",
+                        "number_color": color,
+                        "fill_alternate": False,  # Don't fill for overlay systems
+                    },
+                )
+            )
+
+    # Add remaining layers
+    layers.extend([
         AspectLayer(),
         PlanetLayer(planet_set=planets_to_draw, radius_key="planet_ring"),
         AngleLayer(),
-    ]
+    ])
 
     # Add moon phase layer if requested
     if moon_phase:
@@ -275,6 +325,7 @@ def draw_chart(
         info_layer = ChartInfoLayer(
             position=chart_info_position,
             fields=chart_info_fields,
+            house_systems=house_system_names,  # Pass actual systems being rendered
         )
         layers.append(info_layer)
         corner_positions.add(chart_info_position)

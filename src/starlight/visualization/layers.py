@@ -716,6 +716,7 @@ class ChartInfoLayer:
         position: str = "top-left",
         fields: list[str] | None = None,
         style_override: dict[str, Any] | None = None,
+        house_systems: list[str] | None = None,
     ) -> None:
         """
         Initialize chart info layer.
@@ -729,6 +730,8 @@ class ChartInfoLayer:
                 If None, displays: ["name", "location", "datetime", "timezone",
                 "coordinates", "house_system", "ephemeris"]
             style_override: Optional style overrides
+            house_systems: List of house system names being rendered on the chart.
+                If provided, will display all systems instead of just the default.
         """
         valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
         if position not in valid_positions:
@@ -747,6 +750,7 @@ class ChartInfoLayer:
             "ephemeris",
         ]
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+        self.house_systems = house_systems
 
     def render(
         self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
@@ -785,9 +789,18 @@ class ChartInfoLayer:
             lines.append(f"{abs(lat):.2f}°{lat_dir}, {abs(lon):.2f}°{lon_dir}")
 
         if "house_system" in self.fields:
-            house_system = getattr(chart, "default_house_system", None)
-            if house_system:
-                lines.append(f"Houses: {house_system}")
+            # Use provided house_systems list if available, otherwise use chart's default
+            if self.house_systems:
+                if len(self.house_systems) == 1:
+                    lines.append(f"Houses: {self.house_systems[0]}")
+                else:
+                    # Multiple house systems - show all
+                    systems_str = ", ".join(self.house_systems)
+                    lines.append(f"Houses: {systems_str}")
+            else:
+                house_system = getattr(chart, "default_house_system", None)
+                if house_system:
+                    lines.append(f"Houses: {house_system}")
 
         if "ephemeris" in self.fields:
             # Currently only Tropical is implemented
@@ -796,10 +809,29 @@ class ChartInfoLayer:
         if not name and not lines:
             return
 
-        # Calculate total lines including name (if present)
+        # Calculate maximum text width to avoid chart overlap
+        max_width = self._get_max_text_width(renderer)
+
+        # Wrap all text lines to fit within max width
+        wrapped_lines = []
+        for line in lines:
+            wrapped = self._wrap_text(line, max_width, self.style["text_size"])
+            wrapped_lines.extend(wrapped)
+
+        # Also wrap name if present
+        wrapped_name = None
+        if name:
+            name_wrapped = self._wrap_text(name, max_width, self.style["name_size"])
+            if len(name_wrapped) > 1:
+                # Name wrapped - use all wrapped lines
+                wrapped_name = name_wrapped
+            else:
+                wrapped_name = [name]
+
+        # Calculate total lines including wrapped name (if present)
         # Name takes extra vertical space due to larger font
         name_line_height = int(float(self.style["name_size"][:-2]) * 1.2)  # 120% of font size
-        total_lines = len(lines) + (1 if name else 0)
+        total_lines = len(wrapped_lines) + (len(wrapped_name) if wrapped_name else 0)
 
         # Calculate position (use total_lines for proper spacing)
         x, y = self._get_position_coordinates(renderer, total_lines)
@@ -821,24 +853,28 @@ class ChartInfoLayer:
         current_y = y
 
         # Render name first (if present) with larger, bold font
-        if name:
-            dwg.add(
-                dwg.text(
-                    name,
-                    insert=(x, current_y),
-                    text_anchor=text_anchor,
-                    dominant_baseline="hanging",
-                    font_size=self.style["name_size"],
-                    fill=text_color,
-                    font_family=renderer.style["font_family_text"],
-                    font_weight=self.style["name_weight"],
+        if wrapped_name:
+            for name_line in wrapped_name:
+                dwg.add(
+                    dwg.text(
+                        name_line,
+                        insert=(x, current_y),
+                        text_anchor=text_anchor,
+                        dominant_baseline="hanging",
+                        font_size=self.style["name_size"],
+                        fill=text_color,
+                        font_family=renderer.style["font_family_text"],
+                        font_weight=self.style["name_weight"],
+                    )
                 )
-            )
-            # Move down for next line (name uses larger spacing)
-            current_y += name_line_height + 2  # Extra 2px gap after name
+                # Move down for next line (name uses larger spacing)
+                current_y += name_line_height
+
+            # Extra gap after name section
+            current_y += 2
 
         # Render remaining info lines with normal font
-        for line in lines:
+        for line in wrapped_lines:
             dwg.add(
                 dwg.text(
                     line,
@@ -852,6 +888,78 @@ class ChartInfoLayer:
                 )
             )
             current_y += self.style["line_height"]
+
+    def _get_max_text_width(self, renderer: ChartRenderer) -> float:
+        """
+        Calculate maximum text width before overlapping with chart circle.
+
+        Args:
+            renderer: ChartRenderer instance
+
+        Returns:
+            Maximum width in pixels
+        """
+        margin = renderer.size * 0.03
+        zodiac_radius = renderer.radii.get("zodiac_ring_outer", renderer.size * 0.47)
+
+        # Calculate available width based on corner position
+        if "left" in self.position:
+            # Text extends right from margin
+            # Chart circle left edge is at center - radius
+            chart_left_edge = renderer.center - zodiac_radius
+            available_width = chart_left_edge - margin - 10  # 10px safety buffer
+        else:  # "right" in position
+            # Text extends left from size - margin
+            # Chart circle right edge is at center + radius
+            chart_right_edge = renderer.center + zodiac_radius
+            available_width = (renderer.size - margin) - chart_right_edge - 10  # 10px safety buffer
+
+        return max(available_width, 100)  # Minimum 100px
+
+    def _wrap_text(self, text: str, max_width: float, font_size: str) -> list[str]:
+        """
+        Wrap text to fit within maximum width.
+
+        Args:
+            text: Text to wrap
+            max_width: Maximum width in pixels
+            font_size: Font size (e.g., "11px")
+
+        Returns:
+            List of wrapped text lines
+        """
+        # Extract numeric font size
+        size_px = int(float(font_size.replace("px", "")))
+
+        # Rough estimation: average character width is ~0.6 * font_size for proportional fonts
+        char_width = size_px * 0.6
+
+        # Calculate max characters per line
+        max_chars = int(max_width / char_width)
+
+        if len(text) <= max_chars:
+            return [text]
+
+        # Wrap text intelligently at word boundaries
+        lines = []
+        words = text.split()
+        current_line = ""
+
+        for word in words:
+            if not current_line:
+                current_line = word
+            elif len(current_line + " " + word) <= max_chars:
+                current_line += " " + word
+            else:
+                # Current line is full, start new line
+                lines.append(current_line)
+                current_line = word
+
+        # Add remaining text
+        if current_line:
+            lines.append(current_line)
+
+        return lines if lines else [text]
 
     def _get_position_coordinates(
         self, renderer: ChartRenderer, num_lines: int
