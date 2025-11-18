@@ -213,14 +213,25 @@ class MoonPhaseLayer:
             moon_radius = self.style["size"]
             corner_inset = margin + moon_radius
 
+            # For bottom corners with labels, add extra vertical space
+            # to prevent label collision with bottom edge
+            if self.show_label and self.position in ["bottom-left", "bottom-right"]:
+                # Extract font size (e.g., "11px" -> 11)
+                label_height = int(float(self.style["label_size"][:-2]))
+                # Add label height + offset + small buffer to move moon up
+                extra_spacing = label_height + self.style["label_offset"] + 4
+                bottom_inset = corner_inset + extra_spacing
+            else:
+                bottom_inset = corner_inset
+
             if self.position == "top-left":
                 return (corner_inset, corner_inset)
             elif self.position == "top-right":
                 return (renderer.size - corner_inset, corner_inset)
             elif self.position == "bottom-left":
-                return (corner_inset, renderer.size - corner_inset)
+                return (corner_inset, renderer.size - bottom_inset)
             elif self.position == "bottom-right":
-                return (renderer.size - corner_inset, renderer.size - corner_inset)
+                return (renderer.size - corner_inset, renderer.size - bottom_inset)
 
         # Center position
         return (renderer.center, renderer.center)
