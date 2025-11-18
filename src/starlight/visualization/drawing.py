@@ -118,9 +118,17 @@ def draw_chart(
     # Determine theme and palette
     if theme:
         theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
-        # If no palette specified, use theme's default
+        # If no zodiac palette specified, use theme's default
         if zodiac_palette is None:
             zodiac_palette = get_theme_default_palette(theme_enum)
+        # If no aspect palette specified, use theme's default
+        if aspect_palette is None:
+            from .themes import get_theme_default_aspect_palette
+            aspect_palette = get_theme_default_aspect_palette(theme_enum).value
+        # If no planet glyph palette specified, use theme's default
+        if planet_glyph_palette is None:
+            from .themes import get_theme_default_planet_palette
+            planet_glyph_palette = get_theme_default_planet_palette(theme_enum).value
     else:
         # No theme specified, use classic defaults
         if zodiac_palette is None:
@@ -164,6 +172,26 @@ def draw_chart(
         planet_glyph_palette=planet_glyph_palette,
         color_sign_info=color_sign_info,
     )
+
+    # Count corner layers early to determine if padding is needed
+    # This must happen BEFORE creating SVG so borders are drawn with correct radii
+    corner_layers_count = 0
+    if chart_info:
+        corner_layers_count += 1
+    if aspect_counts:
+        corner_layers_count += 1
+    if element_modality_table:
+        corner_layers_count += 1
+    if chart_shape:
+        corner_layers_count += 1
+
+    # Apply padding if auto_padding is enabled and >2 corners are occupied
+    # Must be done before creating SVG so borders use adjusted radii
+    if auto_padding and corner_layers_count > 2:
+        # Add subtle padding by slightly reducing radii (keeps chart centered)
+        padding_factor = 0.95  # Reduce by 5%
+        for key in renderer.radii:
+            renderer.radii[key] *= padding_factor
 
     # Create SVG drawing
     if extended_canvas:
@@ -239,8 +267,7 @@ def draw_chart(
         )
         layers.insert(3, moon_layer)  # Insert before PlanetLayer
 
-    # Count corner layers to determine if padding is needed
-    corner_layers_count = 0
+    # Add corner layers (auto_padding already applied earlier if needed)
     corner_positions = set()
 
     # Add chart info layer if requested
@@ -250,7 +277,6 @@ def draw_chart(
             fields=chart_info_fields,
         )
         layers.append(info_layer)
-        corner_layers_count += 1
         corner_positions.add(chart_info_position)
 
     # Add aspect counts layer if requested
@@ -259,7 +285,6 @@ def draw_chart(
             position=aspect_counts_position,
         )
         layers.append(counts_layer)
-        corner_layers_count += 1
         corner_positions.add(aspect_counts_position)
 
     # Add element/modality table layer if requested
@@ -268,7 +293,6 @@ def draw_chart(
             position=element_modality_position,
         )
         layers.append(table_layer)
-        corner_layers_count += 1
         corner_positions.add(element_modality_position)
 
     # Add chart shape layer if requested
@@ -277,18 +301,7 @@ def draw_chart(
             position=chart_shape_position,
         )
         layers.append(shape_layer)
-        corner_layers_count += 1
         corner_positions.add(chart_shape_position)
-
-    # Apply padding if auto_padding is enabled and >2 corners are occupied
-    # This is a simple approach - we just scale up the radii proportionally
-    # A more sophisticated approach would expand the canvas size
-    # For now, this keeps the chart centered with more breathing room
-    if auto_padding and corner_layers_count > 2:
-        # Add subtle padding by slightly reducing radii (keeps chart centered)
-        padding_factor = 0.95  # Reduce by 5%
-        for key in renderer.radii:
-            renderer.radii[key] *= padding_factor
 
     # Tell each layer to render itself
     for layer in layers:
@@ -375,9 +388,17 @@ def draw_chart_with_multiple_houses(
     # Determine theme and palette
     if theme:
         theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
-        # If no palette specified, use theme's default
+        # If no zodiac palette specified, use theme's default
         if zodiac_palette is None:
             zodiac_palette = get_theme_default_palette(theme_enum)
+        # If no aspect palette specified, use theme's default
+        if aspect_palette is None:
+            from .themes import get_theme_default_aspect_palette
+            aspect_palette = get_theme_default_aspect_palette(theme_enum).value
+        # If no planet glyph palette specified, use theme's default
+        if planet_glyph_palette is None:
+            from .themes import get_theme_default_planet_palette
+            planet_glyph_palette = get_theme_default_planet_palette(theme_enum).value
     else:
         # No theme specified, use classic defaults
         if zodiac_palette is None:

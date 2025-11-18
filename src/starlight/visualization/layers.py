@@ -707,6 +707,8 @@ class ChartInfoLayer:
         "text_size": "11px",
         "line_height": 14,  # Pixels between lines
         "font_weight": "normal",
+        "name_size": "16px",  # Larger font for name
+        "name_weight": "bold",  # Bold weight for name
     }
 
     def __init__(
@@ -746,14 +748,11 @@ class ChartInfoLayer:
         self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
     ) -> None:
         """Render chart information."""
-        # Build info text lines
-        lines = []
+        # Check for name in metadata first (always display prominently if present)
+        name = chart.metadata.get("name") if hasattr(chart, "metadata") else None
 
-        # Check for name in metadata or as attribute
-        if "name" in self.fields:
-            name = chart.metadata.get("name") if hasattr(chart, "metadata") else None
-            if name:
-                lines.append(name)
+        # Build info text lines (excluding name, which is handled separately)
+        lines = []
 
         if "location" in self.fields and chart.location:
             location_name = getattr(chart.location, "name", None)
@@ -786,11 +785,16 @@ class ChartInfoLayer:
             if house_system:
                 lines.append(f"Houses: {house_system}")
 
-        if not lines:
+        if not name and not lines:
             return
 
-        # Calculate position
-        x, y = self._get_position_coordinates(renderer, len(lines))
+        # Calculate total lines including name (if present)
+        # Name takes extra vertical space due to larger font
+        name_line_height = int(float(self.style["name_size"][:-2]) * 1.2)  # 120% of font size
+        total_lines = len(lines) + (1 if name else 0)
+
+        # Calculate position (use total_lines for proper spacing)
+        x, y = self._get_position_coordinates(renderer, total_lines)
 
         # Determine text anchor based on position
         if "right" in self.position:
@@ -806,13 +810,31 @@ class ChartInfoLayer:
             min_contrast=4.5
         )
 
-        # Render each line
-        for i, line in enumerate(lines):
-            line_y = y + (i * self.style["line_height"])
+        current_y = y
+
+        # Render name first (if present) with larger, bold font
+        if name:
+            dwg.add(
+                dwg.text(
+                    name,
+                    insert=(x, current_y),
+                    text_anchor=text_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["name_size"],
+                    fill=text_color,
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["name_weight"],
+                )
+            )
+            # Move down for next line (name uses larger spacing)
+            current_y += name_line_height + 2  # Extra 2px gap after name
+
+        # Render remaining info lines with normal font
+        for line in lines:
             dwg.add(
                 dwg.text(
                     line,
-                    insert=(x, line_y),
+                    insert=(x, current_y),
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
@@ -821,6 +843,7 @@ class ChartInfoLayer:
                     font_weight=self.style["font_weight"],
                 )
             )
+            current_y += self.style["line_height"]
 
     def _get_position_coordinates(
         self, renderer: ChartRenderer, num_lines: int
