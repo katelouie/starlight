@@ -724,8 +724,10 @@ class ChartInfoLayer:
             position: Where to place the info block.
                 Options: "top-left", "top-right", "bottom-left", "bottom-right"
             fields: List of fields to display. Options:
-                "name", "location", "datetime", "timezone", "coordinates", "house_system"
-                If None, displays: ["name", "location", "datetime", "timezone", "coordinates"]
+                "name", "location", "datetime", "timezone", "coordinates",
+                "house_system", "ephemeris"
+                If None, displays: ["name", "location", "datetime", "timezone",
+                "coordinates", "house_system", "ephemeris"]
             style_override: Optional style overrides
         """
         valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
@@ -741,6 +743,8 @@ class ChartInfoLayer:
             "datetime",
             "timezone",
             "coordinates",
+            "house_system",
+            "ephemeris",
         ]
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
 
@@ -784,6 +788,10 @@ class ChartInfoLayer:
             house_system = getattr(chart, "default_house_system", None)
             if house_system:
                 lines.append(f"Houses: {house_system}")
+
+        if "ephemeris" in self.fields:
+            # Currently only Tropical is implemented
+            lines.append("Ephemeris: Tropical")
 
         if not name and not lines:
             return

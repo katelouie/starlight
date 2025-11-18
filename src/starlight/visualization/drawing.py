@@ -295,13 +295,23 @@ def draw_chart(
         layers.append(table_layer)
         corner_positions.add(element_modality_position)
 
-    # Add chart shape layer if requested
+    # Add chart shape layer if requested (with collision detection)
     if chart_shape:
-        shape_layer = ChartShapeLayer(
-            position=chart_shape_position,
+        # Check for collision with auto-positioned moon phase
+        # Skip chart shape if moon phase will be in same corner (bottom-right when aspects present)
+        moon_will_be_in_bottom_right = (
+            moon_phase
+            and moon_phase_position is None  # Auto-detect enabled
+            and chart.aspects and len(chart.aspects) > 0  # Has aspects = moon goes to bottom-right
+            and chart_shape_position == "bottom-right"  # Chart shape also in bottom-right
         )
-        layers.append(shape_layer)
-        corner_positions.add(chart_shape_position)
+
+        if not moon_will_be_in_bottom_right:
+            shape_layer = ChartShapeLayer(
+                position=chart_shape_position,
+            )
+            layers.append(shape_layer)
+            corner_positions.add(chart_shape_position)
 
     # Tell each layer to render itself
     for layer in layers:

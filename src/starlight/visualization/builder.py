@@ -326,11 +326,12 @@ class ChartDrawBuilder:
         Detailed preset: Chart with info boxes and moon phase.
 
         Includes chart info (top-left), aspect counts (top-right),
-        element/modality table (bottom-left), and auto-positioned moon phase
-        (bottom-right when aspects present, center when no aspects).
+        element/modality table (bottom-left), chart shape (bottom-right),
+        and auto-positioned moon phase (center when no aspects, bottom-right
+        when aspects present).
 
-        Note: Chart shape is excluded to avoid collision with moon phase
-        in bottom-right corner when aspects are present.
+        Note: Chart shape is automatically hidden at render time when moon
+        phase is positioned in bottom-right to avoid collision.
 
         Returns:
             Self for chaining
@@ -348,8 +349,9 @@ class ChartDrawBuilder:
         self._element_modality_table = True
         self._element_modality_table_position = "bottom-left"
 
-        # Chart shape excluded to avoid collision with auto-positioned moon phase
-        self._chart_shape = False
+        # Chart shape enabled - will be auto-hidden if moon phase is in bottom-right
+        self._chart_shape = True
+        self._chart_shape_position = "bottom-right"
 
         return self
 
