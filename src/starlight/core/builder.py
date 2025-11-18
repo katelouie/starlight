@@ -79,6 +79,9 @@ class ChartBuilder:
         # Cache management
         self._cache: Cache | None = None
 
+        # Optional chart name (for display purposes)
+        self._name: str | None = None
+
     @classmethod
     def from_native(cls, native: Native) -> "ChartBuilder":
         """Create a new ChartBuilder from a Native object.
@@ -97,18 +100,20 @@ class ChartBuilder:
         This is a convenience method that looks up a famous birth or event
         from the curated registry and creates a chart for it.
 
+        The notable's name is automatically set on the chart for display purposes.
+
         Args:
             name: Name of person or event (case-insensitive)
 
         Returns:
-            ChartBuilder instance ready to build
+            ChartBuilder instance ready to build, with name pre-set
 
         Raises:
             ValueError: If name not found in registry
 
         Example:
-            >>> chart = ChartBuilder.from_notable("Albert Einstein").build()
-            >>> chart = ChartBuilder.from_notable("marie curie").build()
+            >>> chart = ChartBuilder.from_notable("Albert Einstein").calculate()
+            >>> chart = ChartBuilder.from_notable("marie curie").calculate()
         """
         registry = get_notable_registry()
         notable = registry.get_by_name(name)
@@ -120,7 +125,10 @@ class ChartBuilder:
                 f"Use get_notable_registry().get_all() to see available notables."
             )
         # Notable IS-A Native, so we can use from_native!
-        return cls.from_native(notable)
+        builder = cls.from_native(notable)
+        # Automatically set the notable's name on the chart
+        builder._name = notable.name
+        return builder
 
     # ---- Fluent configuration methods ---
     def with_ephemeris(self, engine: EphemerisEngine) -> "ChartBuilder":
@@ -153,6 +161,24 @@ class ChartBuilder:
     def with_orbs(self, engine: OrbEngine | None = None) -> "ChartBuilder":
         """Set the orb calculation engine."""
         self._orb_engine = engine or SimpleOrbEngine()
+        return self
+
+    def with_name(self, name: str) -> "ChartBuilder":
+        """
+        Set the chart name (for display purposes).
+
+        Args:
+            name: Name to display on the chart (e.g., person's name, event name)
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            >>> chart = (ChartBuilder.from_native(native)
+            ...     .with_name("John Doe")
+            ...     .calculate())
+        """
+        self._name = name
         return self
 
     def with_config(self, config: CalculationConfig) -> "ChartBuilder":
@@ -291,6 +317,10 @@ class ChartBuilder:
         # Add cache statistics to the metadata
         cache_stats = self._get_cache().get_stats()
         final_metadata["cache_stats"] = cache_stats
+
+        # Add chart name to metadata if set
+        if self._name is not None:
+            final_metadata["name"] = self._name
 
         # Step 7: Build final chart
         return CalculatedChart(

@@ -707,6 +707,8 @@ class ChartInfoLayer:
         "text_size": "11px",
         "line_height": 14,  # Pixels between lines
         "font_weight": "normal",
+        "name_size": "16px",  # Larger font for name
+        "name_weight": "bold",  # Bold weight for name
     }
 
     def __init__(
@@ -714,6 +716,7 @@ class ChartInfoLayer:
         position: str = "top-left",
         fields: list[str] | None = None,
         style_override: dict[str, Any] | None = None,
+        house_systems: list[str] | None = None,
     ) -> None:
         """
         Initialize chart info layer.
@@ -722,9 +725,13 @@ class ChartInfoLayer:
             position: Where to place the info block.
                 Options: "top-left", "top-right", "bottom-left", "bottom-right"
             fields: List of fields to display. Options:
-                "name", "location", "datetime", "timezone", "coordinates", "house_system"
-                If None, displays: ["name", "location", "datetime", "timezone", "coordinates"]
+                "name", "location", "datetime", "timezone", "coordinates",
+                "house_system", "ephemeris"
+                If None, displays: ["name", "location", "datetime", "timezone",
+                "coordinates", "house_system", "ephemeris"]
             style_override: Optional style overrides
+            house_systems: List of house system names being rendered on the chart.
+                If provided, will display all systems instead of just the default.
         """
         valid_positions = ["top-left", "top-right", "bottom-left", "bottom-right"]
         if position not in valid_positions:
@@ -739,21 +746,21 @@ class ChartInfoLayer:
             "datetime",
             "timezone",
             "coordinates",
+            "house_system",
+            "ephemeris",
         ]
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+        self.house_systems = house_systems
 
     def render(
         self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
     ) -> None:
         """Render chart information."""
-        # Build info text lines
-        lines = []
+        # Check for name in metadata first (always display prominently if present)
+        name = chart.metadata.get("name") if hasattr(chart, "metadata") else None
 
-        # Check for name in metadata or as attribute
-        if "name" in self.fields:
-            name = chart.metadata.get("name") if hasattr(chart, "metadata") else None
-            if name:
-                lines.append(name)
+        # Build info text lines (excluding name, which is handled separately)
+        lines = []
 
         if "location" in self.fields and chart.location:
             location_name = getattr(chart.location, "name", None)
@@ -782,15 +789,52 @@ class ChartInfoLayer:
             lines.append(f"{abs(lat):.2f}°{lat_dir}, {abs(lon):.2f}°{lon_dir}")
 
         if "house_system" in self.fields:
-            house_system = getattr(chart, "default_house_system", None)
-            if house_system:
-                lines.append(f"Houses: {house_system}")
+            # Use provided house_systems list if available, otherwise use chart's default
+            if self.house_systems:
+                if len(self.house_systems) == 1:
+                    lines.append(f"Houses: {self.house_systems[0]}")
+                else:
+                    # Multiple house systems - show all
+                    systems_str = ", ".join(self.house_systems)
+                    lines.append(f"Houses: {systems_str}")
+            else:
+                house_system = getattr(chart, "default_house_system", None)
+                if house_system:
+                    lines.append(f"Houses: {house_system}")
 
-        if not lines:
+        if "ephemeris" in self.fields:
+            # Currently only Tropical is implemented
+            lines.append("Ephemeris: Tropical")
+
+        if not name and not lines:
             return
 
-        # Calculate position
-        x, y = self._get_position_coordinates(renderer, len(lines))
+        # Calculate maximum text width to avoid chart overlap
+        max_width = self._get_max_text_width(renderer)
+
+        # Wrap all text lines to fit within max width
+        wrapped_lines = []
+        for line in lines:
+            wrapped = self._wrap_text(line, max_width, self.style["text_size"])
+            wrapped_lines.extend(wrapped)
+
+        # Also wrap name if present
+        wrapped_name = None
+        if name:
+            name_wrapped = self._wrap_text(name, max_width, self.style["name_size"])
+            if len(name_wrapped) > 1:
+                # Name wrapped - use all wrapped lines
+                wrapped_name = name_wrapped
+            else:
+                wrapped_name = [name]
+
+        # Calculate total lines including wrapped name (if present)
+        # Name takes extra vertical space due to larger font
+        name_line_height = int(float(self.style["name_size"][:-2]) * 1.2)  # 120% of font size
+        total_lines = len(wrapped_lines) + (len(wrapped_name) if wrapped_name else 0)
+
+        # Calculate position (use total_lines for proper spacing)
+        x, y = self._get_position_coordinates(renderer, total_lines)
 
         # Determine text anchor based on position
         if "right" in self.position:
@@ -806,13 +850,35 @@ class ChartInfoLayer:
             min_contrast=4.5
         )
 
-        # Render each line
-        for i, line in enumerate(lines):
-            line_y = y + (i * self.style["line_height"])
+        current_y = y
+
+        # Render name first (if present) with larger, bold font
+        if wrapped_name:
+            for name_line in wrapped_name:
+                dwg.add(
+                    dwg.text(
+                        name_line,
+                        insert=(x, current_y),
+                        text_anchor=text_anchor,
+                        dominant_baseline="hanging",
+                        font_size=self.style["name_size"],
+                        fill=text_color,
+                        font_family=renderer.style["font_family_text"],
+                        font_weight=self.style["name_weight"],
+                    )
+                )
+                # Move down for next line (name uses larger spacing)
+                current_y += name_line_height
+
+            # Extra gap after name section
+            current_y += 2
+
+        # Render remaining info lines with normal font
+        for line in wrapped_lines:
             dwg.add(
                 dwg.text(
                     line,
-                    insert=(x, line_y),
+                    insert=(x, current_y),
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
@@ -821,6 +887,79 @@ class ChartInfoLayer:
                     font_weight=self.style["font_weight"],
                 )
             )
+            current_y += self.style["line_height"]
+
+    def _get_max_text_width(self, renderer: ChartRenderer) -> float:
+        """
+        Calculate maximum text width before overlapping with chart circle.
+
+        Args:
+            renderer: ChartRenderer instance
+
+        Returns:
+            Maximum width in pixels
+        """
+        margin = renderer.size * 0.03
+        zodiac_radius = renderer.radii.get("zodiac_ring_outer", renderer.size * 0.47)
+
+        # Calculate available width based on corner position
+        if "left" in self.position:
+            # Text extends right from margin
+            # Chart circle left edge is at center - radius
+            chart_left_edge = renderer.center - zodiac_radius
+            available_width = chart_left_edge - margin - 10  # 10px safety buffer
+        else:  # "right" in position
+            # Text extends left from size - margin
+            # Chart circle right edge is at center + radius
+            chart_right_edge = renderer.center + zodiac_radius
+            available_width = (renderer.size - margin) - chart_right_edge - 10  # 10px safety buffer
+
+        return max(available_width, 100)  # Minimum 100px
+
+    def _wrap_text(self, text: str, max_width: float, font_size: str) -> list[str]:
+        """
+        Wrap text to fit within maximum width.
+
+        Args:
+            text: Text to wrap
+            max_width: Maximum width in pixels
+            font_size: Font size (e.g., "11px")
+
+        Returns:
+            List of wrapped text lines
+        """
+        # Extract numeric font size
+        size_px = int(float(font_size.replace("px", "")))
+
+        # Rough estimation: average character width is ~0.6 * font_size for proportional fonts
+        char_width = size_px * 0.6
+
+        # Calculate max characters per line
+        max_chars = int(max_width / char_width)
+
+        if len(text) <= max_chars:
+            return [text]
+
+        # Wrap text intelligently at word boundaries
+        lines = []
+        words = text.split()
+        current_line = ""
+
+        for word in words:
+            if not current_line:
+                current_line = word
+            elif len(current_line + " " + word) <= max_chars:
+                current_line += " " + word
+            else:
+                # Current line is full, start new line
+                lines.append(current_line)
+                current_line = word
+
+        # Add remaining text
+        if current_line:
+            lines.append(current_line)
+
+        return lines if lines else [text]
 
     def _get_position_coordinates(
         self, renderer: ChartRenderer, num_lines: int
@@ -841,17 +980,21 @@ class ChartInfoLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
             # Fallback to top-left
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class AspectCountsLayer:
@@ -987,16 +1130,20 @@ class AspectCountsLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class ElementModalityTableLayer:
@@ -1103,16 +1250,36 @@ class ElementModalityTableLayer:
         num_lines = 5  # Header + 4 elements
         x, y = self._get_position_coordinates(renderer, num_lines)
 
-        # Determine text anchor
+        # Determine positioning based on corner
         if "right" in self.position:
-            text_anchor = "end"
+            # Right-aligned: row headers on right, data columns to the left
+            row_header_anchor = "end"
+            data_anchor = "middle"
             col_offset_multiplier = -1
         else:
-            text_anchor = "start"
+            # Left-aligned: row headers on left, data columns to the right
+            row_header_anchor = "start"
+            data_anchor = "middle"
             col_offset_multiplier = 1
 
-        # Render table
-        col_width = self.style["col_width"]
+        # Define column positions (relative to base x)
+        # Column layout: [Element] [Card] [Fix] [Mut]
+        row_header_width = 32  # Width for element symbol + name
+        col_width = 20  # Width for each data column
+
+        if "right" in self.position:
+            # Columns go left from base position
+            col_card_x = x + (col_offset_multiplier * row_header_width)
+            col_fix_x = col_card_x + (col_offset_multiplier * col_width)
+            col_mut_x = col_fix_x + (col_offset_multiplier * col_width)
+            row_header_x = x
+        else:
+            # Columns go right from base position
+            row_header_x = x
+            col_card_x = x + row_header_width
+            col_fix_x = col_card_x + col_width
+            col_mut_x = col_fix_x + col_width
+
         line_height = self.style["line_height"]
 
         # Ensure text color has sufficient contrast with background
@@ -1123,13 +1290,42 @@ class ElementModalityTableLayer:
             min_contrast=4.5
         )
 
-        # Header row
+        # Header row - render each column header separately
         header_y = y
+
+        # Empty space for element column
+        # (no header needed for element column)
+
+        # Column headers (Card, Fix, Mut)
         dwg.add(
             dwg.text(
-                "     Card Fix Mut",
-                insert=(x, header_y),
-                text_anchor=text_anchor,
+                "Card",
+                insert=(col_card_x, header_y),
+                text_anchor=data_anchor,
+                dominant_baseline="hanging",
+                font_size=self.style["text_size"],
+                fill=text_color,
+                font_family=renderer.style["font_family_text"],
+                font_weight=self.style["title_weight"],
+            )
+        )
+        dwg.add(
+            dwg.text(
+                "Fix",
+                insert=(col_fix_x, header_y),
+                text_anchor=data_anchor,
+                dominant_baseline="hanging",
+                font_size=self.style["text_size"],
+                fill=text_color,
+                font_family=renderer.style["font_family_text"],
+                font_weight=self.style["title_weight"],
+            )
+        )
+        dwg.add(
+            dwg.text(
+                "Mut",
+                insert=(col_mut_x, header_y),
+                text_anchor=data_anchor,
                 dominant_baseline="hanging",
                 font_size=self.style["text_size"],
                 fill=text_color,
@@ -1143,22 +1339,62 @@ class ElementModalityTableLayer:
         for i, element in enumerate(elements):
             row_y = header_y + ((i + 1) * line_height)
 
-            # Element symbol + name
+            # Element symbol + name (row header)
             symbol = self.ELEMENT_SYMBOLS.get(element, element[0])
-            row_text = f"{symbol} {element[:2]}"
+            row_header_text = f"{symbol} {element[:2]}"
 
-            # Add counts
+            dwg.add(
+                dwg.text(
+                    row_header_text,
+                    insert=(row_header_x, row_y),
+                    text_anchor=row_header_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=text_color,
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Data cells (counts) - each in its own column
             card_count = table[element]["Cardinal"]
             fix_count = table[element]["Fixed"]
             mut_count = table[element]["Mutable"]
 
-            row_text += f"   {card_count}   {fix_count}   {mut_count}"
-
+            # Cardinal count
             dwg.add(
                 dwg.text(
-                    row_text,
-                    insert=(x, row_y),
-                    text_anchor=text_anchor,
+                    str(card_count),
+                    insert=(col_card_x, row_y),
+                    text_anchor=data_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=text_color,
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Fixed count
+            dwg.add(
+                dwg.text(
+                    str(fix_count),
+                    insert=(col_fix_x, row_y),
+                    text_anchor=data_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=text_color,
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Mutable count
+            dwg.add(
+                dwg.text(
+                    str(mut_count),
+                    insert=(col_mut_x, row_y),
+                    text_anchor=data_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
                     fill=text_color,
@@ -1175,16 +1411,20 @@ class ElementModalityTableLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class ChartShapeLayer:
@@ -1307,16 +1547,20 @@ class ChartShapeLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class AspectLayer:

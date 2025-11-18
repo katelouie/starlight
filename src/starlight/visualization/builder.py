@@ -79,6 +79,9 @@ class ChartDrawBuilder:
         # Extended canvas
         self._extended_canvas: dict[str, Any] | None = None
 
+        # House systems (default: None = use chart's default, can be list of names or "all")
+        self._house_systems: list[str] | str | None = None
+
     def with_filename(self, filename: str) -> "ChartDrawBuilder":
         """
         Set the output filename.
@@ -172,6 +175,32 @@ class ChartDrawBuilder:
             This setting only controls the tiny sign glyphs in planet info stacks.
         """
         self._color_sign_info = sign_info
+        return self
+
+    def with_house_systems(self, systems: str | list[str]) -> "ChartDrawBuilder":
+        """
+        Configure multiple house systems to overlay on the chart.
+
+        Args:
+            systems: House system(s) to display. Can be:
+                - Single system name (e.g., "Placidus")
+                - List of system names (e.g., ["Placidus", "Whole Sign"])
+                - "all" to display all available house systems from the chart
+
+        Returns:
+            Self for chaining
+
+        Example:
+            # Single additional system
+            builder.with_house_systems("Whole Sign")
+
+            # Multiple systems
+            builder.with_house_systems(["Placidus", "Koch", "Whole Sign"])
+
+            # All available systems
+            builder.with_house_systems("all")
+        """
+        self._house_systems = systems
         return self
 
     def with_moon_phase(
@@ -323,7 +352,15 @@ class ChartDrawBuilder:
 
     def preset_detailed(self) -> "ChartDrawBuilder":
         """
-        Detailed preset: Chart with info boxes in all corners.
+        Detailed preset: Chart with info boxes and moon phase.
+
+        Includes chart info (top-left), aspect counts (top-right),
+        element/modality table (bottom-left), chart shape (bottom-right),
+        and auto-positioned moon phase (center when no aspects, bottom-right
+        when aspects present).
+
+        Note: Chart shape is automatically hidden at render time when moon
+        phase is positioned in bottom-right to avoid collision.
 
         Returns:
             Self for chaining
@@ -341,6 +378,7 @@ class ChartDrawBuilder:
         self._element_modality_table = True
         self._element_modality_table_position = "bottom-left"
 
+        # Chart shape enabled - will be auto-hidden if moon phase is in bottom-right
         self._chart_shape = True
         self._chart_shape_position = "bottom-right"
 
@@ -425,6 +463,10 @@ class ChartDrawBuilder:
         # Add extended canvas if configured
         if self._extended_canvas:
             options["extended_canvas"] = self._extended_canvas
+
+        # Add house systems if configured
+        if self._house_systems is not None:
+            options["house_systems"] = self._house_systems
 
         # Call draw_chart with all options
         return draw_chart(self._chart, **options)

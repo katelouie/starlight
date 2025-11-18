@@ -52,6 +52,7 @@ def draw_chart(
     planet_glyph_palette: str | None = None,
     color_sign_info: bool = False,
     style_config: dict | None = None,
+    house_systems: str | list[str] | None = None,  # Single name, list of names, or "all"
 ) -> str:
     """
     Draws a standard natal chart.
@@ -102,10 +103,17 @@ def draw_chart(
         color_sign_info: If True, color sign glyphs in info stack based on zodiac palette
                          with adaptive contrast. Default False.
         style_config: Optional style overrides for fine-tuning.
+        house_systems: House system(s) to overlay on the chart. Options:
+            - None (default): Use chart's default house system only
+            - Single system name (e.g., "Whole Sign"): Overlay that system
+            - List of names (e.g., ["Placidus", "Whole Sign"]): Overlay multiple systems
+            - "all": Display all available house systems from the chart
 
     Note:
         Zodiac wheel glyphs are automatically adapted for contrast against their
         sign backgrounds for accessibility (WCAG AA compliance). No configuration needed.
+        When multiple house systems are specified, the first is drawn with default style,
+        and additional systems are drawn with distinct styles (dashed lines, different colors).
 
     Returns:
         The filename of the saved chart.
@@ -118,9 +126,17 @@ def draw_chart(
     # Determine theme and palette
     if theme:
         theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
-        # If no palette specified, use theme's default
+        # If no zodiac palette specified, use theme's default
         if zodiac_palette is None:
             zodiac_palette = get_theme_default_palette(theme_enum)
+        # If no aspect palette specified, use theme's default
+        if aspect_palette is None:
+            from .themes import get_theme_default_aspect_palette
+            aspect_palette = get_theme_default_aspect_palette(theme_enum).value
+        # If no planet glyph palette specified, use theme's default
+        if planet_glyph_palette is None:
+            from .themes import get_theme_default_planet_palette
+            planet_glyph_palette = get_theme_default_planet_palette(theme_enum).value
     else:
         # No theme specified, use classic defaults
         if zodiac_palette is None:
@@ -164,6 +180,26 @@ def draw_chart(
         planet_glyph_palette=planet_glyph_palette,
         color_sign_info=color_sign_info,
     )
+
+    # Count corner layers early to determine if padding is needed
+    # This must happen BEFORE creating SVG so borders are drawn with correct radii
+    corner_layers_count = 0
+    if chart_info:
+        corner_layers_count += 1
+    if aspect_counts:
+        corner_layers_count += 1
+    if element_modality_table:
+        corner_layers_count += 1
+    if chart_shape:
+        corner_layers_count += 1
+
+    # Apply padding if auto_padding is enabled and >2 corners are occupied
+    # Must be done before creating SVG so borders use adjusted radii
+    if auto_padding and corner_layers_count > 2:
+        # Add subtle padding by slightly reducing radii (keeps chart centered)
+        padding_factor = 0.95  # Reduce by 5%
+        for key in renderer.radii:
+            renderer.radii[key] *= padding_factor
 
     # Create SVG drawing
     if extended_canvas:
@@ -222,14 +258,56 @@ def draw_chart(
         in (ObjectType.PLANET, ObjectType.ASTEROID, ObjectType.NODE, ObjectType.POINT)
     ]
 
+    # Determine which house systems to render
+    house_system_names = []
+    if house_systems is None:
+        # Default: use chart's default house system
+        house_system_names = [chart.default_house_system]
+    elif house_systems == "all":
+        # Use all available house systems from chart
+        house_system_names = list(chart.house_systems.keys())
+    elif isinstance(house_systems, str):
+        # Single house system specified
+        house_system_names = [house_systems]
+    else:
+        # List of house systems
+        house_system_names = house_systems
+
     # Assemble the layers in draw order (background to foreground)
     layers: list[IRenderLayer] = [
         ZodiacLayer(palette=zodiac_palette),
-        HouseCuspLayer(house_system_name=chart.default_house_system),
+    ]
+
+    # Add house cusp layers (first with default style, rest with distinct styles)
+    for i, system_name in enumerate(house_system_names):
+        if i == 0:
+            # First system uses default style
+            layers.append(HouseCuspLayer(house_system_name=system_name))
+        else:
+            # Additional systems use distinct styles
+            # Cycle through colors for multiple overlays
+            overlay_colors = ["#E74C3C", "#3498DB", "#2ECC71", "#F39C12", "#9B59B6"]
+            color = overlay_colors[(i - 1) % len(overlay_colors)]
+
+            layers.append(
+                HouseCuspLayer(
+                    house_system_name=system_name,
+                    style_override={
+                        "line_color": color,
+                        "line_width": 0.5,
+                        "line_dash": "5,5",
+                        "number_color": color,
+                        "fill_alternate": False,  # Don't fill for overlay systems
+                    },
+                )
+            )
+
+    # Add remaining layers
+    layers.extend([
         AspectLayer(),
         PlanetLayer(planet_set=planets_to_draw, radius_key="planet_ring"),
         AngleLayer(),
-    ]
+    ])
 
     # Add moon phase layer if requested
     if moon_phase:
@@ -239,8 +317,7 @@ def draw_chart(
         )
         layers.insert(3, moon_layer)  # Insert before PlanetLayer
 
-    # Count corner layers to determine if padding is needed
-    corner_layers_count = 0
+    # Add corner layers (auto_padding already applied earlier if needed)
     corner_positions = set()
 
     # Add chart info layer if requested
@@ -248,9 +325,9 @@ def draw_chart(
         info_layer = ChartInfoLayer(
             position=chart_info_position,
             fields=chart_info_fields,
+            house_systems=house_system_names,  # Pass actual systems being rendered
         )
         layers.append(info_layer)
-        corner_layers_count += 1
         corner_positions.add(chart_info_position)
 
     # Add aspect counts layer if requested
@@ -259,7 +336,6 @@ def draw_chart(
             position=aspect_counts_position,
         )
         layers.append(counts_layer)
-        corner_layers_count += 1
         corner_positions.add(aspect_counts_position)
 
     # Add element/modality table layer if requested
@@ -268,27 +344,25 @@ def draw_chart(
             position=element_modality_position,
         )
         layers.append(table_layer)
-        corner_layers_count += 1
         corner_positions.add(element_modality_position)
 
-    # Add chart shape layer if requested
+    # Add chart shape layer if requested (with collision detection)
     if chart_shape:
-        shape_layer = ChartShapeLayer(
-            position=chart_shape_position,
+        # Check for collision with auto-positioned moon phase
+        # Skip chart shape if moon phase will be in same corner (bottom-right when aspects present)
+        moon_will_be_in_bottom_right = (
+            moon_phase
+            and moon_phase_position is None  # Auto-detect enabled
+            and chart.aspects and len(chart.aspects) > 0  # Has aspects = moon goes to bottom-right
+            and chart_shape_position == "bottom-right"  # Chart shape also in bottom-right
         )
-        layers.append(shape_layer)
-        corner_layers_count += 1
-        corner_positions.add(chart_shape_position)
 
-    # Apply padding if auto_padding is enabled and >2 corners are occupied
-    # This is a simple approach - we just scale up the radii proportionally
-    # A more sophisticated approach would expand the canvas size
-    # For now, this keeps the chart centered with more breathing room
-    if auto_padding and corner_layers_count > 2:
-        # Add subtle padding by slightly reducing radii (keeps chart centered)
-        padding_factor = 0.95  # Reduce by 5%
-        for key in renderer.radii:
-            renderer.radii[key] *= padding_factor
+        if not moon_will_be_in_bottom_right:
+            shape_layer = ChartShapeLayer(
+                position=chart_shape_position,
+            )
+            layers.append(shape_layer)
+            corner_positions.add(chart_shape_position)
 
     # Tell each layer to render itself
     for layer in layers:
@@ -375,9 +449,17 @@ def draw_chart_with_multiple_houses(
     # Determine theme and palette
     if theme:
         theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
-        # If no palette specified, use theme's default
+        # If no zodiac palette specified, use theme's default
         if zodiac_palette is None:
             zodiac_palette = get_theme_default_palette(theme_enum)
+        # If no aspect palette specified, use theme's default
+        if aspect_palette is None:
+            from .themes import get_theme_default_aspect_palette
+            aspect_palette = get_theme_default_aspect_palette(theme_enum).value
+        # If no planet glyph palette specified, use theme's default
+        if planet_glyph_palette is None:
+            from .themes import get_theme_default_planet_palette
+            planet_glyph_palette = get_theme_default_planet_palette(theme_enum).value
     else:
         # No theme specified, use classic defaults
         if zodiac_palette is None:
