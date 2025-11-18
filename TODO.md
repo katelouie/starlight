@@ -44,11 +44,13 @@
 ### Fixes
 
 - [x] Nudge planets outwards and house numbers inwards for natal charts
-- [ ] Don't calculate aspects for known things like: AC/DSC, MC/IC, NN/SN
+- [x] Don't calculate aspects for known things like: AC/DSC, MC/IC, NN/SN
   - [ ] Don't calculate aspects between the 4 main angles in general
-- [ ] DO calculate aspects between Angles and other things
-- [ ] Make all aspect lines slightly transparent (alpha < 1)
-- [ ] When moon in is center of chart and aspects are displayed/present, make the moon transparent/fainter and rendered towards a back layer
+- [x] DO calculate aspects between Angles and other things
+- [x] Make all aspect lines slightly transparent (alpha < 1)
+- [x] When moon in is center of chart and aspects are displayed/present, move the moon to the corner
+- [x] Make moon phase name use the same font and size and styling as the chart info corner section -- also make corner moon smaller, and make sure its label text has enough padding from the edge of the canvas (curerntly hits it)
+- [ ] Make sure default corner-moon has a label (default label to On)
 
 ## Testing
 
