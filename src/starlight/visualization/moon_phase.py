@@ -207,6 +207,10 @@ class MoonPhaseLayer:
         # Match chart padding for corner placement
         margin = renderer.size * 0.03
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         # For corner placement, add moon size + padding for proper inset
         if self.position != "center":
             # Use configured size from style
@@ -225,16 +229,16 @@ class MoonPhaseLayer:
                 bottom_inset = corner_inset
 
             if self.position == "top-left":
-                return (corner_inset, corner_inset)
+                return (x_offset + corner_inset, y_offset + corner_inset)
             elif self.position == "top-right":
-                return (renderer.size - corner_inset, corner_inset)
+                return (x_offset + renderer.size - corner_inset, y_offset + corner_inset)
             elif self.position == "bottom-left":
-                return (corner_inset, renderer.size - bottom_inset)
+                return (x_offset + corner_inset, y_offset + renderer.size - bottom_inset)
             elif self.position == "bottom-right":
-                return (renderer.size - corner_inset, renderer.size - bottom_inset)
+                return (x_offset + renderer.size - corner_inset, y_offset + renderer.size - bottom_inset)
 
         # Center position
-        return (renderer.center, renderer.center)
+        return (x_offset + renderer.center, y_offset + renderer.center)
 
     def _create_moon_phase_symbol(
         self,

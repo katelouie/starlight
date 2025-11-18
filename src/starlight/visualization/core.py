@@ -182,6 +182,10 @@ class ChartRenderer:
         self.center = size // 2
         self.rotation = rotation
 
+        # Initialize offsets (set by extended canvas mode in drawing.py)
+        self.x_offset = 0
+        self.y_offset = 0
+
         # Store palette configurations
         self.zodiac_palette = zodiac_palette
         self.aspect_palette = aspect_palette
@@ -322,12 +326,14 @@ class ChartRenderer:
     ) -> tuple[float, float]:
         """
         Converts an astrological degree (0 degrees Aries) and radius to an (x,y) coordinate.
+        Accounts for extended canvas offsets when present.
         """
         svg_angle_rad = math.radians(self.astrological_to_svg_angle(astro_deg))
 
         # SVG Y is inverted (positive is down)
-        x = self.center + radius * math.cos(svg_angle_rad)
-        y = self.center - radius * math.sin(svg_angle_rad)
+        # Add offsets for extended canvas positioning
+        x = self.x_offset + self.center + radius * math.cos(svg_angle_rad)
+        y = self.y_offset + self.center - radius * math.sin(svg_angle_rad)
 
         return x, y
 

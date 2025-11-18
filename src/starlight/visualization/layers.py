@@ -864,17 +864,21 @@ class ChartInfoLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
             # Fallback to top-left
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class AspectCountsLayer:
@@ -1010,16 +1014,20 @@ class AspectCountsLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class ElementModalityTableLayer:
@@ -1287,16 +1295,20 @@ class ElementModalityTableLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class ChartShapeLayer:
@@ -1419,16 +1431,20 @@ class ChartShapeLayer:
         margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
+        # Get offsets for extended canvas positioning
+        x_offset = getattr(renderer, 'x_offset', 0)
+        y_offset = getattr(renderer, 'y_offset', 0)
+
         if self.position == "top-left":
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
         elif self.position == "top-right":
-            return (renderer.size - margin, margin)
+            return (x_offset + renderer.size - margin, y_offset + margin)
         elif self.position == "bottom-left":
-            return (margin, renderer.size - margin - total_height)
+            return (x_offset + margin, y_offset + renderer.size - margin - total_height)
         elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin - total_height)
+            return (x_offset + renderer.size - margin, y_offset + renderer.size - margin - total_height)
         else:
-            return (margin, margin)
+            return (x_offset + margin, y_offset + margin)
 
 
 class AspectLayer:
