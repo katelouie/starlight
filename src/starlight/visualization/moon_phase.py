@@ -60,9 +60,18 @@ class MoonPhaseLayer:
             show_label: Whether to display the phase name below the moon
             style_override: Optional style overrides
         """
-        valid_positions = ["center", "top-left", "top-right", "bottom-left", "bottom-right", None]
+        valid_positions = [
+            "center",
+            "top-left",
+            "top-right",
+            "bottom-left",
+            "bottom-right",
+            None,
+        ]
         if position not in valid_positions:
-            raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
+            raise ValueError(
+                f"Invalid position: {position}. Must be one of {valid_positions}"
+            )
 
         self.position = position  # None means auto-detect later in render()
         self.show_label = show_label
@@ -158,24 +167,23 @@ class MoonPhaseLayer:
                     # Above the moon - ensure we don't hit top edge
                     label_y = max(
                         y - self.style["size"] - self.style["label_offset"],
-                        min_margin + 12  # 12px for text height
+                        min_margin + 12,  # 12px for text height
                     )
                     dominant_baseline = "auto"  # Bottom of text aligns with y
                 else:
                     # Below the moon - ensure we don't hit bottom edge
                     label_y = min(
                         y + self.style["size"] + self.style["label_offset"],
-                        renderer.size - min_margin - 4  # 4px buffer
+                        renderer.size - min_margin - 4,  # 4px buffer
                     )
                     dominant_baseline = "hanging"  # Top of text aligns with y
 
                 # Ensure label color has sufficient contrast (match corner text behavior)
                 from .palettes import adjust_color_for_contrast
+
                 background_color = renderer.style.get("background_color", "#FFFFFF")
                 label_color = adjust_color_for_contrast(
-                    self.style["label_color"],
-                    background_color,
-                    min_contrast=4.5
+                    self.style["label_color"], background_color, min_contrast=4.5
                 )
 
                 dwg.add(
@@ -208,8 +216,8 @@ class MoonPhaseLayer:
         margin = renderer.size * 0.03
 
         # Get offsets for extended canvas positioning
-        x_offset = getattr(renderer, 'x_offset', 0)
-        y_offset = getattr(renderer, 'y_offset', 0)
+        x_offset = getattr(renderer, "x_offset", 0)
+        y_offset = getattr(renderer, "y_offset", 0)
 
         # For corner placement, add moon size + padding for proper inset
         if self.position != "center":
@@ -223,7 +231,7 @@ class MoonPhaseLayer:
                 # Extract font size (e.g., "11px" -> 11)
                 label_height = int(float(self.style["label_size"][:-2]))
                 # Add label height + offset + small buffer to move moon up
-                extra_spacing = label_height + self.style["label_offset"] + 4
+                extra_spacing = label_height + self.style["label_offset"]
                 bottom_inset = corner_inset + extra_spacing
             else:
                 bottom_inset = corner_inset
@@ -231,11 +239,20 @@ class MoonPhaseLayer:
             if self.position == "top-left":
                 return (x_offset + corner_inset, y_offset + corner_inset)
             elif self.position == "top-right":
-                return (x_offset + renderer.size - corner_inset, y_offset + corner_inset)
+                return (
+                    x_offset + renderer.size - corner_inset,
+                    y_offset + corner_inset,
+                )
             elif self.position == "bottom-left":
-                return (x_offset + corner_inset, y_offset + renderer.size - bottom_inset)
+                return (
+                    x_offset + corner_inset + 15,
+                    y_offset + renderer.size - bottom_inset,
+                )
             elif self.position == "bottom-right":
-                return (x_offset + renderer.size - corner_inset, y_offset + renderer.size - bottom_inset)
+                return (
+                    x_offset + renderer.size - corner_inset - 15,
+                    y_offset + renderer.size - bottom_inset,
+                )
 
         # Center position
         return (x_offset + renderer.center, y_offset + renderer.center)

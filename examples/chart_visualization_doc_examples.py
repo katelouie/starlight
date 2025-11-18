@@ -61,7 +61,7 @@ def viz_chart_minimal():
 @chart
 def viz_chart_standard():
     filename = "viz_standard.svg"
-    chart = ChartBuilder.from_notable("Albert Einstein").calculate()
+    chart = ChartBuilder.from_notable("Albert Einstein").with_aspects().calculate()
     drawing = chart.draw(os.path.join(FILEDIR, filename))
     drawing.preset_standard().save()
 

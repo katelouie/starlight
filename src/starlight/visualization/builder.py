@@ -58,7 +58,7 @@ class ChartDrawBuilder:
         # Moon phase
         self._moon_phase = True
         self._moon_phase_position = None  # Auto-detect based on aspects
-        self._moon_phase_show_label = False
+        self._moon_phase_show_label = True
         self._moon_phase_size: int | None = None
         self._moon_phase_label_size: str | None = None
 
@@ -206,7 +206,7 @@ class ChartDrawBuilder:
     def with_moon_phase(
         self,
         position: str = "center",
-        show_label: bool = False,
+        show_label: bool = True,
         size: int | None = None,
         label_size: str | None = None,
     ) -> "ChartDrawBuilder":
@@ -343,7 +343,7 @@ class ChartDrawBuilder:
         """
         self._moon_phase = True
         self._moon_phase_position = None  # Auto-detect based on aspects
-        self._moon_phase_show_label = False
+        self._moon_phase_show_label = True
         self._chart_info = False
         self._aspect_counts = False
         self._element_modality_table = False
@@ -367,7 +367,7 @@ class ChartDrawBuilder:
         """
         self._moon_phase = True
         self._moon_phase_position = None  # Auto-detect based on aspects
-        self._moon_phase_show_label = False
+        self._moon_phase_show_label = True
 
         self._chart_info = True
         self._chart_info_position = "top-left"

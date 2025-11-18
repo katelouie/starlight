@@ -4,7 +4,8 @@
 
 Built on Swiss Ephemeris for NASA-grade astronomical accuracy, Starlight brings professional astrological calculations to Python with a clean, composable architecture that works for everyone—from quick scripts to production applications.
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI version](https://badge.fury.io/py/starlight-astro.svg)](https://badge.fury.io/py/starlight-astro)
+[![Python Version](https://img.shields.io/pypi/pyversions/starlight-astro.svg)](https://pypi.org/project/starlight-astro/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Active Development](https://img.shields.io/badge/status-active%20development-brightgreen.svg)]()
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/katelouie/starlight)
