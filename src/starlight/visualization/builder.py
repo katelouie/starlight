@@ -10,6 +10,9 @@ from typing import Any
 from starlight.core.comparison import Comparison
 from starlight.core.models import CalculatedChart
 
+# Sentinel value to indicate "use theme's default colorful palette"
+_USE_THEME_DEFAULT_PALETTE = object()
+
 
 class ChartDrawBuilder:
     """
@@ -121,17 +124,28 @@ class ChartDrawBuilder:
         self._theme = theme
         return self
 
-    def with_zodiac_palette(self, palette: str) -> "ChartDrawBuilder":
+    def with_zodiac_palette(self, palette: str | None = None) -> "ChartDrawBuilder":
         """
         Set the zodiac ring color palette.
 
         Args:
-            palette: Palette name (e.g., "grey", "rainbow", "viridis", "elemental")
+            palette: Palette name (e.g., "grey", "rainbow", "viridis", "elemental").
+                     If not provided (empty call), uses the theme's default colorful palette.
+                     If theme is set, calling without args gives you the colorful version.
 
         Returns:
             Self for chaining
+
+        Usage:
+            .with_zodiac_palette()           # Use theme's colorful default palette
+            .with_zodiac_palette("rainbow")  # Use specific rainbow palette
         """
-        self._zodiac_palette = palette
+        if palette is None:
+            # Empty call: signal to use theme's default colorful palette
+            self._zodiac_palette = _USE_THEME_DEFAULT_PALETTE
+        else:
+            # Specific palette provided
+            self._zodiac_palette = palette
         return self
 
     def with_aspect_palette(self, palette: str) -> "ChartDrawBuilder":
@@ -318,6 +332,51 @@ class ChartDrawBuilder:
         self._chart_shape_position = position
         return self
 
+    def with_tables(
+        self,
+        mode: str = "right",
+        show_position_table: bool = True,
+        show_aspectarian: bool = True,
+    ) -> "ChartDrawBuilder":
+        """
+        Enable extended canvas with position table and aspectarian grid.
+
+        Extended canvas expands the SVG to include tabular data alongside the chart wheel.
+        Choose where the tables appear relative to the chart.
+
+        Args:
+            mode: Canvas extension direction
+                - "right": Tables appear to the right of the chart (canvas width +450px)
+                - "left": Tables appear to the left of the chart (canvas width +450px)
+                - "below": Tables appear below the chart (canvas height +400px)
+            show_position_table: Whether to show the position table (planet positions, signs, houses)
+            show_aspectarian: Whether to show the aspectarian grid (aspect matrix)
+
+        Returns:
+            Self for chaining
+
+        Example:
+            # Tables to the right
+            chart.draw("extended.svg").with_theme("midnight") \\
+                .extended_canvas("right") \\
+                .save()
+
+            # Tables below, position table only
+            chart.draw("tables_below.svg") \\
+                .extended_canvas("below", show_aspectarian=False) \\
+                .save()
+        """
+        valid_modes = ["right", "left", "below"]
+        if mode not in valid_modes:
+            raise ValueError(f"Invalid mode: {mode}. Must be one of {valid_modes}")
+
+        self._extended_canvas = {
+            "mode": mode,
+            "show_position_table": show_position_table,
+            "show_aspectarian": show_aspectarian,
+        }
+        return self
+
     # === Preset Methods ===
 
     def preset_minimal(self) -> "ChartDrawBuilder":
@@ -462,7 +521,11 @@ class ChartDrawBuilder:
 
         # Add extended canvas if configured
         if self._extended_canvas:
-            options["extended_canvas"] = self._extended_canvas
+            options["extended_canvas"] = self._extended_canvas["mode"]
+            options["show_position_table"] = self._extended_canvas[
+                "show_position_table"
+            ]
+            options["show_aspectarian"] = self._extended_canvas["show_aspectarian"]
 
         # Add house systems if configured
         if self._house_systems is not None:

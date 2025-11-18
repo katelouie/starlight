@@ -6,6 +6,9 @@ Starlight's visualization system transforms your calculated charts into professi
 
 See the HTML full theme and palette reference overview [rendered here](https://html-preview.github.io/?url=https://github.com/katelouie/starlight/blob/main/examples/chart_examples/starlight_colors.html).
 
+- [Theme Gallery](THEME_GALLERY.md) - Visual showcase of all themes
+- [Palette Gallery](PALETTE_GALLERY.md) - Visual showcase of all palettes
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
@@ -32,7 +35,7 @@ chart = ChartBuilder.from_notable("Albert Einstein").with_angles().calculate()
 chart.draw("einstein.svg").save()
 ```
 
-![Einstein - Plain](images/readme_einstein.svg)
+![Einstein - Plain](images/examples/readme_einstein.svg)
 
 That's it! You now have a beautiful natal chart saved as `einstein.svg`.
 
@@ -51,9 +54,9 @@ chart.draw("standard.svg").preset_standard().save()
 chart.draw("detailed.svg").preset_detailed().save()
 ```
 
-![Chart - Minimal](images/viz_minimal.svg)
-![Chart - Standard](images/viz_standard.svg)
-![Chart - Detailed](images/viz_detailed.svg)
+![Chart - Minimal](images/examples/viz_minimal.svg)
+![Chart - Standard](images/examples/viz_standard.svg)
+![Chart - Detailed](images/examples/viz_detailed.svg)
 
 ### Adding a Theme
 
@@ -70,9 +73,9 @@ chart.draw("celestial.svg").with_theme("celestial").save()
 chart.draw("neon.svg").with_theme("neon").save()
 ```
 
-![Chart - Midnight](images/viz_midnight.svg)
-![Chart - Celestial](images/viz_celestial.svg)
-![Chart - Neon](images/viz_neon.svg)
+![Chart - Midnight](images/examples/viz_midnight.svg)
+![Chart - Celestial](images/examples/viz_celestial.svg)
+![Chart - Neon](images/examples/viz_neon.svg)
 
 ### Custom Configuration
 
@@ -90,7 +93,7 @@ chart.draw("custom.svg")
 )
 ```
 
-![Chart - Celestial (More)](images/viz_celestial_more.svg)
+![Chart - Celestial (More)](images/examples/viz_celestial_more.svg)
 
 **Tip:** Type `chart.draw("chart.svg").` in your IDE and let autocomplete show you all available options!
 
@@ -863,9 +866,39 @@ draw_chart(
 
 **Recommendation:** Use the new `.draw()` fluent API for better discoverability and readability.
 
-### Extended Canvas (Advanced)
+### Additional Tables (Advanced)
 
-For tabular data alongside the chart (position tables, aspectarian grids), see the extended canvas documentation in the main README.
+You can also add additional tables to see planetary positions, house cusps, and the aspectarian chart alongside the chart wheel. These can be configured to be to the left, right, or below the main wheel. You can configure the image to only show some of the additional tables as well (all are enabled by default).
+
+The canvas extends by 450px (tables left or right) or 400px (tables below). All tables automatically adapt to your chosen theme.
+
+```python
+# Default: Tables to the right of the chart wheel
+chart.draw("extended_right.svg").with_tables().save()
+
+# Tables below
+chart.draw("extended_below.svg").with_theme("midnight").with_tables("below").save()
+
+# Positions table only (no aspectarian)
+(
+    chart.draw("extended_no_positions.svg")
+    .with_theme("celestial")
+    .with_tables("below", show_aspectarian=False)
+    .save()
+)
+
+# Aspectarian table only (no positions table)
+(
+    chart.draw("extended_no_positions.svg")
+    .with_theme("midnight")
+    .with_tables(show_position_table=False)
+    .save()
+)
+```
+
+![Extended Chart - Default](images/examples/extended.svg)
+![Extended Chart - Left (Midnight)](images/examples/extended_left_midnight.svg)
+![Extended Chart - Below (No Aspectarian)](images/examples/extended_below_no_aspect.svg)
 
 ---
 

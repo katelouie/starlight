@@ -198,9 +198,7 @@ class PositionTableLayer:
                     )
                 )
 
-    def _get_house_placement(
-        self, chart: CalculatedChart, position
-    ) -> int | None:
+    def _get_house_placement(self, chart: CalculatedChart, position) -> int | None:
         """Get house placement for a position."""
         if not chart.default_house_system or not chart.house_placements:
             return None
@@ -271,7 +269,9 @@ class AspectarianLayer:
             "Neptune",
             "Pluto",
         ]
-        planets.sort(key=lambda p: planet_order.index(p.name) if p.name in planet_order else 99)
+        planets.sort(
+            key=lambda p: planet_order.index(p.name) if p.name in planet_order else 99
+        )
 
         # Build aspect lookup
         aspect_lookup = {}
@@ -290,7 +290,11 @@ class AspectarianLayer:
         for col_idx in range(len(planets) - 1):
             planet = planets[col_idx]
             glyph_info = get_glyph(planet.name)
-            glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else planet.name[:2]
+            glyph = (
+                glyph_info["value"]
+                if glyph_info["type"] == "unicode"
+                else planet.name[:2]
+            )
 
             x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
             y = y_start
@@ -312,7 +316,11 @@ class AspectarianLayer:
         for row_idx in range(1, len(planets)):
             planet_row = planets[row_idx]
             glyph_info = get_glyph(planet_row.name)
-            glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else planet_row.name[:2]
+            glyph = (
+                glyph_info["value"]
+                if glyph_info["type"] == "unicode"
+                else planet_row.name[:2]
+            )
 
             y_row = y_start + (row_idx * cell_size) + (cell_size / 2)
 

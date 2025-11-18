@@ -33,7 +33,8 @@ Built on Swiss Ephemeris for NASA-grade astronomical accuracy, Starlight brings 
 
 ### Visual Chart Example
 
-![Example Round Chart](docs/images/readme_first.svg)
+![Example Round Chart](docs/images/examples/readme_first.svg)
+![Example Extended Chart](docs/images/examples/readme_extended_detailed.svg)
 
 ### **What Makes Starlight Different**
 
@@ -84,7 +85,7 @@ chart = ChartBuilder.from_notable("Albert Einstein").with_aspects().calculate()
 chart.draw("einstein.svg").save()
 ```
 
-![Einstein - Plain](docs/images/readme_einstein.svg)
+![Einstein - Plain](docs/images/examples/readme_einstein.svg)
 
 **That's it!** You now have a beautiful natal chart SVG for Einstein.
 
@@ -110,7 +111,7 @@ chart.draw("custom.svg") \
     .save()
 ```
 
-![Einstein - Celestial](docs/images/readme_einstein_celestial.svg)
+![Einstein - Celestial](docs/images/examples/readme_einstein_celestial.svg)
 
 **Discover features through autocomplete!** Type `chart.draw().` and your IDE will show you everything available.
 

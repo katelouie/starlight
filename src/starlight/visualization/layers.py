@@ -45,10 +45,18 @@ class ZodiacLayer:
         Initialize the zodiac layer.
 
         Args:
-            palette: The color palette to use (ZodiacPalette enum or string)
+            palette: The color palette to use (ZodiacPalette enum, palette name, or "single_color:#RRGGBB")
             style_override: Optional style overrides
         """
-        self.palette = ZodiacPalette(palette) if isinstance(palette, str) else palette
+        # Try to convert string to enum, but allow pass-through for special formats
+        if isinstance(palette, str):
+            try:
+                self.palette = ZodiacPalette(palette)
+            except ValueError:
+                # Not a valid enum value, pass through as-is (e.g., "single_color:#RRGGBB")
+                self.palette = palette
+        else:
+            self.palette = palette
         self.style = style_override or {}
 
     def render(

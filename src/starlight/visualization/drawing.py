@@ -8,6 +8,7 @@ to assemble and render chart drawings.
 
 from starlight.core.models import CalculatedChart, ObjectType
 
+from .builder import _USE_THEME_DEFAULT_PALETTE
 from .core import ChartRenderer, IRenderLayer
 from .extended_canvas import AspectarianLayer, PositionTableLayer
 from .layers import (
@@ -23,7 +24,7 @@ from .layers import (
 )
 from .moon_phase import MoonPhaseLayer
 from .palettes import ZodiacPalette
-from .themes import ChartTheme, get_theme_default_palette
+from .themes import ChartTheme, get_theme_default_palette, get_theme_style
 
 
 def draw_chart(
@@ -31,7 +32,8 @@ def draw_chart(
     filename: str = "chart.svg",
     size: int = 600,
     moon_phase: bool = True,
-    moon_phase_position: str | None = None,  # None = auto (bottom-right if aspects, center if not)
+    moon_phase_position: str
+    | None = None,  # None = auto (bottom-right if aspects, center if not)
     moon_phase_label: bool = True,
     chart_info: bool = False,
     chart_info_position: str = "top-left",
@@ -52,7 +54,9 @@ def draw_chart(
     planet_glyph_palette: str | None = None,
     color_sign_info: bool = False,
     style_config: dict | None = None,
-    house_systems: str | list[str] | None = None,  # Single name, list of names, or "all"
+    house_systems: str
+    | list[str]
+    | None = None,  # Single name, list of names, or "all"
 ) -> str:
     """
     Draws a standard natal chart.
@@ -126,21 +130,41 @@ def draw_chart(
     # Determine theme and palette
     if theme:
         theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
-        # If no zodiac palette specified, use theme's default
+
+        # ZODIAC PALETTE LOGIC (NEW BEHAVIOR - subtle by default)
         if zodiac_palette is None:
+            # Case 1: User didn't call .with_zodiac_palette()
+            # Use single color from theme's zodiac ring color (subtle)
+            theme_style = get_theme_style(theme_enum)
+            ring_color = theme_style["zodiac"]["ring_color"]
+            # Create dynamic single-color palette
+            zodiac_palette = f"single_color:{ring_color}"
+        elif zodiac_palette is _USE_THEME_DEFAULT_PALETTE:
+            # Case 2: User called .with_zodiac_palette() with no args
+            # Use colorful theme default palette
             zodiac_palette = get_theme_default_palette(theme_enum)
-        # If no aspect palette specified, use theme's default
+        # else: Case 3: zodiac_palette is a string palette name, use it as-is
+
+        # Aspect palette logic (UNCHANGED)
         if aspect_palette is None:
             from .themes import get_theme_default_aspect_palette
+
             aspect_palette = get_theme_default_aspect_palette(theme_enum).value
-        # If no planet glyph palette specified, use theme's default
+        # Planet glyph palette logic (UNCHANGED)
         if planet_glyph_palette is None:
             from .themes import get_theme_default_planet_palette
+
             planet_glyph_palette = get_theme_default_planet_palette(theme_enum).value
     else:
         # No theme specified, use classic defaults
         if zodiac_palette is None:
+            # No theme, no palette → classic grey single color
+            zodiac_palette = "single_color:#EEEEEE"
+        elif zodiac_palette is _USE_THEME_DEFAULT_PALETTE:
+            # Edge case: .with_zodiac_palette() called without theme
+            # Default to classic grey
             zodiac_palette = ZodiacPalette.GREY
+        # else: zodiac_palette is a string palette name, use it as-is
 
     # Convert zodiac_palette to string if it's an enum
     if hasattr(zodiac_palette, "value"):
@@ -224,7 +248,10 @@ def draw_chart(
         # Add chart borders at offset position
         dwg.add(
             dwg.circle(
-                center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                center=(
+                    chart_x_offset + renderer.center,
+                    chart_y_offset + renderer.center,
+                ),
                 r=renderer.radii["outer_border"],
                 fill="none",
                 stroke=renderer.style["border_color"],
@@ -233,7 +260,10 @@ def draw_chart(
         )
         dwg.add(
             dwg.circle(
-                center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                center=(
+                    chart_x_offset + renderer.center,
+                    chart_y_offset + renderer.center,
+                ),
                 r=renderer.radii["aspect_ring_inner"],
                 fill="none",
                 stroke=renderer.style["border_color"],
@@ -303,11 +333,13 @@ def draw_chart(
             )
 
     # Add remaining layers
-    layers.extend([
-        AspectLayer(),
-        PlanetLayer(planet_set=planets_to_draw, radius_key="planet_ring"),
-        AngleLayer(),
-    ])
+    layers.extend(
+        [
+            AspectLayer(),
+            PlanetLayer(planet_set=planets_to_draw, radius_key="planet_ring"),
+            AngleLayer(),
+        ]
+    )
 
     # Add moon phase layer if requested
     if moon_phase:
@@ -353,8 +385,10 @@ def draw_chart(
         moon_will_be_in_bottom_right = (
             moon_phase
             and moon_phase_position is None  # Auto-detect enabled
-            and chart.aspects and len(chart.aspects) > 0  # Has aspects = moon goes to bottom-right
-            and chart_shape_position == "bottom-right"  # Chart shape also in bottom-right
+            and chart.aspects
+            and len(chart.aspects) > 0  # Has aspects = moon goes to bottom-right
+            and chart_shape_position
+            == "bottom-right"  # Chart shape also in bottom-right
         )
 
         if not moon_will_be_in_bottom_right:
@@ -391,8 +425,12 @@ def draw_chart(
 
         # Adapt extended layer colors to theme
         extended_style = {
-            "text_color": renderer.style.get("planets", {}).get("info_color", "#333333"),
-            "header_color": renderer.style.get("planets", {}).get("glyph_color", "#222222"),
+            "text_color": renderer.style.get("planets", {}).get(
+                "info_color", "#333333"
+            ),
+            "header_color": renderer.style.get("planets", {}).get(
+                "glyph_color", "#222222"
+            ),
             "grid_color": renderer.style.get("zodiac", {}).get("line_color", "#CCCCCC"),
         }
 
@@ -455,10 +493,12 @@ def draw_chart_with_multiple_houses(
         # If no aspect palette specified, use theme's default
         if aspect_palette is None:
             from .themes import get_theme_default_aspect_palette
+
             aspect_palette = get_theme_default_aspect_palette(theme_enum).value
         # If no planet glyph palette specified, use theme's default
         if planet_glyph_palette is None:
             from .themes import get_theme_default_planet_palette
+
             planet_glyph_palette = get_theme_default_planet_palette(theme_enum).value
     else:
         # No theme specified, use classic defaults

@@ -42,11 +42,11 @@ class ChartTheme(str, Enum):
 THEME_DEFAULT_PALETTES = {
     ChartTheme.CLASSIC: ZodiacPalette.GREY,
     ChartTheme.DARK: ZodiacPalette.GREY,
-    ChartTheme.MIDNIGHT: ZodiacPalette.GREY,
-    ChartTheme.NEON: ZodiacPalette.RAINBOW,
-    ChartTheme.SEPIA: ZodiacPalette.GREY,
+    ChartTheme.MIDNIGHT: ZodiacPalette.RAINBOW_MIDNIGHT,
+    ChartTheme.NEON: ZodiacPalette.RAINBOW_NEON,
+    ChartTheme.SEPIA: ZodiacPalette.RAINBOW_SEPIA,
     ChartTheme.PASTEL: ZodiacPalette.RAINBOW,
-    ChartTheme.CELESTIAL: ZodiacPalette.GREY,
+    ChartTheme.CELESTIAL: ZodiacPalette.RAINBOW_CELESTIAL,
     # Data science themes
     ChartTheme.VIRIDIS: ZodiacPalette.VIRIDIS,
     ChartTheme.PLASMA: ZodiacPalette.PLASMA,
