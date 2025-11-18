@@ -19,14 +19,14 @@
 - [ ] Declinations
 - [ ] Add bi-wheel charts for Comparison charts
 - [ ] Update chart grid to take in *arbitrary wheel-only charts*
-- [ ] Make aspect palettes better (more different colors, line styles)
-  - [ ] Maybe add a legend with the aspect count corner info?
+- [x] Make aspect palettes better (more different colors, line styles)
+  - [x] Maybe add a legend with the aspect count corner info?
 
 ### Fixes
 
-- [ ] Fix element-modality table to be properly aligned
-- [ ] On shrink (with >2 corners full of info): Chart AND OUTER BORDER need to shrink
-- [ ] Update chart themes to have better default zodiac etc. palettes
+- [x] Fix element-modality table to be properly aligned
+- [x] On shrink (with >2 corners full of info): Chart AND OUTER BORDER need to shrink
+- [x] Update chart themes to have better default zodiac etc. palettes
 
 ## Core Functions
 
@@ -39,7 +39,7 @@
 - [ ] Add Vedic
 - [ ] Declinations
 - [ ] Add more notable people and events to data registry
-- [ ] Add "name" parameter to ChartBuilder, that the chart drawer then uses for chart_info in larger font on top
+- [x] Add "name" parameter to ChartBuilder, that the chart drawer then uses for chart_info in larger font on top
 
 ### Fixes
 
@@ -50,7 +50,7 @@
 - [x] Make all aspect lines slightly transparent (alpha < 1)
 - [x] When moon in is center of chart and aspects are displayed/present, move the moon to the corner
 - [x] Make moon phase name use the same font and size and styling as the chart info corner section -- also make corner moon smaller, and make sure its label text has enough padding from the edge of the canvas (curerntly hits it)
-- [ ] Make sure default corner-moon has a label (default label to On)
+- [x] Make sure default corner-moon has a label (default label to On)
 
 ## Testing
 
