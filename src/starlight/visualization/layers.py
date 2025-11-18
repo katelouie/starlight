@@ -1103,16 +1103,36 @@ class ElementModalityTableLayer:
         num_lines = 5  # Header + 4 elements
         x, y = self._get_position_coordinates(renderer, num_lines)
 
-        # Determine text anchor
+        # Determine positioning based on corner
         if "right" in self.position:
-            text_anchor = "end"
+            # Right-aligned: row headers on right, data columns to the left
+            row_header_anchor = "end"
+            data_anchor = "middle"
             col_offset_multiplier = -1
         else:
-            text_anchor = "start"
+            # Left-aligned: row headers on left, data columns to the right
+            row_header_anchor = "start"
+            data_anchor = "middle"
             col_offset_multiplier = 1
 
-        # Render table
-        col_width = self.style["col_width"]
+        # Define column positions (relative to base x)
+        # Column layout: [Element] [Card] [Fix] [Mut]
+        row_header_width = 32  # Width for element symbol + name
+        col_width = 20  # Width for each data column
+
+        if "right" in self.position:
+            # Columns go left from base position
+            col_card_x = x + (col_offset_multiplier * row_header_width)
+            col_fix_x = col_card_x + (col_offset_multiplier * col_width)
+            col_mut_x = col_fix_x + (col_offset_multiplier * col_width)
+            row_header_x = x
+        else:
+            # Columns go right from base position
+            row_header_x = x
+            col_card_x = x + row_header_width
+            col_fix_x = col_card_x + col_width
+            col_mut_x = col_fix_x + col_width
+
         line_height = self.style["line_height"]
 
         # Ensure text color has sufficient contrast with background
@@ -1123,13 +1143,42 @@ class ElementModalityTableLayer:
             min_contrast=4.5
         )
 
-        # Header row
+        # Header row - render each column header separately
         header_y = y
+
+        # Empty space for element column
+        # (no header needed for element column)
+
+        # Column headers (Card, Fix, Mut)
         dwg.add(
             dwg.text(
-                "     Card Fix Mut",
-                insert=(x, header_y),
-                text_anchor=text_anchor,
+                "Card",
+                insert=(col_card_x, header_y),
+                text_anchor=data_anchor,
+                dominant_baseline="hanging",
+                font_size=self.style["text_size"],
+                fill=text_color,
+                font_family=renderer.style["font_family_text"],
+                font_weight=self.style["title_weight"],
+            )
+        )
+        dwg.add(
+            dwg.text(
+                "Fix",
+                insert=(col_fix_x, header_y),
+                text_anchor=data_anchor,
+                dominant_baseline="hanging",
+                font_size=self.style["text_size"],
+                fill=text_color,
+                font_family=renderer.style["font_family_text"],
+                font_weight=self.style["title_weight"],
+            )
+        )
+        dwg.add(
+            dwg.text(
+                "Mut",
+                insert=(col_mut_x, header_y),
+                text_anchor=data_anchor,
                 dominant_baseline="hanging",
                 font_size=self.style["text_size"],
                 fill=text_color,
@@ -1143,22 +1192,62 @@ class ElementModalityTableLayer:
         for i, element in enumerate(elements):
             row_y = header_y + ((i + 1) * line_height)
 
-            # Element symbol + name
+            # Element symbol + name (row header)
             symbol = self.ELEMENT_SYMBOLS.get(element, element[0])
-            row_text = f"{symbol} {element[:2]}"
+            row_header_text = f"{symbol} {element[:2]}"
 
-            # Add counts
+            dwg.add(
+                dwg.text(
+                    row_header_text,
+                    insert=(row_header_x, row_y),
+                    text_anchor=row_header_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=text_color,
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Data cells (counts) - each in its own column
             card_count = table[element]["Cardinal"]
             fix_count = table[element]["Fixed"]
             mut_count = table[element]["Mutable"]
 
-            row_text += f"   {card_count}   {fix_count}   {mut_count}"
-
+            # Cardinal count
             dwg.add(
                 dwg.text(
-                    row_text,
-                    insert=(x, row_y),
-                    text_anchor=text_anchor,
+                    str(card_count),
+                    insert=(col_card_x, row_y),
+                    text_anchor=data_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=text_color,
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Fixed count
+            dwg.add(
+                dwg.text(
+                    str(fix_count),
+                    insert=(col_fix_x, row_y),
+                    text_anchor=data_anchor,
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=text_color,
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Mutable count
+            dwg.add(
+                dwg.text(
+                    str(mut_count),
+                    insert=(col_mut_x, row_y),
+                    text_anchor=data_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
                     fill=text_color,
