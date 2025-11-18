@@ -158,25 +158,20 @@ class ZodiacLayer:
                 )
             )
 
-            # Glyph with optional adaptive coloring
+            # Glyph with automatic adaptive coloring for accessibility
             glyph_deg = (i * 30.0) + 15.0
             x_glyph, y_glyph = renderer.polar_to_cartesian(
                 glyph_deg, renderer.radii["zodiac_glyph"]
             )
 
-            # Use adaptive glyph color if enabled
-            if renderer.color_zodiac_glyphs and renderer.zodiac_palette:
-                zodiac_pal = ZodiacPalette(active_palette)
-                # Get the sign's background color
-                sign_bg_color = sign_colors[i]
-                # Adjust the default glyph color for contrast against the sign background
-                glyph_color = adjust_color_for_contrast(
-                    style["glyph_color"],
-                    sign_bg_color,
-                    min_contrast=4.5,
-                )
-            else:
-                glyph_color = style["glyph_color"]
+            # Always adapt glyph color for contrast against wedge background
+            # This ensures glyphs are readable on all palette backgrounds
+            sign_bg_color = sign_colors[i]
+            glyph_color = adjust_color_for_contrast(
+                style["glyph_color"],
+                sign_bg_color,
+                min_contrast=4.5,
+            )
 
             dwg.add(
                 dwg.text(
@@ -803,6 +798,14 @@ class ChartInfoLayer:
         else:
             text_anchor = "start"
 
+        # Ensure text color has sufficient contrast with background
+        background_color = renderer.style.get("background_color", "#FFFFFF")
+        text_color = adjust_color_for_contrast(
+            self.style["text_color"],
+            background_color,
+            min_contrast=4.5
+        )
+
         # Render each line
         for i, line in enumerate(lines):
             line_y = y + (i * self.style["line_height"])
@@ -813,7 +816,7 @@ class ChartInfoLayer:
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
-                    fill=self.style["text_color"],
+                    fill=text_color,
                     font_family=renderer.style["font_family_text"],
                     font_weight=self.style["font_weight"],
                 )
@@ -832,7 +835,10 @@ class ChartInfoLayer:
         Returns:
             Tuple of (x, y) coordinates
         """
-        margin = 20  # Pixels from edge
+        # Match the chart's own padding (distance from zodiac ring to canvas edge)
+        # zodiac_ring_outer is at radius 0.47 * size from center
+        # center is at size/2, so padding = size/2 - 0.47 * size = 0.03 * size
+        margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
         if self.position == "top-left":
@@ -925,6 +931,14 @@ class AspectCountsLayer:
         else:
             text_anchor = "start"
 
+        # Ensure text color has sufficient contrast with background
+        background_color = renderer.style.get("background_color", "#FFFFFF")
+        text_color = adjust_color_for_contrast(
+            self.style["text_color"],
+            background_color,
+            min_contrast=4.5
+        )
+
         # Render each line
         for i, line in enumerate(lines):
             line_y = y + (i * self.style["line_height"])
@@ -939,7 +953,7 @@ class AspectCountsLayer:
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
-                    fill=self.style["text_color"],
+                    fill=text_color,
                     font_family=renderer.style["font_family_text"],
                     font_weight=font_weight,
                 )
@@ -949,7 +963,8 @@ class AspectCountsLayer:
         self, renderer: ChartRenderer, num_lines: int
     ) -> tuple[float, float]:
         """Calculate position coordinates."""
-        margin = 20
+        # Match the chart's own padding
+        margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
         if self.position == "top-left":
@@ -1080,6 +1095,14 @@ class ElementModalityTableLayer:
         col_width = self.style["col_width"]
         line_height = self.style["line_height"]
 
+        # Ensure text color has sufficient contrast with background
+        background_color = renderer.style.get("background_color", "#FFFFFF")
+        text_color = adjust_color_for_contrast(
+            self.style["text_color"],
+            background_color,
+            min_contrast=4.5
+        )
+
         # Header row
         header_y = y
         dwg.add(
@@ -1089,7 +1112,7 @@ class ElementModalityTableLayer:
                 text_anchor=text_anchor,
                 dominant_baseline="hanging",
                 font_size=self.style["text_size"],
-                fill=self.style["text_color"],
+                fill=text_color,
                 font_family=renderer.style["font_family_text"],
                 font_weight=self.style["title_weight"],
             )
@@ -1118,7 +1141,7 @@ class ElementModalityTableLayer:
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
-                    fill=self.style["text_color"],
+                    fill=text_color,
                     font_family=renderer.style["font_family_text"],
                     font_weight=self.style["font_weight"],
                 )
@@ -1128,7 +1151,8 @@ class ElementModalityTableLayer:
         self, renderer: ChartRenderer, num_lines: int
     ) -> tuple[float, float]:
         """Calculate position coordinates."""
-        margin = 20
+        # Match the chart's own padding
+        margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
         if self.position == "top-left":
@@ -1217,6 +1241,14 @@ class ChartShapeLayer:
         else:
             text_anchor = "start"
 
+        # Ensure text color has sufficient contrast with background
+        background_color = renderer.style.get("background_color", "#FFFFFF")
+        text_color = adjust_color_for_contrast(
+            self.style["text_color"],
+            background_color,
+            min_contrast=4.5
+        )
+
         # Render each line
         for i, line in enumerate(lines):
             line_y = y + (i * self.style["line_height"])
@@ -1231,7 +1263,7 @@ class ChartShapeLayer:
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
-                    fill=self.style["text_color"],
+                    fill=text_color,
                     font_family=renderer.style["font_family_text"],
                     font_weight=font_weight,
                 )
@@ -1241,7 +1273,8 @@ class ChartShapeLayer:
         self, renderer: ChartRenderer, num_lines: int
     ) -> tuple[float, float]:
         """Calculate position coordinates."""
-        margin = 20
+        # Match the chart's own padding
+        margin = renderer.size * 0.03
         total_height = num_lines * self.style["line_height"]
 
         if self.position == "top-left":

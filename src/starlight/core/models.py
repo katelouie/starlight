@@ -600,6 +600,35 @@ class CalculatedChart:
         dignity_data = self.metadata.get("dignities", {})
         return dignity_data.get("sect")
 
+    def draw(self, filename: str = "chart.svg") -> "ChartDrawBuilder":
+        """
+        Start building a chart visualization with fluent API.
+
+        This is a convenience method that creates a ChartDrawBuilder for
+        easy, discoverable chart visualization. It provides presets and
+        a fluent interface for customization.
+
+        Args:
+            filename: Output filename for the SVG
+
+        Returns:
+            ChartDrawBuilder instance for chaining
+
+        Example:
+            # Simple preset
+            chart.draw("my_chart.svg").preset_standard().save()
+
+            # Custom configuration
+            chart.draw("custom.svg") \\
+                .with_theme("dark") \\
+                .with_moon_phase(position="top-left", show_label=True) \\
+                .with_chart_info(position="top-right") \\
+                .save()
+        """
+        from starlight.visualization.builder import ChartDrawBuilder
+
+        return ChartDrawBuilder(self).with_filename(filename)
+
     def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dictionary for JSON export.

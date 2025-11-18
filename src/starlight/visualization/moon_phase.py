@@ -31,15 +31,15 @@ class MoonPhaseLayer:
     """
 
     DEFAULT_STYLE = {
-        "size": 40,  # Radius in pixels
+        "size": 40,  # Radius in pixels (recommended: 60 for center, 30-35 for corners)
         "border_color": "#2C3E50",
         "border_width": 2,
         "lit_color": "#F8F9FA",
         "shadow_color": "#2C3E50",
         "opacity": 0.95,
         "label_color": "#2C3E50",
-        "label_size": "14px",
-        "label_offset": 8,  # Pixels below moon symbol
+        "label_size": "14px",  # Recommended: 14px for center, 11px for corners to match corner text
+        "label_offset": 8,  # Pixels from moon symbol (above for upper corners, below for others)
     }
 
     def __init__(
@@ -112,13 +112,22 @@ class MoonPhaseLayer:
 
             # Add label if requested
             if self.show_label:
-                label_y = y + self.style["size"] + self.style["label_offset"]
+                # Place label above moon for upper corners, below for others
+                if self.position in ["top-left", "top-right"]:
+                    # Above the moon - need to account for moon radius and offset
+                    label_y = y - self.style["size"] - self.style["label_offset"]
+                    dominant_baseline = "auto"  # Bottom of text aligns with y
+                else:
+                    # Below the moon (default)
+                    label_y = y + self.style["size"] + self.style["label_offset"]
+                    dominant_baseline = "hanging"  # Top of text aligns with y
+
                 dwg.add(
                     dwg.text(
                         phase_data.phase_name,
                         insert=(x, label_y),
                         text_anchor="middle",
-                        dominant_baseline="hanging",
+                        dominant_baseline=dominant_baseline,
                         font_size=self.style["label_size"],
                         fill=self.style["label_color"],
                         font_family=renderer.style["font_family_text"],
@@ -136,21 +145,26 @@ class MoonPhaseLayer:
         Returns:
             Tuple of (x, y) coordinates
         """
-        margin = 60  # Pixels from edge
+        # Match chart padding for corner placement
+        margin = renderer.size * 0.03
 
-        if self.position == "center":
-            return (renderer.center, renderer.center)
-        elif self.position == "top-left":
-            return (margin, margin)
-        elif self.position == "top-right":
-            return (renderer.size - margin, margin)
-        elif self.position == "bottom-left":
-            return (margin, renderer.size - margin)
-        elif self.position == "bottom-right":
-            return (renderer.size - margin, renderer.size - margin)
-        else:
-            # Fallback to center
-            return (renderer.center, renderer.center)
+        # For corner placement, add moon size + padding for proper inset
+        if self.position != "center":
+            # Use configured size from style
+            moon_radius = self.style["size"]
+            corner_inset = margin + moon_radius
+
+            if self.position == "top-left":
+                return (corner_inset, corner_inset)
+            elif self.position == "top-right":
+                return (renderer.size - corner_inset, corner_inset)
+            elif self.position == "bottom-left":
+                return (corner_inset, renderer.size - corner_inset)
+            elif self.position == "bottom-right":
+                return (renderer.size - corner_inset, renderer.size - corner_inset)
+
+        # Center position
+        return (renderer.center, renderer.center)
 
     def _create_moon_phase_symbol(
         self,

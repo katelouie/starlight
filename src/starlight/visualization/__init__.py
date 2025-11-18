@@ -1,5 +1,6 @@
 """Visualization system for Starlight charts."""
 
+from .builder import ChartDrawBuilder
 from .core import ChartRenderer
 from .drawing import draw_chart
 from .extended_canvas import AspectarianLayer, PositionTableLayer
@@ -49,6 +50,7 @@ from .grid import (
 __all__ = [
     # Core rendering
     "ChartRenderer",
+    "ChartDrawBuilder",
     "draw_chart",
     # Layers
     "ZodiacLayer",

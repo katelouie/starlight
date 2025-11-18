@@ -290,6 +290,35 @@ class Comparison:
         normalized = ((total_score / max_possible) + 0.5) / 1.5 * 100
         return max(0.0, min(100.0, normalized))
 
+    def draw(self, filename: str = "synastry.svg") -> "ChartDrawBuilder":
+        """
+        Start building a comparison chart visualization with fluent API.
+
+        This is a convenience method that creates a ChartDrawBuilder for
+        easy, discoverable comparison chart visualization. It provides
+        synastry-specific presets and a fluent interface for customization.
+
+        Args:
+            filename: Output filename for the SVG
+
+        Returns:
+            ChartDrawBuilder instance for chaining
+
+        Example:
+            # Simple synastry preset
+            comparison.draw("synastry.svg").preset_synastry().save()
+
+            # Custom configuration
+            comparison.draw("custom.svg") \\
+                .with_theme("celestial") \\
+                .with_moon_phase(position="top-left") \\
+                .with_chart_info(position="top-right") \\
+                .save()
+        """
+        from starlight.visualization.builder import ChartDrawBuilder
+
+        return ChartDrawBuilder(self).with_filename(filename)
+
     def to_dict(self) -> dict[str, Any]:
         """
         Serialize to dictionary for JSON export.
