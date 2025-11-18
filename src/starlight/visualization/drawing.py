@@ -32,7 +32,7 @@ def draw_chart(
     size: int = 600,
     moon_phase: bool = True,
     moon_phase_position: str | None = None,  # None = auto (bottom-right if aspects, center if not)
-    moon_phase_label: bool = False,
+    moon_phase_label: bool = True,
     chart_info: bool = False,
     chart_info_position: str = "top-left",
     chart_info_fields: list[str] | None = None,

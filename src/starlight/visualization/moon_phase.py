@@ -45,7 +45,7 @@ class MoonPhaseLayer:
     def __init__(
         self,
         position: str | None = None,  # None = auto-detect based on chart content
-        show_label: bool = False,
+        show_label: bool = True,
         style_override: dict[str, Any] | None = None,
     ) -> None:
         """
