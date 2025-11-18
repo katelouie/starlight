@@ -18,6 +18,15 @@
 - [ ] Synastry square aspect table
 - [ ] Declinations
 - [ ] Add bi-wheel charts for Comparison charts
+- [ ] Update chart grid to take in *arbitrary wheel-only charts*
+- [ ] Make aspect palettes better (more different colors, line styles)
+  - [ ] Maybe add a legend with the aspect count corner info?
+
+### Fixes
+
+- [ ] Fix element-modality table to be properly aligned
+- [ ] On shrink (with >2 corners full of info): Chart AND OUTER BORDER need to shrink
+- [ ] Update chart themes to have better default zodiac etc. palettes
 
 ## Core Functions
 
@@ -30,6 +39,7 @@
 - [ ] Add Vedic
 - [ ] Declinations
 - [ ] Add more notable people and events to data registry
+- [ ] Add "name" parameter to ChartBuilder, that the chart drawer then uses for chart_info in larger font on top
 
 ### Fixes
 

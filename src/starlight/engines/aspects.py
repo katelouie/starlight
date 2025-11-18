@@ -15,6 +15,33 @@ from starlight.core.registry import get_aspect_by_alias, get_aspect_info
 # --- Helper Functions (Shared Logic) ---
 
 
+def _are_axis_pair(obj1: CelestialPosition, obj2: CelestialPosition) -> bool:
+    """
+    Check if two objects are an axis pair that shouldn't aspect each other.
+
+    Axis pairs:
+    - ASC/DSC (Ascendant-Descendant axis)
+    - MC/IC (Midheaven-Imum Coeli axis)
+    - True Node/South Node (Nodal axis)
+
+    These pairs are always in exact opposition by definition, so calculating
+    aspects between them is redundant and clutters the aspect list.
+
+    Returns:
+        True if the pair is an axis pair that should be excluded
+    """
+    # Define axis pairs (order doesn't matter)
+    axis_pairs = {
+        frozenset(["ASC", "DSC"]),
+        frozenset(["MC", "IC"]),
+        frozenset(["True Node", "South Node"]),
+    }
+
+    # Check if this pair is an axis pair
+    pair = frozenset([obj1.name, obj2.name])
+    return pair in axis_pairs
+
+
 def _angular_distance(long1: float, long2: float) -> float:
     """Calculate shortest angular distance between two longitudes."""
     diff = abs(long1 - long2)
@@ -105,6 +132,10 @@ class ModernAspectEngine:
 
         # 2. Iterate over every unique pair of objects
         for obj1, obj2 in combinations(valid_objects, 2):
+            # Skip axis pairs (ASC/DSC, MC/IC, True Node/South Node)
+            if _are_axis_pair(obj1, obj2):
+                continue
+
             distance = _angular_distance(obj1.longitude, obj2.longitude)
 
             # 3. Check against each aspect in our config
