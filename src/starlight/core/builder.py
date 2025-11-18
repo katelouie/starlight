@@ -28,6 +28,7 @@ from starlight.core.protocols import (
     OrbEngine,
 )
 from starlight.data import get_notable_registry
+from starlight.engines.aspects import ModernAspectEngine
 from starlight.engines.ephemeris import SwissEphemerisEngine
 from starlight.engines.houses import PlacidusHouses
 from starlight.engines.orbs import SimpleOrbEngine
@@ -144,14 +145,14 @@ class ChartBuilder:
         self._house_engines.append(engine)
         return self
 
-    def with_aspects(self, engine: AspectEngine | None) -> "ChartBuilder":
-        """Set the aspect calculation engine. (Set to None to disable)"""
-        self._aspect_engine = engine
+    def with_aspects(self, engine: AspectEngine | None = None) -> "ChartBuilder":
+        """Set the aspect calculation engine."""
+        self._aspect_engine = engine or ModernAspectEngine()
         return self
 
-    def with_orbs(self, engine: OrbEngine) -> "ChartBuilder":
+    def with_orbs(self, engine: OrbEngine | None = None) -> "ChartBuilder":
         """Set the orb calculation engine."""
-        self._orb_engine = engine
+        self._orb_engine = engine or SimpleOrbEngine()
         return self
 
     def with_config(self, config: CalculationConfig) -> "ChartBuilder":

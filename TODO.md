@@ -31,6 +31,15 @@
 - [ ] Declinations
 - [ ] Add more notable people and events to data registry
 
+### Fixes
+
+- [x] Nudge planets outwards and house numbers inwards for natal charts
+- [ ] Don't calculate aspects for known things like: AC/DSC, MC/IC, NN/SN
+  - [ ] Don't calculate aspects between the 4 main angles in general
+- [ ] DO calculate aspects between Angles and other things
+- [ ] Make all aspect lines slightly transparent (alpha < 1)
+- [ ] When moon in is center of chart and aspects are displayed/present, make the moon transparent/fainter and rendered towards a back layer
+
 ## Testing
 
 - [ ] Look at coverage report and add more tests...

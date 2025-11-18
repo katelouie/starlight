@@ -259,7 +259,9 @@ class ChartDrawBuilder:
         self._aspect_counts_position = position
         return self
 
-    def with_element_modality_table(self, position: str = "bottom-left") -> "ChartDrawBuilder":
+    def with_element_modality_table(
+        self, position: str = "bottom-left"
+    ) -> "ChartDrawBuilder":
         """
         Add element × modality cross-table.
 
@@ -414,7 +416,9 @@ class ChartDrawBuilder:
 
         # Add element/modality table position if enabled
         if self._element_modality_table:
-            options["element_modality_table_position"] = self._element_modality_table_position
+            options["element_modality_table_position"] = (
+                self._element_modality_table_position
+            )
 
         # Add chart shape position if enabled
         if self._chart_shape:
