@@ -770,16 +770,16 @@ class ChartInfoLayer:
         if "datetime" in self.fields and chart.datetime:
             if chart.datetime.local_datetime:
                 dt_str = chart.datetime.local_datetime.strftime(
-                    "%B %d, %Y  %I:%M:%S %p"
+                    "%B %d, %Y  %I:%M %p"
                 )
             else:
-                dt_str = chart.datetime.utc_datetime.strftime("%B %d, %Y  %H:%M:%S UTC")
+                dt_str = chart.datetime.utc_datetime.strftime("%B %d, %Y  %H:%M UTC")
             lines.append(dt_str)
 
         if "timezone" in self.fields and chart.location:
             timezone = getattr(chart.location, "timezone", None)
             if timezone:
-                lines.append(f"Timezone: {timezone}")
+                lines.append(timezone)
 
         if "coordinates" in self.fields and chart.location:
             lat = chart.location.latitude
@@ -792,19 +792,19 @@ class ChartInfoLayer:
             # Use provided house_systems list if available, otherwise use chart's default
             if self.house_systems:
                 if len(self.house_systems) == 1:
-                    lines.append(f"Houses: {self.house_systems[0]}")
+                    lines.append(self.house_systems[0])
                 else:
                     # Multiple house systems - show all
                     systems_str = ", ".join(self.house_systems)
-                    lines.append(f"Houses: {systems_str}")
+                    lines.append(systems_str)
             else:
                 house_system = getattr(chart, "default_house_system", None)
                 if house_system:
-                    lines.append(f"Houses: {house_system}")
+                    lines.append(house_system)
 
         if "ephemeris" in self.fields:
             # Currently only Tropical is implemented
-            lines.append("Ephemeris: Tropical")
+            lines.append("Tropical")
 
         if not name and not lines:
             return
@@ -818,15 +818,10 @@ class ChartInfoLayer:
             wrapped = self._wrap_text(line, max_width, self.style["text_size"])
             wrapped_lines.extend(wrapped)
 
-        # Also wrap name if present
+        # Name should never be wrapped - display as single line
         wrapped_name = None
         if name:
-            name_wrapped = self._wrap_text(name, max_width, self.style["name_size"])
-            if len(name_wrapped) > 1:
-                # Name wrapped - use all wrapped lines
-                wrapped_name = name_wrapped
-            else:
-                wrapped_name = [name]
+            wrapped_name = [name]
 
         # Calculate total lines including wrapped name (if present)
         # Name takes extra vertical space due to larger font
