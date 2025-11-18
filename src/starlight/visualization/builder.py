@@ -323,7 +323,14 @@ class ChartDrawBuilder:
 
     def preset_detailed(self) -> "ChartDrawBuilder":
         """
-        Detailed preset: Chart with info boxes in all corners.
+        Detailed preset: Chart with info boxes and moon phase.
+
+        Includes chart info (top-left), aspect counts (top-right),
+        element/modality table (bottom-left), and auto-positioned moon phase
+        (bottom-right when aspects present, center when no aspects).
+
+        Note: Chart shape is excluded to avoid collision with moon phase
+        in bottom-right corner when aspects are present.
 
         Returns:
             Self for chaining
@@ -341,8 +348,8 @@ class ChartDrawBuilder:
         self._element_modality_table = True
         self._element_modality_table_position = "bottom-left"
 
-        self._chart_shape = True
-        self._chart_shape_position = "bottom-right"
+        # Chart shape excluded to avoid collision with auto-positioned moon phase
+        self._chart_shape = False
 
         return self
 
