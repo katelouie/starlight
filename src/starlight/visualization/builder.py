@@ -416,9 +416,7 @@ class ChartDrawBuilder:
 
         # Add element/modality table position if enabled
         if self._element_modality_table:
-            options["element_modality_table_position"] = (
-                self._element_modality_table_position
-            )
+            options["element_modality_position"] = self._element_modality_table_position
 
         # Add chart shape position if enabled
         if self._chart_shape:
