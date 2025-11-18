@@ -57,7 +57,7 @@ class ChartDrawBuilder:
 
         # Moon phase
         self._moon_phase = True
-        self._moon_phase_position = "center"
+        self._moon_phase_position = None  # Auto-detect based on aspects
         self._moon_phase_show_label = False
         self._moon_phase_size: int | None = None
         self._moon_phase_label_size: str | None = None
@@ -313,7 +313,7 @@ class ChartDrawBuilder:
             Self for chaining
         """
         self._moon_phase = True
-        self._moon_phase_position = "center"
+        self._moon_phase_position = None  # Auto-detect based on aspects
         self._moon_phase_show_label = False
         self._chart_info = False
         self._aspect_counts = False
@@ -329,7 +329,7 @@ class ChartDrawBuilder:
             Self for chaining
         """
         self._moon_phase = True
-        self._moon_phase_position = "center"
+        self._moon_phase_position = None  # Auto-detect based on aspects
         self._moon_phase_show_label = False
 
         self._chart_info = True

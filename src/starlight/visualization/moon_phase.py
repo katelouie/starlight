@@ -31,20 +31,20 @@ class MoonPhaseLayer:
     """
 
     DEFAULT_STYLE = {
-        "size": 40,  # Radius in pixels (recommended: 60 for center, 30-35 for corners)
+        "size": 40,  # Radius in pixels (auto-sized: 60 for center, 28 for corners)
         "border_color": "#2C3E50",
         "border_width": 2,
         "lit_color": "#F8F9FA",
         "shadow_color": "#2C3E50",
         "opacity": 0.95,
         "label_color": "#2C3E50",
-        "label_size": "14px",  # Recommended: 14px for center, 11px for corners to match corner text
-        "label_offset": 8,  # Pixels from moon symbol (above for upper corners, below for others)
+        "label_size": "11px",  # Auto-sized: 14px for center, 11px for corners to match corner text
+        "label_offset": 10,  # Pixels from moon symbol (above for upper corners, below for others)
     }
 
     def __init__(
         self,
-        position: str = "center",
+        position: str | None = None,  # None = auto-detect based on chart content
         show_label: bool = False,
         style_override: dict[str, Any] | None = None,
     ) -> None:
@@ -53,17 +53,33 @@ class MoonPhaseLayer:
 
         Args:
             position: Where to place the moon phase symbol.
-                Options: "center", "top-left", "top-right", "bottom-left", "bottom-right"
+                Options: "center", "top-left", "top-right", "bottom-left", "bottom-right", None
+                If None (default), automatically chooses:
+                - "bottom-right" if chart has aspects (keeps center clear)
+                - "center" if chart has no aspects (makes use of empty space)
             show_label: Whether to display the phase name below the moon
             style_override: Optional style overrides
         """
-        valid_positions = ["center", "top-left", "top-right", "bottom-left", "bottom-right"]
+        valid_positions = ["center", "top-left", "top-right", "bottom-left", "bottom-right", None]
         if position not in valid_positions:
             raise ValueError(f"Invalid position: {position}. Must be one of {valid_positions}")
 
-        self.position = position
+        self.position = position  # None means auto-detect later in render()
         self.show_label = show_label
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+        # Auto-size moon and label based on position if not explicitly overridden
+        if style_override is None or "size" not in style_override:
+            if position == "center":
+                self.style["size"] = 60  # Larger for center
+            else:
+                self.style["size"] = 28  # Smaller for corners
+
+        if style_override is None or "label_size" not in style_override:
+            if position == "center":
+                self.style["label_size"] = "14px"
+            else:
+                self.style["label_size"] = "11px"  # Match corner text size
 
     def render(
         self,
@@ -83,6 +99,28 @@ class MoonPhaseLayer:
         moon = chart.get_object("Moon")
         if not moon or not moon.phase:
             return
+
+        # Auto-detect position if not explicitly set
+        if self.position is None:
+            # Smart default: bottom-right if aspects present, center if not
+            if chart.aspects and len(chart.aspects) > 0:
+                actual_position = "bottom-right"
+            else:
+                actual_position = "center"
+        else:
+            actual_position = self.position
+
+        # Auto-size based on detected position
+        if actual_position == "center":
+            self.style["size"] = self.style.get("size", 60)
+            self.style["label_size"] = self.style.get("label_size", "14px")
+        else:
+            self.style["size"] = self.style.get("size", 28)
+            self.style["label_size"] = self.style.get("label_size", "11px")
+
+        # Temporarily set position for coordinate calculation
+        original_position = self.position
+        self.position = actual_position
 
         # Access the phase data cleanly
         phase_data = moon.phase
@@ -113,14 +151,32 @@ class MoonPhaseLayer:
             # Add label if requested
             if self.show_label:
                 # Place label above moon for upper corners, below for others
+                # Ensure label has enough padding from edge (minimum margin)
+                min_margin = renderer.size * 0.03  # Match chart padding
+
                 if self.position in ["top-left", "top-right"]:
-                    # Above the moon - need to account for moon radius and offset
-                    label_y = y - self.style["size"] - self.style["label_offset"]
+                    # Above the moon - ensure we don't hit top edge
+                    label_y = max(
+                        y - self.style["size"] - self.style["label_offset"],
+                        min_margin + 12  # 12px for text height
+                    )
                     dominant_baseline = "auto"  # Bottom of text aligns with y
                 else:
-                    # Below the moon (default)
-                    label_y = y + self.style["size"] + self.style["label_offset"]
+                    # Below the moon - ensure we don't hit bottom edge
+                    label_y = min(
+                        y + self.style["size"] + self.style["label_offset"],
+                        renderer.size - min_margin - 4  # 4px buffer
+                    )
                     dominant_baseline = "hanging"  # Top of text aligns with y
+
+                # Ensure label color has sufficient contrast (match corner text behavior)
+                from .palettes import adjust_color_for_contrast
+                background_color = renderer.style.get("background_color", "#FFFFFF")
+                label_color = adjust_color_for_contrast(
+                    self.style["label_color"],
+                    background_color,
+                    min_contrast=4.5
+                )
 
                 dwg.add(
                     dwg.text(
@@ -129,11 +185,14 @@ class MoonPhaseLayer:
                         text_anchor="middle",
                         dominant_baseline=dominant_baseline,
                         font_size=self.style["label_size"],
-                        fill=self.style["label_color"],
+                        fill=label_color,
                         font_family=renderer.style["font_family_text"],
-                        font_weight="bold",
+                        font_weight="normal",  # Match corner text (not bold)
                     )
                 )
+
+        # Restore original position
+        self.position = original_position
 
     def _get_position_coordinates(self, renderer: ChartRenderer) -> tuple[float, float]:
         """

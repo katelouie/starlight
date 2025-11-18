@@ -906,12 +906,15 @@ class AspectCountsLayer:
         if not aspect_counts:
             return
 
-        # Build lines
+        # Build lines (title has no color, aspect lines have colors)
         lines = []
-        lines.append("Aspects:")
+        lines.append(("Aspects:", None))  # Title has no specific color
 
         # Sort by count (descending)
         sorted_aspects = sorted(aspect_counts.items(), key=lambda x: x[1], reverse=True)
+
+        # Get aspect styles from renderer
+        aspect_style_dict = renderer.style.get("aspects", {})
 
         for aspect_name, count in sorted_aspects:
             aspect_info = get_aspect_info(aspect_name)
@@ -920,7 +923,14 @@ class AspectCountsLayer:
             else:
                 glyph = aspect_name[:3]
 
-            lines.append(f"{glyph} {aspect_name}: {count}")
+            # Get the color for this aspect (for legend)
+            aspect_style = aspect_style_dict.get(aspect_name, aspect_style_dict.get("default", {}))
+            if isinstance(aspect_style, dict):
+                aspect_color = aspect_style.get("color", "#888888")
+            else:
+                aspect_color = "#888888"
+
+            lines.append((f"{glyph} {aspect_name}: {count}", aspect_color))
 
         # Calculate position
         x, y = self._get_position_coordinates(renderer, len(lines))
@@ -940,20 +950,30 @@ class AspectCountsLayer:
         )
 
         # Render each line
-        for i, line in enumerate(lines):
+        for i, line_data in enumerate(lines):
+            # Unpack line text and optional color
+            if isinstance(line_data, tuple):
+                line_text, line_color = line_data
+            else:
+                # Single string (backwards compatibility)
+                line_text, line_color = line_data, None
+
             line_y = y + (i * self.style["line_height"])
             font_weight = (
                 self.style["title_weight"] if i == 0 else self.style["font_weight"]
             )
 
+            # Use line-specific color if available, otherwise default text color
+            fill_color = line_color if line_color else text_color
+
             dwg.add(
                 dwg.text(
-                    line,
+                    line_text,
                     insert=(x, line_y),
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
-                    fill=text_color,
+                    fill=fill_color,
                     font_family=renderer.style["font_family_text"],
                     font_weight=font_weight,
                 )
@@ -1250,20 +1270,30 @@ class ChartShapeLayer:
         )
 
         # Render each line
-        for i, line in enumerate(lines):
+        for i, line_data in enumerate(lines):
+            # Unpack line text and optional color
+            if isinstance(line_data, tuple):
+                line_text, line_color = line_data
+            else:
+                # Single string (backwards compatibility)
+                line_text, line_color = line_data, None
+
             line_y = y + (i * self.style["line_height"])
             font_weight = (
                 self.style["title_weight"] if i == 0 else self.style["font_weight"]
             )
 
+            # Use line-specific color if available, otherwise default text color
+            fill_color = line_color if line_color else text_color
+
             dwg.add(
                 dwg.text(
-                    line,
+                    line_text,
                     insert=(x, line_y),
                     text_anchor=text_anchor,
                     dominant_baseline="hanging",
                     font_size=self.style["text_size"],
-                    fill=text_color,
+                    fill=fill_color,
                     font_family=renderer.style["font_family_text"],
                     font_weight=font_weight,
                 )
@@ -1309,13 +1339,16 @@ class AspectLayer:
             aspect_palette = AspectPalette(renderer.aspect_palette)
             aspect_colors = get_aspect_palette_colors(aspect_palette)
 
-            # Update style with palette colors
+            # Update style with palette colors, PRESERVING line width and dash from registry
             for aspect_name, color in aspect_colors.items():
                 if aspect_name not in style:
-                    style[aspect_name] = {}
-                if isinstance(style[aspect_name], dict):
+                    # If not in style (shouldn't happen), create with defaults
+                    style[aspect_name] = {"color": color, "width": 1.5, "dash": "1,0"}
+                elif isinstance(style[aspect_name], dict):
+                    # Preserve existing width and dash, only update color
                     style[aspect_name]["color"] = color
                 else:
+                    # Fallback case
                     style[aspect_name] = {"color": color, "width": 1.5, "dash": "1,0"}
 
         radius = renderer.radii["aspect_ring_inner"]
@@ -1344,5 +1377,6 @@ class AspectLayer:
                     stroke=aspect_style["color"],
                     stroke_width=aspect_style["width"],
                     stroke_dasharray=aspect_style["dash"],
+                    opacity=0.6,  # Make aspect lines semi-transparent to reduce visual clutter
                 )
             )

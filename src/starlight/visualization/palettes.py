@@ -453,17 +453,17 @@ def get_aspect_palette_colors(palette: AspectPalette) -> dict[str, str]:
         }
 
     elif palette == AspectPalette.MIDNIGHT:
-        # Midnight theme: gold and cool blues
+        # Midnight theme: gold and distinct blues/cyans for clarity
         return {
-            "Conjunction": "#FFD700",
-            "Sextile": "#ADD8E6",
-            "Square": "#B0C4DE",
-            "Trine": "#98D8E8",
-            "Opposition": "#87CEEB",
-            "Semisextile": "#7B8FA0",
-            "Semisquare": "#C0D0E0",
-            "Sesquisquare": "#B0C8D8",
-            "Quincunx": "#A0B8D0",
+            "Conjunction": "#FFD700",  # Gold (bright, stands out)
+            "Sextile": "#00CED1",  # Dark turquoise (distinct from other blues)
+            "Square": "#FFA500",  # Orange (contrast to blues)
+            "Trine": "#4169E1",  # Royal blue (distinct from cyan)
+            "Opposition": "#DC143C",  # Crimson (distinct from other colors)
+            "Semisextile": "#7B8FA0",  # Slate gray
+            "Semisquare": "#FF8C00",  # Dark orange
+            "Sesquisquare": "#FFB347",  # Light orange
+            "Quincunx": "#9370DB",  # Medium purple
         }
 
     elif palette == AspectPalette.NEON:
@@ -481,31 +481,31 @@ def get_aspect_palette_colors(palette: AspectPalette) -> dict[str, str]:
         }
 
     elif palette == AspectPalette.SEPIA:
-        # Sepia theme: warm browns
+        # Sepia theme: warm browns with more contrast
         return {
-            "Conjunction": "#8B4513",
-            "Sextile": "#A68B6B",
-            "Square": "#8B7355",
-            "Trine": "#9B7653",
-            "Opposition": "#A0522D",
-            "Semisextile": "#C4A582",
-            "Semisquare": "#B8936A",
-            "Sesquisquare": "#A88158",
-            "Quincunx": "#987654",
+            "Conjunction": "#654321",  # Dark brown (distinct)
+            "Sextile": "#D2691E",  # Chocolate (orange-brown, distinct)
+            "Square": "#8B4513",  # Saddle brown (medium)
+            "Trine": "#CD853F",  # Peru (lighter tan)
+            "Opposition": "#A0522D",  # Sienna (reddish brown)
+            "Semisextile": "#C4A582",  # Tan
+            "Semisquare": "#DEB887",  # Burlywood
+            "Sesquisquare": "#F4A460",  # Sandy brown
+            "Quincunx": "#BC8F8F",  # Rosy brown
         }
 
     elif palette == AspectPalette.PASTEL:
-        # Pastel theme: soft colors
+        # Pastel theme: soft but distinct colors
         return {
-            "Conjunction": "#FFD4A3",
-            "Sextile": "#BAFFC9",
-            "Square": "#FFDFBA",
-            "Trine": "#BAE1FF",
-            "Opposition": "#FFB3BA",
-            "Semisextile": "#E0E0E0",
-            "Semisquare": "#FFE0B0",
-            "Sesquisquare": "#FFD0A0",
-            "Quincunx": "#E0C0E0",
+            "Conjunction": "#B39EB5",  # Pastel purple (distinct)
+            "Sextile": "#77DD77",  # Pastel green (bright enough to see)
+            "Square": "#FFB347",  # Pastel orange (warm, stands out)
+            "Trine": "#779ECB",  # Pastel blue (cool, distinct)
+            "Opposition": "#FF6961",  # Pastel red (distinct warm)
+            "Semisextile": "#CFCFC4",  # Pastel gray
+            "Semisquare": "#FDFD96",  # Pastel yellow
+            "Sesquisquare": "#FFD1DC",  # Pastel pink
+            "Quincunx": "#C5A3FF",  # Pastel lavender
         }
 
     elif palette == AspectPalette.CELESTIAL:

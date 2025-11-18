@@ -31,7 +31,7 @@ def draw_chart(
     filename: str = "chart.svg",
     size: int = 600,
     moon_phase: bool = True,
-    moon_phase_position: str = "center",
+    moon_phase_position: str | None = None,  # None = auto (bottom-right if aspects, center if not)
     moon_phase_label: bool = False,
     chart_info: bool = False,
     chart_info_position: str = "top-left",
