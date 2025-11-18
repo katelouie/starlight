@@ -4,6 +4,8 @@
 
 Starlight's visualization system transforms your calculated charts into professional-quality SVG graphics. Whether you need a quick chart for analysis or a publication-ready visualization with custom styling, the fluent API makes it effortless.
 
+See the HTML full theme and palette reference overview [rendered here](https://html-preview.github.io/?url=https://github.com/katelouie/starlight/blob/main/examples/chart_examples/starlight_colors.html).
+
 ## Table of Contents
 
 - [Quick Start](#quick-start)
