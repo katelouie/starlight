@@ -73,18 +73,42 @@ pip install starlight-astro
 
 ## Quick Start
 
-### Your First Chart (3 Lines of Code)
+### Your First Chart (2 Lines of Code)
 
 ```python
-from starlight import ChartBuilder, draw_chart
+from starlight import ChartBuilder
 
 chart = ChartBuilder.from_notable("Albert Einstein").calculate()
-draw_chart(chart, "einstein.svg")
+chart.draw("einstein.svg").save()
 ```
 
-**That's it!** You now have a professional natal chart SVG for Einstein.
+**That's it!** You now have a beautiful natal chart SVG for Einstein.
 
 The `from_notable()` factory method uses our curated database of famous births. Other notables include: "Carl Jung", "Frida Kahlo", "Marie Curie", and more.
+
+### Beautiful Visualizations, Zero Config
+
+Want to customize your chart? The fluent `.draw()` API makes it effortless:
+
+```python
+# Apply a preset for instant results
+chart.draw("detailed.svg").preset_detailed().save()
+
+# Choose a theme
+chart.draw("midnight.svg").with_theme("midnight").save()
+
+# Full customization
+chart.draw("custom.svg") \
+    .with_theme("celestial") \
+    .with_zodiac_palette("rainbow_celestial") \
+    .with_moon_phase(position="center", show_label=True) \
+    .with_chart_info(position="top-left") \
+    .save()
+```
+
+**Discover features through autocomplete!** Type `chart.draw().` and your IDE will show you everything available.
+
+📚 **See the [Visualization Guide](docs/VISUALIZATION.md) for complete documentation, theme gallery, and examples.**
 
 ### Your Own Chart
 
