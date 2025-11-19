@@ -82,6 +82,7 @@ class ChartDrawBuilder:
         self._show_aspectarian = False
         self._show_house_cusps = False  # For natal charts only
         self._aspectarian_mode = "cross_chart"  # For comparisons
+        self._table_object_types: list[str] | None = None  # Object types to show in tables
 
         # House systems (default: None = use chart's default, can be list of names or "all")
         self._house_systems: list[str] | str | None = None
@@ -329,6 +330,7 @@ class ChartDrawBuilder:
         show_aspectarian: bool = True,
         show_house_cusps: bool = False,
         aspectarian_mode: str = "cross_chart",
+        show_object_types: list[str] | None = None,
     ) -> "ChartDrawBuilder":
         """
         Add extended canvas with position table and/or aspectarian grid.
@@ -346,6 +348,10 @@ class ChartDrawBuilder:
                 - "all": All three grids (chart1 internal, chart2 internal, cross-chart)
                 - "chart1": Only chart1 internal aspects
                 - "chart2": Only chart2 internal aspects
+            show_object_types: List of object types to include in tables.
+                If None, uses default (planet, asteroid, point, node, angle).
+                Examples: ["planet", "asteroid", "midpoint"]
+                         ["planet", "asteroid", "point", "node", "angle", "arabic_part"]
 
         Returns:
             Self for chaining
@@ -365,12 +371,19 @@ class ChartDrawBuilder:
                 position="right",
                 aspectarian_mode="all"  # Show all aspect grids
             )
+
+            # Include midpoints and Arabic parts in tables
+            builder.with_tables(
+                position="right",
+                show_object_types=["planet", "asteroid", "midpoint", "arabic_part"]
+            )
         """
         self._extended_canvas = position
         self._show_position_table = show_position_table
         self._show_aspectarian = show_aspectarian
         self._show_house_cusps = show_house_cusps
         self._aspectarian_mode = aspectarian_mode
+        self._table_object_types = show_object_types
         return self
 
     def without_tables(self) -> "ChartDrawBuilder":
@@ -384,6 +397,7 @@ class ChartDrawBuilder:
         self._show_position_table = False
         self._show_aspectarian = False
         self._show_house_cusps = False
+        self._table_object_types = None
         return self
 
     # === Preset Methods ===
@@ -556,6 +570,8 @@ class ChartDrawBuilder:
                 options["show_position_table"] = self._show_position_table
                 options["show_aspectarian"] = self._show_aspectarian
                 options["aspectarian_mode"] = self._aspectarian_mode
+                if self._table_object_types is not None:
+                    options["table_object_types"] = self._table_object_types
 
             # Call draw_comparison_chart
             return draw_comparison_chart(self._chart, **options)
@@ -578,6 +594,8 @@ class ChartDrawBuilder:
                 options["show_position_table"] = self._show_position_table
                 options["show_aspectarian"] = self._show_aspectarian
                 options["show_house_cusps"] = self._show_house_cusps
+                if self._table_object_types is not None:
+                    options["table_object_types"] = self._table_object_types
 
             # Add house systems if configured
             if self._house_systems is not None:

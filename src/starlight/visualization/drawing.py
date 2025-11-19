@@ -48,6 +48,7 @@ def draw_chart(
     show_position_table: bool = True,
     show_aspectarian: bool = True,
     show_house_cusps: bool = False,
+    table_object_types: list[str] | None = None,
     theme: ChartTheme | str | None = None,
     zodiac_palette: ZodiacPalette | str | None = None,
     aspect_palette: str | None = None,
@@ -92,6 +93,10 @@ def draw_chart(
         show_position_table: Whether to show position table in extended canvas.
         show_aspectarian: Whether to show aspectarian grid in extended canvas.
         show_house_cusps: Whether to show house cusp table in extended canvas (natal charts only).
+        table_object_types: List of object types to include in tables.
+            If None, uses default (planet, asteroid, point, node, angle).
+            Examples: ["planet", "asteroid", "midpoint"]
+                     ["planet", "asteroid", "point", "node", "angle", "arabic_part"]
         theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial,
                viridis, plasma, inferno, magma, cividis, turbo).
                If not specified, uses classic theme.
@@ -411,6 +416,7 @@ def draw_chart(
                 x_offset=table_x,
                 y_offset=table_y,
                 style_override=extended_style,
+                object_types=table_object_types,
             )
             position_table.render(renderer, dwg, chart)
 
@@ -429,6 +435,7 @@ def draw_chart(
                 x_offset=aspectarian_x,
                 y_offset=aspectarian_y,
                 style_override=extended_style,
+                object_types=table_object_types,
             )
             aspectarian.render(renderer, dwg, chart)
 
@@ -550,6 +557,7 @@ def draw_comparison_chart(
     show_position_table: bool = True,
     show_aspectarian: bool = True,
     aspectarian_mode: str = "cross_chart",  # "cross_chart", "all", "chart1", "chart2"
+    table_object_types: list[str] | None = None,
     theme: ChartTheme | str | None = None,
     zodiac_palette: ZodiacPalette | str | None = None,
     aspect_palette: str | None = None,
@@ -589,6 +597,10 @@ def draw_comparison_chart(
             - "all": All three grids (chart1 internal, chart2 internal, cross-chart)
             - "chart1": Only chart1 internal aspects
             - "chart2": Only chart2 internal aspects
+        table_object_types: List of object types to include in tables.
+            If None, uses default (planet, asteroid, point, node, angle).
+            Examples: ["planet", "asteroid", "midpoint"]
+                     ["planet", "asteroid", "point", "node", "angle", "arabic_part"]
         theme: Visual theme
         zodiac_palette: Color palette for zodiac wheel
         aspect_palette: Color palette for aspect lines
@@ -868,24 +880,24 @@ def draw_comparison_chart(
             "grid_color": renderer.style.get("zodiac", {}).get("line_color", "#CCCCCC"),
         }
 
-        # Position table - will need to be modified for Comparison objects
+        # Position table
         if show_position_table:
             position_table = PositionTableLayer(
                 x_offset=table_x,
                 y_offset=table_y,
                 style_override=extended_style,
+                object_types=table_object_types,
             )
-            # TODO: Modify PositionTableLayer to handle Comparison objects
             position_table.render(renderer, dwg, comparison)  # Pass comparison directly
 
-        # Aspectarian - will need to be modified for Comparison objects
+        # Aspectarian
         if show_aspectarian:
             aspectarian = AspectarianLayer(
                 x_offset=aspectarian_x,
                 y_offset=aspectarian_y,
                 style_override=extended_style,
+                object_types=table_object_types,
             )
-            # TODO: Modify AspectarianLayer to handle Comparison objects
             aspectarian.render(renderer, dwg, comparison)  # Pass comparison directly
 
     dwg.save()

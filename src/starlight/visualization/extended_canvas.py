@@ -20,48 +20,94 @@ def _is_comparison(obj):
     return hasattr(obj, "comparison_type") and hasattr(obj, "chart1") and hasattr(obj, "chart2")
 
 
-def _filter_objects_for_tables(positions):
+def _filter_objects_for_tables(positions, object_types=None):
     """
     Filter positions to include in position tables and aspectarian.
 
-    Includes:
+    Default includes:
     - All PLANET objects (except Earth)
-    - North Node only (exclude South Node)
+    - All ASTEROID objects
     - All POINT objects
+    - North Node only (exclude South Node)
     - ASC/AC and MC only (exclude DSC/DC and IC)
+
+    Default excludes:
+    - MIDPOINT, ARABIC_PART, FIXED_STAR
 
     Args:
         positions: List of CelestialPosition objects
+        object_types: Optional list of ObjectType enum values or strings to include.
+                     If None, uses default filter (planet, asteroid, point, node, angle).
+                     Examples: ["planet", "asteroid", "midpoint"]
+                              [ObjectType.PLANET, ObjectType.ASTEROID]
 
     Returns:
         Filtered list of CelestialPosition objects
     """
+    # Convert object_types to a set of ObjectType enums for fast lookup
+    if object_types is None:
+        # Default: include planet, asteroid, point, node, angle
+        included_types = {
+            ObjectType.PLANET,
+            ObjectType.ASTEROID,
+            ObjectType.POINT,
+            ObjectType.NODE,
+            ObjectType.ANGLE,
+        }
+    else:
+        # Convert strings to ObjectType enums
+        included_types = set()
+        for obj_type in object_types:
+            if isinstance(obj_type, str):
+                # Convert string to ObjectType enum
+                try:
+                    included_types.add(ObjectType(obj_type.lower()))
+                except ValueError:
+                    # Skip invalid type names
+                    pass
+            elif isinstance(obj_type, ObjectType):
+                included_types.add(obj_type)
+
     filtered = []
     for p in positions:
         # Skip Earth
         if p.name == "Earth":
             continue
 
-        # Include all planets (except Earth, already checked)
+        # Check if object type is in included types
+        if p.object_type not in included_types:
+            continue
+
+        # For planets: include all except Earth (already checked)
         if p.object_type == ObjectType.PLANET:
             filtered.append(p)
             continue
 
-        # Include North Node only (exclude South Node)
+        # For asteroids: include all
+        if p.object_type == ObjectType.ASTEROID:
+            filtered.append(p)
+            continue
+
+        # For nodes: include North Node only (exclude South Node)
         if p.object_type == ObjectType.NODE:
             if p.name in ("North Node", "True Node", "Mean Node"):
                 filtered.append(p)
             continue
 
-        # Include all POINT objects
+        # For points: include all
         if p.object_type == ObjectType.POINT:
             filtered.append(p)
             continue
 
-        # Include only ASC/AC and MC (exclude DSC/DC and IC)
+        # For angles: include only ASC/AC and MC (exclude DSC/DC and IC)
         if p.object_type == ObjectType.ANGLE:
             if p.name in ("ASC", "AC", "Ascendant", "MC", "Midheaven"):
                 filtered.append(p)
+            continue
+
+        # For midpoints and arabic parts: include all if type is in included_types
+        if p.object_type in (ObjectType.MIDPOINT, ObjectType.ARABIC_PART, ObjectType.FIXED_STAR):
+            filtered.append(p)
             continue
 
     return filtered
@@ -93,6 +139,7 @@ class PositionTableLayer:
         x_offset: float = 0,
         y_offset: float = 0,
         style_override: dict[str, Any] | None = None,
+        object_types: list[str | ObjectType] | None = None,
     ) -> None:
         """
         Initialize position table layer.
@@ -101,10 +148,14 @@ class PositionTableLayer:
             x_offset: X position offset from canvas origin
             y_offset: Y position offset from canvas origin
             style_override: Optional style overrides
+            object_types: Optional list of object types to include.
+                         If None, uses default (planet, asteroid, point, node, angle).
+                         Examples: ["planet", "asteroid", "midpoint"]
         """
         self.x_offset = x_offset
         self.y_offset = y_offset
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+        self.object_types = object_types
 
     def render(
         self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
@@ -119,15 +170,19 @@ class PositionTableLayer:
 
         if is_comparison:
             # Get positions from both charts using filter function
-            chart1_positions = _filter_objects_for_tables(chart.chart1.positions)
-            chart2_positions = _filter_objects_for_tables(chart.chart2.positions)
+            chart1_positions = _filter_objects_for_tables(chart.chart1.positions, self.object_types)
+            chart2_positions = _filter_objects_for_tables(chart.chart2.positions, self.object_types)
 
             # Sort both lists
             type_priority = {
                 ObjectType.PLANET: 0,
-                ObjectType.NODE: 1,
-                ObjectType.POINT: 2,
-                ObjectType.ANGLE: 3,
+                ObjectType.ASTEROID: 1,
+                ObjectType.NODE: 2,
+                ObjectType.POINT: 3,
+                ObjectType.ANGLE: 4,
+                ObjectType.MIDPOINT: 5,
+                ObjectType.ARABIC_PART: 6,
+                ObjectType.FIXED_STAR: 7,
             }
             chart1_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
             chart2_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
@@ -142,14 +197,18 @@ class PositionTableLayer:
                     positions.append(("chart2", chart2_positions[i]))
         else:
             # Standard CalculatedChart - use filter function to include angles
-            chart_positions = _filter_objects_for_tables(chart.positions)
+            chart_positions = _filter_objects_for_tables(chart.positions, self.object_types)
 
             # Sort by object type priority, then name
             type_priority = {
                 ObjectType.PLANET: 0,
-                ObjectType.NODE: 1,
-                ObjectType.POINT: 2,
-                ObjectType.ANGLE: 3,
+                ObjectType.ASTEROID: 1,
+                ObjectType.NODE: 2,
+                ObjectType.POINT: 3,
+                ObjectType.ANGLE: 4,
+                ObjectType.MIDPOINT: 5,
+                ObjectType.ARABIC_PART: 6,
+                ObjectType.FIXED_STAR: 7,
             }
             chart_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
             positions = [(None, p) for p in chart_positions]  # Wrap in tuples for consistency
@@ -484,6 +543,7 @@ class AspectarianLayer:
         x_offset: float = 0,
         y_offset: float = 0,
         style_override: dict[str, Any] | None = None,
+        object_types: list[str | ObjectType] | None = None,
     ) -> None:
         """
         Initialize aspectarian layer.
@@ -492,10 +552,14 @@ class AspectarianLayer:
             x_offset: X position offset from canvas origin
             y_offset: Y position offset from canvas origin
             style_override: Optional style overrides
+            object_types: Optional list of object types to include.
+                         If None, uses default (planet, asteroid, point, node, angle).
+                         Examples: ["planet", "asteroid", "midpoint"]
         """
         self.x_offset = x_offset
         self.y_offset = y_offset
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+        self.object_types = object_types
 
     def render(
         self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
@@ -511,10 +575,10 @@ class AspectarianLayer:
         if is_comparison:
             # For comparisons: get all celestial objects using filter function
             # Chart1 objects (rows - inner wheel)
-            chart1_objects = _filter_objects_for_tables(chart.chart1.positions)
+            chart1_objects = _filter_objects_for_tables(chart.chart1.positions, self.object_types)
 
             # Chart2 objects (columns - outer wheel)
-            chart2_objects = _filter_objects_for_tables(chart.chart2.positions)
+            chart2_objects = _filter_objects_for_tables(chart.chart2.positions, self.object_types)
 
             # Sort by traditional order (planets first, nodes, points, then angles)
             object_order = [
@@ -562,7 +626,7 @@ class AspectarianLayer:
 
         else:
             # Standard CalculatedChart - use filter function to include angles and nodes
-            planets = _filter_objects_for_tables(chart.positions)
+            planets = _filter_objects_for_tables(chart.positions, self.object_types)
 
             # Sort by traditional order (planets, nodes, points, angles)
             planet_order = [
