@@ -127,7 +127,7 @@ class PositionTableLayer:
         "text_size": "10px",
         "header_size": "11px",
         "line_height": 16,
-        "col_spacing": 70,  # Pixels between columns
+        "col_spacing": 55,  # Pixels between columns (reduced from 70 for tighter spacing)
         "font_weight": "normal",
         "header_weight": "bold",
         "show_speed": True,
@@ -378,7 +378,7 @@ class HouseCuspTableLayer:
         "text_size": "10px",
         "header_size": "11px",
         "line_height": 16,
-        "col_spacing": 70,  # Pixels between columns
+        "col_spacing": 55,  # Pixels between columns (reduced from 70 for tighter spacing)
         "font_weight": "normal",
         "header_weight": "bold",
     }
@@ -674,7 +674,7 @@ class AspectarianLayer:
 
         if is_comparison:
             # For comparisons: full rectangular grid (chart1 rows × chart2 columns)
-            # Column headers (chart2 objects - outer wheel)
+            # Column headers (chart2 objects - outer wheel) - aligned at left edge of column
             for col_idx, obj in enumerate(col_objects):
                 glyph_info = get_glyph(obj.name)
                 glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj.name[:2]
@@ -682,14 +682,14 @@ class AspectarianLayer:
                 # Add ② indicator for chart2
                 glyph = f"{glyph}②"
 
-                x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                x = x_start + ((col_idx + 1) * cell_size)  # Left edge of column
                 y = y_start
 
                 dwg.add(
                     dwg.text(
                         glyph,
                         insert=(x, y),
-                        text_anchor="middle",
+                        text_anchor="start",  # Align at left edge
                         dominant_baseline="hanging",
                         font_size=self.style["header_size"],
                         fill=self.style["header_color"],
@@ -774,20 +774,20 @@ class AspectarianLayer:
 
         else:
             # Standard CalculatedChart: triangle grid
-            # Column headers (top)
+            # Column headers (top) - aligned at left edge of column
             for col_idx in range(len(row_objects) - 1):
                 obj = row_objects[col_idx]
                 glyph_info = get_glyph(obj.name)
                 glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj.name[:2]
 
-                x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                x = x_start + ((col_idx + 1) * cell_size)  # Left edge of column
                 y = y_start
 
                 dwg.add(
                     dwg.text(
                         glyph,
                         insert=(x, y),
-                        text_anchor="middle",
+                        text_anchor="start",  # Align at left edge
                         dominant_baseline="hanging",
                         font_size=self.style["header_size"],
                         fill=self.style["header_color"],
