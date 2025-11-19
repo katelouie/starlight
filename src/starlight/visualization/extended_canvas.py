@@ -9,15 +9,19 @@ from typing import Any
 
 import svgwrite
 
-from starlight.core.models import CalculatedChart, ObjectType
-from starlight.core.registry import get_aspect_info
+from starlight.core.models import Aspect, CalculatedChart, ObjectType
+from starlight.core.registry import CELESTIAL_REGISTRY, get_aspect_info
 
 from .core import ChartRenderer, get_glyph
 
 
 def _is_comparison(obj):
     """Check if object is a Comparison (avoid circular import)."""
-    return hasattr(obj, "comparison_type") and hasattr(obj, "chart1") and hasattr(obj, "chart2")
+    return (
+        hasattr(obj, "comparison_type")
+        and hasattr(obj, "chart1")
+        and hasattr(obj, "chart2")
+    )
 
 
 def _filter_objects_for_tables(positions, object_types=None):
@@ -106,7 +110,11 @@ def _filter_objects_for_tables(positions, object_types=None):
             continue
 
         # For midpoints and arabic parts: include all if type is in included_types
-        if p.object_type in (ObjectType.MIDPOINT, ObjectType.ARABIC_PART, ObjectType.FIXED_STAR):
+        if p.object_type in (
+            ObjectType.MIDPOINT,
+            ObjectType.ARABIC_PART,
+            ObjectType.FIXED_STAR,
+        ):
             filtered.append(p)
             continue
 
@@ -157,9 +165,7 @@ class PositionTableLayer:
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
         self.object_types = object_types
 
-    def render(
-        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
-    ) -> None:
+    def render(self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart) -> None:
         """Render position table.
 
         Handles both CalculatedChart and Comparison objects.
@@ -182,7 +188,9 @@ class PositionTableLayer:
         # Standard CalculatedChart - use filter function to include angles
         chart_positions = _filter_objects_for_tables(chart.positions, self.object_types)
 
-        # Sort by object type priority, then name
+        # Get defined names from registry
+        name_priority = {name: i for i, name in enumerate(CELESTIAL_REGISTRY.keys())}
+        # Sort by object type priority, then registry order
         type_priority = {
             ObjectType.PLANET: 0,
             ObjectType.ASTEROID: 1,
@@ -193,7 +201,12 @@ class PositionTableLayer:
             ObjectType.ARABIC_PART: 6,
             ObjectType.FIXED_STAR: 7,
         }
-        chart_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+        chart_positions.sort(
+            key=lambda p: (
+                type_priority.get(p.object_type, 99),
+                name_priority.get(p.name, 999),
+            )
+        )
 
         # Build table
         x_start = self.x_offset
@@ -324,8 +337,15 @@ class PositionTableLayer:
     ) -> None:
         """Render two separate side-by-side tables for comparison charts."""
         # Get positions from both charts
-        chart1_positions = _filter_objects_for_tables(comparison.chart1.positions, self.object_types)
-        chart2_positions = _filter_objects_for_tables(comparison.chart2.positions, self.object_types)
+        chart1_positions = _filter_objects_for_tables(
+            comparison.chart1.positions, self.object_types
+        )
+        chart2_positions = _filter_objects_for_tables(
+            comparison.chart2.positions, self.object_types
+        )
+
+        # Get defined names from registry
+        name_priority = {name: i for i, name in enumerate(CELESTIAL_REGISTRY.keys())}
 
         # Sort both lists
         type_priority = {
@@ -338,8 +358,18 @@ class PositionTableLayer:
             ObjectType.ARABIC_PART: 6,
             ObjectType.FIXED_STAR: 7,
         }
-        chart1_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
-        chart2_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+        chart1_positions.sort(
+            key=lambda p: (
+                type_priority.get(p.object_type, 99),
+                name_priority.get(p.name, 999),
+            )
+        )
+        chart2_positions.sort(
+            key=lambda p: (
+                type_priority.get(p.object_type, 99),
+                name_priority.get(p.name, 999),
+            )
+        )
 
         # Calculate table width
         num_cols = 3  # Planet, Sign, Degree
@@ -397,7 +427,13 @@ class PositionTableLayer:
         )
 
     def _render_table_for_chart(
-        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart, positions, x_offset, y_offset
+        self,
+        renderer: ChartRenderer,
+        dwg: svgwrite.Drawing,
+        chart,
+        positions,
+        x_offset,
+        y_offset,
     ) -> None:
         """Render a table for a specific chart."""
         x_start = x_offset
@@ -569,9 +605,7 @@ class HouseCuspTableLayer:
         self.y_offset = y_offset
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
 
-    def render(
-        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
-    ) -> None:
+    def render(self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart) -> None:
         """Render house cusp table.
 
         Handles both CalculatedChart and Comparison objects.
@@ -908,9 +942,7 @@ class AspectarianLayer:
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
         self.object_types = object_types
 
-    def render(
-        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
-    ) -> None:
+    def render(self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart) -> None:
         """Render aspectarian grid.
 
         Handles both CalculatedChart and Comparison objects.
@@ -918,14 +950,20 @@ class AspectarianLayer:
         """
         # Check if this is a Comparison object
         is_comparison = _is_comparison(chart)
+        cell_size = self.style["cell_size"]
+        padding = self.style.get("label_padding", 4)
 
         if is_comparison:
             # For comparisons: get all celestial objects using filter function
             # Chart1 objects (rows - inner wheel)
-            chart1_objects = _filter_objects_for_tables(chart.chart1.positions, self.object_types)
+            chart1_objects = _filter_objects_for_tables(
+                chart.chart1.positions, self.object_types
+            )
 
             # Chart2 objects (columns - outer wheel)
-            chart2_objects = _filter_objects_for_tables(chart.chart2.positions, self.object_types)
+            chart2_objects = _filter_objects_for_tables(
+                chart.chart2.positions, self.object_types
+            )
 
             # Sort by traditional order (planets first, nodes, points, then angles)
             object_order = [
@@ -1024,20 +1062,28 @@ class AspectarianLayer:
             # Column headers (chart2 objects - outer wheel) - aligned at left edge of column
             for col_idx, obj in enumerate(col_objects):
                 glyph_info = get_glyph(obj.name)
-                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj.name[:2]
+                glyph = (
+                    glyph_info["value"]
+                    if glyph_info["type"] == "unicode"
+                    else obj.name[:2]
+                )
 
                 # Add ② indicator for chart2
-                glyph = f"{glyph}②"
+                glyph = f"{glyph}₂"
 
-                x = x_start + ((col_idx + 1) * cell_size)  # Left edge of column
-                y = y_start
+                # Center of the column
+                x = x_start + (col_idx * cell_size) + (cell_size / 2)
+
+                # Bottom of the text sits just above the first row (y_start + cell_size)
+                # We subtract the padding from the top of the grid
+                y = y_start + cell_size - padding
 
                 dwg.add(
                     dwg.text(
                         glyph,
                         insert=(x, y),
-                        text_anchor="start",  # Align at left edge
-                        dominant_baseline="hanging",
+                        text_anchor="middle",  # Center aligned
+                        # dominant_baseline="hanging",
                         font_size=self.style["header_size"],
                         fill=self.style["header_color"],
                         font_family=renderer.style["font_family_glyphs"],
@@ -1048,19 +1094,27 @@ class AspectarianLayer:
             # Row headers (chart1 objects - inner wheel) and grid cells
             for row_idx, obj_row in enumerate(row_objects):
                 glyph_info = get_glyph(obj_row.name)
-                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj_row.name[:2]
+                glyph = (
+                    glyph_info["value"]
+                    if glyph_info["type"] == "unicode"
+                    else obj_row.name[:2]
+                )
 
                 # Add ① indicator for chart1
-                glyph = f"{glyph}①"
+                glyph = f"{glyph}₁"
 
-                y_row = y_start + ((row_idx + 1) * cell_size) + (cell_size / 2)
+                # Center of the row vertically
+                y_row_center = y_start + ((row_idx + 1) * cell_size) + (cell_size / 2)
+
+                # Right-align text against the grid edge (x_start + cell_size)
+                x_text = x_start + cell_size - padding
 
                 # Row header
                 dwg.add(
                     dwg.text(
                         glyph,
-                        insert=(x_start, y_row),
-                        text_anchor="start",
+                        insert=(x_text, y_row_center),
+                        text_anchor="end",  # Right aligned (tight to grid)
                         dominant_baseline="middle",
                         font_size=self.style["header_size"],
                         fill=self.style["header_color"],
@@ -1071,17 +1125,16 @@ class AspectarianLayer:
 
                 # Grid cells (all columns for rectangular grid)
                 for col_idx, obj_col in enumerate(col_objects):
-                    x_cell = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
-                    y_cell = y_row
+                    cell_x_left = x_start + cell_size + (col_idx * cell_size)
+                    cell_x_center = cell_x_left + (cell_size / 2)
 
                     # Draw grid lines if enabled
                     if self.style["show_grid"]:
-                        cell_x = x_start + ((col_idx + 1) * cell_size)
                         cell_y = y_start + ((row_idx + 1) * cell_size)
 
                         dwg.add(
                             dwg.rect(
-                                insert=(cell_x, cell_y),
+                                insert=(cell_x_left, cell_y),
                                 size=(cell_size, cell_size),
                                 fill="none",
                                 stroke=self.style["grid_color"],
@@ -1089,53 +1142,45 @@ class AspectarianLayer:
                             )
                         )
 
-                    # Check for cross-chart aspect (chart1_obj → chart2_obj)
+                    # Aspects
                     aspect_key = (obj_row.name, obj_col.name)
                     if aspect_key in aspect_lookup:
-                        aspect = aspect_lookup[aspect_key]
-                        aspect_info = get_aspect_info(aspect.aspect_name)
-
-                        if aspect_info and aspect_info.glyph:
-                            aspect_glyph = aspect_info.glyph
-                        else:
-                            aspect_glyph = aspect.aspect_name[:1]
-
-                        # Use aspect color if available
-                        if aspect_info and aspect_info.color:
-                            text_color = aspect_info.color
-                        else:
-                            text_color = self.style["text_color"]
-
-                        dwg.add(
-                            dwg.text(
-                                aspect_glyph,
-                                insert=(x_cell, y_cell),
-                                text_anchor="middle",
-                                dominant_baseline="middle",
-                                font_size=self.style["text_size"],
-                                fill=text_color,
-                                font_family=renderer.style["font_family_glyphs"],
-                                font_weight=self.style["font_weight"],
-                            )
+                        self._render_aspect_glyph(
+                            dwg,
+                            renderer,
+                            aspect_lookup[aspect_key],
+                            cell_x_center,
+                            y_row_center,
                         )
 
         else:
-            # Standard CalculatedChart: triangle grid
-            # Column headers (top) - aligned at left edge of column
+            # === SINGLE CHART: TRIANGLE GRID ===
+
+            # Column headers (Top - Stair Step)
+            # Only go up to len - 1 because the last planet never heads a column in a triangle
             for col_idx in range(len(row_objects) - 1):
                 obj = row_objects[col_idx]
                 glyph_info = get_glyph(obj.name)
-                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj.name[:2]
+                glyph = (
+                    glyph_info["value"]
+                    if glyph_info["type"] == "unicode"
+                    else obj.name[:2]
+                )
 
-                x = x_start + ((col_idx + 1) * cell_size)  # Left edge of column
-                y = y_start
+                # Center of the column
+                x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                # STAIR STEP CALCULATION:
+                # The column for planet index `i` starts at row index `i + 1`.
+                # We want the label to sit on top of that first box.
+                # Top of first box = y_start + ((col_idx + 1) * cell_size)
+                y = y_start + ((col_idx + 1) * cell_size) - padding
 
                 dwg.add(
                     dwg.text(
                         glyph,
                         insert=(x, y),
-                        text_anchor="start",  # Align at left edge
-                        dominant_baseline="hanging",
+                        text_anchor="middle",  # Center aligned
+                        # dominant_baseline="hanging",
                         font_size=self.style["header_size"],
                         fill=self.style["header_color"],
                         font_family=renderer.style["font_family_glyphs"],
@@ -1147,16 +1192,23 @@ class AspectarianLayer:
             for row_idx in range(1, len(row_objects)):
                 obj_row = row_objects[row_idx]
                 glyph_info = get_glyph(obj_row.name)
-                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj_row.name[:2]
+                glyph = (
+                    glyph_info["value"]
+                    if glyph_info["type"] == "unicode"
+                    else obj_row.name[:2]
+                )
 
-                y_row = y_start + (row_idx * cell_size) + (cell_size / 2)
+                y_row_center = y_start + (row_idx * cell_size) + (cell_size / 2)
+
+                # Right-align text against the grid edge
+                x_text = x_start + cell_size - padding
 
                 # Row header
                 dwg.add(
                     dwg.text(
                         glyph,
-                        insert=(x_start, y_row),
-                        text_anchor="start",
+                        insert=(x_text, y_row_center),
+                        text_anchor="end",  # Right aligned
                         dominant_baseline="middle",
                         font_size=self.style["header_size"],
                         fill=self.style["header_color"],
@@ -1168,19 +1220,17 @@ class AspectarianLayer:
                 # Grid cells (only lower triangle)
                 for col_idx in range(row_idx):
                     obj_col = row_objects[col_idx]
-
-                    x_cell = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
-                    y_cell = y_row
+                    cell_x_left = x_start + cell_size + (col_idx * cell_size)
+                    cell_x_center = cell_x_left + (cell_size / 2)
 
                     # Draw grid lines if enabled
                     if self.style["show_grid"]:
                         # Cell border
-                        cell_x = x_start + ((col_idx + 1) * cell_size)
                         cell_y = y_start + (row_idx * cell_size)
 
                         dwg.add(
                             dwg.rect(
-                                insert=(cell_x, cell_y),
+                                insert=(cell_x_left, cell_y),
                                 size=(cell_size, cell_size),
                                 fill="none",
                                 stroke=self.style["grid_color"],
@@ -1191,29 +1241,44 @@ class AspectarianLayer:
                     # Check for aspect
                     aspect_key = (obj_row.name, obj_col.name)
                     if aspect_key in aspect_lookup:
-                        aspect = aspect_lookup[aspect_key]
-                        aspect_info = get_aspect_info(aspect.aspect_name)
-
-                        if aspect_info and aspect_info.glyph:
-                            aspect_glyph = aspect_info.glyph
-                        else:
-                            aspect_glyph = aspect.aspect_name[:1]
-
-                        # Use aspect color if available
-                        if aspect_info and aspect_info.color:
-                            text_color = aspect_info.color
-                        else:
-                            text_color = self.style["text_color"]
-
-                        dwg.add(
-                            dwg.text(
-                                aspect_glyph,
-                                insert=(x_cell, y_cell),
-                                text_anchor="middle",
-                                dominant_baseline="middle",
-                                font_size=self.style["text_size"],
-                                fill=text_color,
-                                font_family=renderer.style["font_family_glyphs"],
-                                font_weight=self.style["font_weight"],
-                            )
+                        self._render_aspect_glyph(
+                            dwg,
+                            renderer,
+                            aspect_lookup[aspect_key],
+                            cell_x_center,
+                            y_row_center,
                         )
+
+    def _render_aspect_glyph(
+        self,
+        dwg: svgwrite.Drawing,
+        renderer: ChartRenderer,
+        aspect: Aspect,
+        x: float,
+        y: float,
+    ):
+        """Helper to render the aspect glyph in a cell."""
+        aspect_info = get_aspect_info(aspect.aspect_name)
+
+        if aspect_info and aspect_info.glyph:
+            aspect_glyph = aspect_info.glyph
+        else:
+            aspect_glyph = aspect.aspect_name[:1]
+
+        if aspect_info and aspect_info.color:
+            text_color = aspect_info.color
+        else:
+            text_color = self.style["text_color"]
+
+        dwg.add(
+            dwg.text(
+                aspect_glyph,
+                insert=(x, y),
+                text_anchor="middle",
+                dominant_baseline="middle",
+                font_size=self.style["text_size"],
+                fill=text_color,
+                font_family=renderer.style["font_family_glyphs"],
+                font_weight=self.style["font_weight"],
+            )
+        )
