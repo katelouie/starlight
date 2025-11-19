@@ -374,7 +374,7 @@ class PositionTableLayer:
         )
 
         # Render Chart 2 table (right, with spacing)
-        x_chart2 = x_chart1 + table_width + 40  # 40px gap between tables
+        x_chart2 = x_chart1 + table_width + 20  # 20px gap between tables
 
         # Chart 2 title
         title_text = f"{comparison.chart2_label or 'Chart 2'} (Outer Wheel)"
@@ -740,7 +740,9 @@ class HouseCuspTableLayer:
         )
 
         # Render Chart 2 house table (right, with spacing)
-        x_chart2 = x_chart1 + table_width + 40  # 40px gap between tables
+        # Use tighter spacing (15px for "below" layout, 20px otherwise)
+        # Note: The calling code will determine which gap to use based on layout
+        x_chart2 = x_chart1 + table_width + 20  # 20px gap between tables (default)
 
         # Chart 2 title
         title_text = f"{comparison.chart2_label or 'Chart 2'} Houses"

@@ -922,28 +922,198 @@ def draw_comparison_chart(
 
     # Add extended canvas layers if requested
     if extended_canvas and (show_position_table or show_aspectarian or show_house_cusps):
-        # Calculate positions for extended layers
+        # Calculate dynamic dimensions for tables
+        # Position table dimensions
+        if show_position_table:
+            # Get filtered positions to calculate actual table height
+            from starlight.visualization.extended_canvas import _filter_objects_for_tables
+            chart1_positions = _filter_objects_for_tables(comparison.chart1.positions, table_object_types)
+            chart2_positions = _filter_objects_for_tables(comparison.chart2.positions, table_object_types)
+            max_positions = max(len(chart1_positions), len(chart2_positions))
+
+            # Calculate position table height: title (20px) + header (18px) + rows
+            line_height = 18  # DEFAULT_STYLE line_height from PositionTableLayer
+            position_table_height = 20 + line_height + (max_positions * line_height)
+
+            # Calculate position table width
+            num_cols = 3  # Planet, Sign, Degree (base columns)
+            # Note: show_house and show_speed would add columns, but we use default for now
+            col_spacing = 55  # DEFAULT_STYLE col_spacing
+            single_table_width = num_cols * col_spacing
+            table_gap = 20  # Reduced from 40px for closer spacing
+            total_position_width = (single_table_width * 2) + table_gap
+        else:
+            position_table_height = 0
+            total_position_width = 0
+
+        # House cusp table dimensions
+        if show_house_cusps:
+            # Always 12 houses + header + title
+            house_line_height = 18
+            house_table_height = 20 + house_line_height + (12 * house_line_height)
+
+            # House cusp tables: 3 columns (House, Sign, Degree)
+            house_col_spacing = 55
+            single_house_width = 3 * house_col_spacing
+
+            # For "below" layout, use tighter spacing
+            house_gap = 15 if extended_canvas == "below" else 20
+            total_house_width = (single_house_width * 2) + house_gap
+        else:
+            house_table_height = 0
+            total_house_width = 0
+
+        # Aspectarian dimensions
+        if show_aspectarian:
+            # Aspectarian uses positions to build grid
+            if show_position_table:
+                num_objects = max(len(chart1_positions), len(chart2_positions))
+            else:
+                # Fallback: count planets from comparison
+                num_objects = len([p for p in comparison.chart1.positions
+                                 if p.object_type in [ObjectType.PLANET, ObjectType.ASTEROID, ObjectType.NODE, ObjectType.POINT]])
+
+            # Aspectarian grid size calculation
+            cell_size = 20  # DEFAULT_STYLE from AspectarianLayer
+            margin = 30
+            aspectarian_size = (num_objects * cell_size) + (margin * 2)
+        else:
+            aspectarian_size = 0
+
+        # Calculate positions for extended layers with auto-placement
+        padding = 30
+        vertical_gap = 20  # Gap between vertically stacked elements
+
         if extended_canvas == "right":
-            table_x = chart_size + 30
-            table_y = 30
-            house_cusp_x = chart_size + 30
-            house_cusp_y = 300  # Below position tables
-            aspectarian_x = chart_size + 30
-            aspectarian_y = 550  # Below house cusp tables
+            # Position table at top
+            table_x = chart_size + padding
+            table_y = padding
+
+            # House cusp tables below position tables
+            house_cusp_x = chart_size + padding
+            house_cusp_y = table_y + position_table_height + vertical_gap
+
+            # Aspectarian below house cusp tables
+            aspectarian_x = chart_size + padding
+            aspectarian_y = house_cusp_y + house_table_height + vertical_gap
+
+            # Calculate required extended width and height
+            extended_width = max(total_position_width, total_house_width, aspectarian_size) + (padding * 2)
+            required_height = aspectarian_y + aspectarian_size + padding
+
+            # Update canvas dimensions if needed
+            if required_height > canvas_height:
+                canvas_height = required_height
+                # Need to recreate the SVG with new dimensions
+                dwg = svgwrite.Drawing(
+                    filename=filename,
+                    size=(f"{canvas_width}px", f"{canvas_height}px"),
+                    viewBox=f"0 0 {canvas_width} {canvas_height}",
+                    profile="full",
+                )
+                # Redraw background
+                dwg.add(dwg.rect(insert=(0, 0), size=(f"{canvas_width}px", f"{canvas_height}px"),
+                               fill=renderer.style["background_color"]))
+                # Redraw outer border
+                dwg.add(dwg.circle(center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                                  r=renderer.radii["outer_border"], fill="none",
+                                  stroke=renderer.style["border_color"], stroke_width=renderer.style["border_width"]))
+                # Re-render all layers
+                for layer in layers:
+                    if isinstance(layer, AspectLayer):
+                        temp_chart = replace(comparison.chart1, aspects=comparison.cross_aspects)
+                        layer.render(renderer, dwg, temp_chart)
+                    else:
+                        layer.render(renderer, dwg, comparison.chart1)
+
         elif extended_canvas == "left":
-            table_x = 30
-            table_y = 30
-            house_cusp_x = 30
-            house_cusp_y = 300
-            aspectarian_x = 30
-            aspectarian_y = 550
+            # Position table at top
+            table_x = padding
+            table_y = padding
+
+            # House cusp tables below position tables
+            house_cusp_x = padding
+            house_cusp_y = table_y + position_table_height + vertical_gap
+
+            # Aspectarian below house cusp tables
+            aspectarian_x = padding
+            aspectarian_y = house_cusp_y + house_table_height + vertical_gap
+
+            # Calculate required extended width and height
+            extended_width = max(total_position_width, total_house_width, aspectarian_size) + (padding * 2)
+            required_height = aspectarian_y + aspectarian_size + padding
+
+            # Update canvas dimensions if needed
+            if required_height > canvas_height:
+                canvas_height = required_height
+                # Recreate SVG with new dimensions
+                dwg = svgwrite.Drawing(
+                    filename=filename,
+                    size=(f"{canvas_width}px", f"{canvas_height}px"),
+                    viewBox=f"0 0 {canvas_width} {canvas_height}",
+                    profile="full",
+                )
+                dwg.add(dwg.rect(insert=(0, 0), size=(f"{canvas_width}px", f"{canvas_height}px"),
+                               fill=renderer.style["background_color"]))
+                dwg.add(dwg.circle(center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                                  r=renderer.radii["outer_border"], fill="none",
+                                  stroke=renderer.style["border_color"], stroke_width=renderer.style["border_width"]))
+                for layer in layers:
+                    if isinstance(layer, AspectLayer):
+                        temp_chart = replace(comparison.chart1, aspects=comparison.cross_aspects)
+                        layer.render(renderer, dwg, temp_chart)
+                    else:
+                        layer.render(renderer, dwg, comparison.chart1)
+
         elif extended_canvas == "below":
-            table_x = 30
-            table_y = chart_size + 30
-            house_cusp_x = 30
-            house_cusp_y = chart_size + 280  # Below position tables
-            aspectarian_x = 30
-            aspectarian_y = chart_size + 530  # Below house cusp tables
+            # Position table at top left
+            table_x = padding
+            table_y = chart_size + padding
+
+            # House cusp tables below position tables
+            house_cusp_x = padding
+            house_cusp_y = table_y + position_table_height + vertical_gap
+
+            # Aspectarian to the right of house cusp tables
+            aspectarian_x = padding + total_house_width + 40  # Extra gap for aspectarian
+            aspectarian_y = table_y + position_table_height + vertical_gap  # Align with house cusp tables
+
+            # Calculate required width and height
+            required_width = max(
+                total_position_width,
+                total_house_width + aspectarian_size + 40
+            ) + (padding * 2)
+
+            required_height = chart_size + max(
+                house_cusp_y + house_table_height,
+                aspectarian_y + aspectarian_size
+            ) - chart_size + padding
+
+            # Update canvas dimensions if needed
+            if required_width > canvas_width:
+                canvas_width = required_width
+            if required_height > canvas_height:
+                canvas_height = required_height
+
+            # Recreate SVG with new dimensions
+            if required_width > canvas_width or required_height > canvas_height:
+                dwg = svgwrite.Drawing(
+                    filename=filename,
+                    size=(f"{canvas_width}px", f"{canvas_height}px"),
+                    viewBox=f"0 0 {canvas_width} {canvas_height}",
+                    profile="full",
+                )
+                dwg.add(dwg.rect(insert=(0, 0), size=(f"{canvas_width}px", f"{canvas_height}px"),
+                               fill=renderer.style["background_color"]))
+                dwg.add(dwg.circle(center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                                  r=renderer.radii["outer_border"], fill="none",
+                                  stroke=renderer.style["border_color"], stroke_width=renderer.style["border_width"]))
+                for layer in layers:
+                    if isinstance(layer, AspectLayer):
+                        temp_chart = replace(comparison.chart1, aspects=comparison.cross_aspects)
+                        layer.render(renderer, dwg, temp_chart)
+                    else:
+                        layer.render(renderer, dwg, comparison.chart1)
         else:
             table_x = table_y = house_cusp_x = house_cusp_y = aspectarian_x = aspectarian_y = 0
 
