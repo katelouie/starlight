@@ -321,6 +321,85 @@ class HouseCuspLayer:
             )
 
 
+class OuterHouseCuspLayer:
+    """
+    Renders house cusps for the OUTER wheel (chart2 in comparisons).
+
+    This draws house cusp lines and numbers outside the zodiac ring,
+    with a distinct visual style from the inner chart's houses.
+    """
+
+    def __init__(
+        self, house_system_name: str, style_override: dict[str, Any] | None = None
+    ) -> None:
+        """
+        Args:
+            house_system_name: The name of the system to pull from the chart
+            style_override: Optional style changes for this layer
+        """
+        self.system_name = house_system_name
+        self.style = style_override or {}
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        style = renderer.style["houses"].copy()
+        style.update(self.style)
+
+        try:
+            house_cusps: HouseCusps = chart.get_houses(self.system_name)
+        except (ValueError, KeyError):
+            print(
+                f"Warning: House system '{self.system_name}' not found in chart data."
+            )
+            return
+
+        # Define outer radii - beyond the zodiac ring
+        # zodiac_ring_outer is the outer edge of zodiac, we go beyond that
+        outer_cusp_start = renderer.radii["zodiac_ring_outer"] + 5
+        outer_cusp_end = renderer.radii["zodiac_ring_outer"] + 35
+        outer_number_radius = renderer.radii["zodiac_ring_outer"] + 20
+
+        for i, cusp_deg in enumerate(house_cusps.cusps):
+            house_num = i + 1
+
+            # Draw cusp line extending outward from zodiac ring
+            x1, y1 = renderer.polar_to_cartesian(cusp_deg, outer_cusp_start)
+            x2, y2 = renderer.polar_to_cartesian(cusp_deg, outer_cusp_end)
+
+            dwg.add(
+                dwg.line(
+                    start=(x1, y1),
+                    end=(x2, y2),
+                    stroke=style["line_color"],
+                    stroke_width=style["line_width"],
+                    stroke_dasharray=style.get("line_dash", "3,3"),  # Default dashed
+                )
+            )
+
+            # Draw house number
+            # find the midpoint angle of the house
+            next_cusp_deg = house_cusps.cusps[(i + 1) % 12]
+            if next_cusp_deg < cusp_deg:
+                next_cusp_deg += 360  # Handle 0-degree wrap
+
+            mid_deg = (cusp_deg + next_cusp_deg) / 2.0
+
+            x_num, y_num = renderer.polar_to_cartesian(mid_deg, outer_number_radius)
+
+            dwg.add(
+                dwg.text(
+                    str(house_num),
+                    insert=(x_num, y_num),
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                    font_size=style.get("number_size", "10px"),
+                    fill=style["number_color"],
+                    font_family=renderer.style["font_family_text"],
+                )
+            )
+
+
 class AngleLayer:
     """Renders the primary chart angles (ASC, MC, DSC, IC)"""
 
@@ -401,16 +480,19 @@ class PlanetLayer:
         planet_set: list[CelestialPosition],
         radius_key: str = "planet_ring",
         style_override: dict[str, Any] | None = None,
+        use_outer_wheel_color: bool = False,
     ) -> None:
         """
         Args:
             planet_set: The list of CelestialPosition objects to draw.
             radius_key: The key from renderer.radii to use (e.g., "planet_ring").
             style_override: Style overrides for this layer.
+            use_outer_wheel_color: If True, use the theme's outer_wheel_planet_color.
         """
         self.planets = planet_set
         self.radius_key = radius_key
         self.style = style_override or {}
+        self.use_outer_wheel_color = use_outer_wheel_color
 
     def render(
         self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
@@ -455,7 +537,10 @@ class PlanetLayer:
             x, y = renderer.polar_to_cartesian(adjusted_long, base_radius)
 
             # Determine glyph color using planet glyph palette if available
-            if renderer.planet_glyph_palette:
+            if self.use_outer_wheel_color and "outer_wheel_planet_color" in style:
+                # Use outer wheel color for comparison charts
+                base_color = style["outer_wheel_planet_color"]
+            elif renderer.planet_glyph_palette:
                 planet_palette = PlanetGlyphPalette(renderer.planet_glyph_palette)
                 base_color = get_planet_glyph_color(
                     planet.name, planet_palette, style["glyph_color"]

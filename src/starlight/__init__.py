@@ -53,7 +53,7 @@ from starlight.data import get_notable_registry
 from starlight.presentation import ReportBuilder
 
 # === Visualization (High-Level) ===
-from starlight.visualization import ChartRenderer, draw_chart
+from starlight.visualization import ChartRenderer, draw_chart, draw_comparison_chart
 
 __all__ = [
     # Version
@@ -77,6 +77,7 @@ __all__ = [
     "get_aspect_info",
     # Visualization
     "draw_chart",
+    "draw_comparison_chart",
     "ChartRenderer",
     # Presentation
     "ReportBuilder",
