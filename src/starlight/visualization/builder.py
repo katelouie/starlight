@@ -76,8 +76,11 @@ class ChartDrawBuilder:
         self._chart_shape = False
         self._chart_shape_position = "bottom-right"
 
-        # Extended canvas
-        self._extended_canvas: dict[str, Any] | None = None
+        # Extended canvas and tables
+        self._extended_canvas: str | None = None
+        self._show_position_table = False
+        self._show_aspectarian = False
+        self._aspectarian_mode = "cross_chart"  # For comparisons
 
         # House systems (default: None = use chart's default, can be list of names or "all")
         self._house_systems: list[str] | str | None = None
@@ -318,6 +321,63 @@ class ChartDrawBuilder:
         self._chart_shape_position = position
         return self
 
+    def with_tables(
+        self,
+        position: str = "right",
+        show_position_table: bool = True,
+        show_aspectarian: bool = True,
+        aspectarian_mode: str = "cross_chart",
+    ) -> "ChartDrawBuilder":
+        """
+        Add extended canvas with position table and/or aspectarian grid.
+
+        This enables an extended canvas area (right, left, or below the chart)
+        that can display tabular data like planetary positions and aspect grids.
+
+        Args:
+            position: Where to place the extended canvas ("right", "left", or "below")
+            show_position_table: Show planetary position table
+            show_aspectarian: Show aspectarian grid
+            aspectarian_mode: For comparison charts, which aspects to show:
+                - "cross_chart": Only cross-chart aspects (default)
+                - "all": All three grids (chart1 internal, chart2 internal, cross-chart)
+                - "chart1": Only chart1 internal aspects
+                - "chart2": Only chart2 internal aspects
+
+        Returns:
+            Self for chaining
+
+        Example:
+            # Standard extended canvas
+            builder.with_tables(position="right")
+
+            # Position table only
+            builder.with_tables(position="right", show_aspectarian=False)
+
+            # Custom aspectarian mode for synastry
+            builder.with_tables(
+                position="right",
+                aspectarian_mode="all"  # Show all aspect grids
+            )
+        """
+        self._extended_canvas = position
+        self._show_position_table = show_position_table
+        self._show_aspectarian = show_aspectarian
+        self._aspectarian_mode = aspectarian_mode
+        return self
+
+    def without_tables(self) -> "ChartDrawBuilder":
+        """
+        Disable extended canvas tables.
+
+        Returns:
+            Self for chaining
+        """
+        self._extended_canvas = None
+        self._show_position_table = False
+        self._show_aspectarian = False
+        return self
+
     # === Preset Methods ===
 
     def preset_minimal(self) -> "ChartDrawBuilder":
@@ -388,19 +448,48 @@ class ChartDrawBuilder:
         """
         Synastry preset: Optimized for relationship comparison charts.
 
+        For Comparison objects, automatically enables bi-wheel layout with:
+        - Inner wheel: chart1 (native/person1) planets
+        - Outer wheel: chart2 (partner/transit) planets
+        - Extended canvas with position table and aspectarian
+        - Chart info for both people
+
         Returns:
             Self for chaining
         """
-        # Moon in corner to make room for two charts' data
-        self._moon_phase = True
-        self._moon_phase_position = "top-left"
-        self._moon_phase_show_label = True
+        if self._is_comparison:
+            # Bi-wheel comparison chart
+            # Moon in corner (show chart1's moon by default)
+            self._moon_phase = "chart1"
+            self._moon_phase_position = "bottom-right"
+            self._moon_phase_show_label = True
 
-        self._chart_info = True
-        self._chart_info_position = "top-right"
+            # Chart info for comparison metadata
+            self._chart_info = True
+            self._chart_info_position = "top-left"
 
-        self._aspect_counts = True
-        self._aspect_counts_position = "bottom-right"
+            # Extended canvas with tables
+            self._extended_canvas = "right"
+            self._show_position_table = True
+            self._show_aspectarian = True
+            self._aspectarian_mode = "cross_chart"  # Cross-chart aspects only by default
+
+            # Aspect counts for cross-chart aspects
+            self._aspect_counts = True
+            self._aspect_counts_position = "top-right"
+
+        else:
+            # Standard natal chart synastry preset
+            # Moon in corner to make room for annotations
+            self._moon_phase = True
+            self._moon_phase_position = "top-left"
+            self._moon_phase_show_label = True
+
+            self._chart_info = True
+            self._chart_info_position = "top-right"
+
+            self._aspect_counts = True
+            self._aspect_counts_position = "bottom-right"
 
         return self
 
@@ -417,9 +506,9 @@ class ChartDrawBuilder:
             ValueError: If required configuration is missing
         """
         # Import here to avoid circular dependency
-        from starlight.visualization.drawing import draw_chart
+        from starlight.visualization.drawing import draw_chart, draw_comparison_chart
 
-        # Build options dictionary
+        # Build options dictionary (common to both chart types)
         options = {
             "filename": self._filename,
             "size": self._size,
@@ -432,8 +521,6 @@ class ChartDrawBuilder:
             "moon_phase_position": self._moon_phase_position,
             "chart_info": self._chart_info,
             "aspect_counts": self._aspect_counts,
-            "element_modality_table": self._element_modality_table,
-            "chart_shape": self._chart_shape,
         }
 
         # Add moon phase options if enabled
@@ -452,21 +539,40 @@ class ChartDrawBuilder:
         if self._aspect_counts:
             options["aspect_counts_position"] = self._aspect_counts_position
 
-        # Add element/modality table position if enabled
-        if self._element_modality_table:
-            options["element_modality_position"] = self._element_modality_table_position
+        # Branch based on chart type
+        if self._is_comparison:
+            # Comparison chart (bi-wheel)
+            # Add extended canvas if configured
+            if self._extended_canvas:
+                options["extended_canvas"] = self._extended_canvas
+                options["show_position_table"] = self._show_position_table
+                options["show_aspectarian"] = self._show_aspectarian
+                options["aspectarian_mode"] = self._aspectarian_mode
 
-        # Add chart shape position if enabled
-        if self._chart_shape:
-            options["chart_shape_position"] = self._chart_shape_position
+            # Call draw_comparison_chart
+            return draw_comparison_chart(self._chart, **options)
 
-        # Add extended canvas if configured
-        if self._extended_canvas:
-            options["extended_canvas"] = self._extended_canvas
+        else:
+            # Standard natal chart
+            # Add element/modality table position if enabled
+            options["element_modality_table"] = self._element_modality_table
+            if self._element_modality_table:
+                options["element_modality_position"] = self._element_modality_table_position
 
-        # Add house systems if configured
-        if self._house_systems is not None:
-            options["house_systems"] = self._house_systems
+            # Add chart shape position if enabled
+            options["chart_shape"] = self._chart_shape
+            if self._chart_shape:
+                options["chart_shape_position"] = self._chart_shape_position
 
-        # Call draw_chart with all options
-        return draw_chart(self._chart, **options)
+            # Add extended canvas if configured
+            if self._extended_canvas:
+                options["extended_canvas"] = self._extended_canvas
+                options["show_position_table"] = self._show_position_table
+                options["show_aspectarian"] = self._show_aspectarian
+
+            # Add house systems if configured
+            if self._house_systems is not None:
+                options["house_systems"] = self._house_systems
+
+            # Call draw_chart with all options
+            return draw_chart(self._chart, **options)
