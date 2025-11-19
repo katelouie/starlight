@@ -596,6 +596,7 @@ def draw_comparison_chart(
     extended_canvas: str | None = "right",  # Default to right for comparisons
     show_position_table: bool = True,
     show_aspectarian: bool = True,
+    show_house_cusps: bool = True,  # Show house cusp tables for biwheel charts
     aspectarian_mode: str = "cross_chart",  # "cross_chart", "all", "chart1", "chart2"
     table_object_types: list[str] | None = None,
     theme: ChartTheme | str | None = None,
@@ -630,8 +631,9 @@ def draw_comparison_chart(
         aspect_counts_position: Position of aspect counts
         auto_padding: Auto-pad when >2 corners occupied
         extended_canvas: Extended canvas mode ("right", "left", "below", or None)
-        show_position_table: Show position table in extended canvas
+        show_position_table: Show position table in extended canvas (displays two separate tables)
         show_aspectarian: Show aspectarian in extended canvas
+        show_house_cusps: Show house cusp tables in extended canvas (displays two separate tables)
         aspectarian_mode: Which aspects to show in aspectarian:
             - "cross_chart": Only cross-chart aspects (default)
             - "all": All three grids (chart1 internal, chart2 internal, cross-chart)
@@ -685,19 +687,31 @@ def draw_comparison_chart(
         zodiac_palette_str = zodiac_palette
 
     # Calculate canvas dimensions for extended canvas
-    canvas_width = size
-    canvas_height = size
+    # Base chart size - expand slightly for biwheel
+    chart_size = int(size * 1.1) if extended_canvas else size
+    canvas_width = chart_size
+    canvas_height = chart_size
     chart_x_offset = 0
     chart_y_offset = 0
 
     if extended_canvas:
+        # Calculate space needed for tables
+        # Position tables: 2 tables side-by-side (each ~5 cols × 55px = 275px per table)
+        # 40px gap between tables = 275 + 40 + 275 = 590px
+        # House cusp tables: 2 tables side-by-side (each 3 cols × 55px = 165px per table)
+        # = 165 + 40 + 165 = 370px
+        # Aspectarian: ~300px wide
+        # Use the max width + margins
+        extended_width = 650  # Enough for two position tables side-by-side
+
         if extended_canvas == "right":
-            canvas_width = size + 500  # More space for interleaved tables
+            canvas_width = chart_size + extended_width
         elif extended_canvas == "left":
-            canvas_width = size + 500
-            chart_x_offset = 500
+            canvas_width = chart_size + extended_width
+            chart_x_offset = extended_width
         elif extended_canvas == "below":
-            canvas_height = size + 500
+            # For below mode, need height for position tables + house tables + aspectarian
+            canvas_height = chart_size + 550  # Increased height for stacked layout
         else:
             raise ValueError(
                 f"Invalid extended_canvas: {extended_canvas}. Must be 'right', 'left', or 'below'"
@@ -705,7 +719,7 @@ def draw_comparison_chart(
 
     # Create renderer with bi-wheel radii adjustments
     renderer = ChartRenderer(
-        size=size,
+        size=chart_size,  # Use expanded chart size
         rotation=rotation_angle,
         theme=theme,
         style_config=style_config,
@@ -891,25 +905,31 @@ def draw_comparison_chart(
             layer.render(renderer, dwg, comparison.chart1)
 
     # Add extended canvas layers if requested
-    if extended_canvas and (show_position_table or show_aspectarian):
+    if extended_canvas and (show_position_table or show_aspectarian or show_house_cusps):
         # Calculate positions for extended layers
         if extended_canvas == "right":
-            table_x = size + 30
+            table_x = chart_size + 30
             table_y = 30
-            aspectarian_x = size + 30
-            aspectarian_y = 350  # Below position table
+            house_cusp_x = chart_size + 30
+            house_cusp_y = 300  # Below position tables
+            aspectarian_x = chart_size + 30
+            aspectarian_y = 550  # Below house cusp tables
         elif extended_canvas == "left":
             table_x = 30
             table_y = 30
+            house_cusp_x = 30
+            house_cusp_y = 300
             aspectarian_x = 30
-            aspectarian_y = 350
+            aspectarian_y = 550
         elif extended_canvas == "below":
             table_x = 30
-            table_y = size + 30
-            aspectarian_x = 400
-            aspectarian_y = size + 30
+            table_y = chart_size + 30
+            house_cusp_x = 30
+            house_cusp_y = chart_size + 280  # Below position tables
+            aspectarian_x = 30
+            aspectarian_y = chart_size + 530  # Below house cusp tables
         else:
-            table_x = table_y = aspectarian_x = aspectarian_y = 0
+            table_x = table_y = house_cusp_x = house_cusp_y = aspectarian_x = aspectarian_y = 0
 
         # Adapt colors to theme
         extended_style = {
@@ -929,6 +949,15 @@ def draw_comparison_chart(
                 object_types=table_object_types,
             )
             position_table.render(renderer, dwg, comparison)  # Pass comparison directly
+
+        # House cusp tables
+        if show_house_cusps:
+            house_cusp_table = HouseCuspTableLayer(
+                x_offset=house_cusp_x,
+                y_offset=house_cusp_y,
+                style_override=extended_style,
+            )
+            house_cusp_table.render(renderer, dwg, comparison)  # Pass comparison directly
 
         # Aspectarian
         if show_aspectarian:
