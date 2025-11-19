@@ -1089,14 +1089,17 @@ def draw_comparison_chart(
                 aspectarian_y + aspectarian_size
             ) - chart_size + padding
 
+            # Check if resize needed before updating dimensions
+            needs_resize = required_width > canvas_width or required_height > canvas_height
+
             # Update canvas dimensions if needed
             if required_width > canvas_width:
                 canvas_width = required_width
             if required_height > canvas_height:
                 canvas_height = required_height
 
-            # Recreate SVG with new dimensions
-            if required_width > canvas_width or required_height > canvas_height:
+            # Recreate SVG with new dimensions if needed
+            if needs_resize:
                 dwg = svgwrite.Drawing(
                     filename=filename,
                     size=(f"{canvas_width}px", f"{canvas_height}px"),
