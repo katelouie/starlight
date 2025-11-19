@@ -80,6 +80,7 @@ class ChartDrawBuilder:
         self._extended_canvas: str | None = None
         self._show_position_table = False
         self._show_aspectarian = False
+        self._show_house_cusps = False  # For natal charts only
         self._aspectarian_mode = "cross_chart"  # For comparisons
 
         # House systems (default: None = use chart's default, can be list of names or "all")
@@ -326,6 +327,7 @@ class ChartDrawBuilder:
         position: str = "right",
         show_position_table: bool = True,
         show_aspectarian: bool = True,
+        show_house_cusps: bool = False,
         aspectarian_mode: str = "cross_chart",
     ) -> "ChartDrawBuilder":
         """
@@ -338,6 +340,7 @@ class ChartDrawBuilder:
             position: Where to place the extended canvas ("right", "left", or "below")
             show_position_table: Show planetary position table
             show_aspectarian: Show aspectarian grid
+            show_house_cusps: Show house cusp table (natal charts only)
             aspectarian_mode: For comparison charts, which aspects to show:
                 - "cross_chart": Only cross-chart aspects (default)
                 - "all": All three grids (chart1 internal, chart2 internal, cross-chart)
@@ -354,6 +357,9 @@ class ChartDrawBuilder:
             # Position table only
             builder.with_tables(position="right", show_aspectarian=False)
 
+            # With house cusps table (natal charts)
+            builder.with_tables(position="right", show_house_cusps=True)
+
             # Custom aspectarian mode for synastry
             builder.with_tables(
                 position="right",
@@ -363,6 +369,7 @@ class ChartDrawBuilder:
         self._extended_canvas = position
         self._show_position_table = show_position_table
         self._show_aspectarian = show_aspectarian
+        self._show_house_cusps = show_house_cusps
         self._aspectarian_mode = aspectarian_mode
         return self
 
@@ -376,6 +383,7 @@ class ChartDrawBuilder:
         self._extended_canvas = None
         self._show_position_table = False
         self._show_aspectarian = False
+        self._show_house_cusps = False
         return self
 
     # === Preset Methods ===
@@ -569,6 +577,7 @@ class ChartDrawBuilder:
                 options["extended_canvas"] = self._extended_canvas
                 options["show_position_table"] = self._show_position_table
                 options["show_aspectarian"] = self._show_aspectarian
+                options["show_house_cusps"] = self._show_house_cusps
 
             # Add house systems if configured
             if self._house_systems is not None:

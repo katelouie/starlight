@@ -20,6 +20,53 @@ def _is_comparison(obj):
     return hasattr(obj, "comparison_type") and hasattr(obj, "chart1") and hasattr(obj, "chart2")
 
 
+def _filter_objects_for_tables(positions):
+    """
+    Filter positions to include in position tables and aspectarian.
+
+    Includes:
+    - All PLANET objects (except Earth)
+    - North Node only (exclude South Node)
+    - All POINT objects
+    - ASC/AC and MC only (exclude DSC/DC and IC)
+
+    Args:
+        positions: List of CelestialPosition objects
+
+    Returns:
+        Filtered list of CelestialPosition objects
+    """
+    filtered = []
+    for p in positions:
+        # Skip Earth
+        if p.name == "Earth":
+            continue
+
+        # Include all planets (except Earth, already checked)
+        if p.object_type == ObjectType.PLANET:
+            filtered.append(p)
+            continue
+
+        # Include North Node only (exclude South Node)
+        if p.object_type == ObjectType.NODE:
+            if p.name in ("North Node", "True Node", "Mean Node"):
+                filtered.append(p)
+            continue
+
+        # Include all POINT objects
+        if p.object_type == ObjectType.POINT:
+            filtered.append(p)
+            continue
+
+        # Include only ASC/AC and MC (exclude DSC/DC and IC)
+        if p.object_type == ObjectType.ANGLE:
+            if p.name in ("ASC", "AC", "Ascendant", "MC", "Midheaven"):
+                filtered.append(p)
+            continue
+
+    return filtered
+
+
 class PositionTableLayer:
     """
     Renders a table of planetary positions.
@@ -71,19 +118,9 @@ class PositionTableLayer:
         is_comparison = _is_comparison(chart)
 
         if is_comparison:
-            # Get positions from both charts
-            chart1_positions = [
-                p
-                for p in chart.chart1.positions
-                if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT, ObjectType.ANGLE)
-                and p.name != "Earth"
-            ]
-            chart2_positions = [
-                p
-                for p in chart.chart2.positions
-                if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT, ObjectType.ANGLE)
-                and p.name != "Earth"
-            ]
+            # Get positions from both charts using filter function
+            chart1_positions = _filter_objects_for_tables(chart.chart1.positions)
+            chart2_positions = _filter_objects_for_tables(chart.chart2.positions)
 
             # Sort both lists
             type_priority = {
@@ -104,19 +141,15 @@ class PositionTableLayer:
                 if i < len(chart2_positions):
                     positions.append(("chart2", chart2_positions[i]))
         else:
-            # Standard CalculatedChart
-            chart_positions = [
-                p
-                for p in chart.positions
-                if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT)
-                and p.name != "Earth"
-            ]
+            # Standard CalculatedChart - use filter function to include angles
+            chart_positions = _filter_objects_for_tables(chart.positions)
 
             # Sort by object type priority, then name
             type_priority = {
                 ObjectType.PLANET: 0,
                 ObjectType.NODE: 1,
                 ObjectType.POINT: 2,
+                ObjectType.ANGLE: 3,
             }
             chart_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
             positions = [(None, p) for p in chart_positions]  # Wrap in tuples for consistency
@@ -272,6 +305,160 @@ class PositionTableLayer:
         return placements.get(position.name)
 
 
+class HouseCuspTableLayer:
+    """
+    Renders a table of house cusps with sign placements.
+
+    Shows house number, cusp longitude, sign, and degree in sign.
+    Respects chart theme colors.
+    """
+
+    DEFAULT_STYLE = {
+        "text_color": "#333333",
+        "header_color": "#222222",
+        "text_size": "10px",
+        "header_size": "11px",
+        "line_height": 16,
+        "col_spacing": 70,  # Pixels between columns
+        "font_weight": "normal",
+        "header_weight": "bold",
+    }
+
+    def __init__(
+        self,
+        x_offset: float = 0,
+        y_offset: float = 0,
+        style_override: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Initialize house cusp table layer.
+
+        Args:
+            x_offset: X position offset from canvas origin
+            y_offset: Y position offset from canvas origin
+            style_override: Optional style overrides
+        """
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
+
+    def render(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+    ) -> None:
+        """Render house cusp table.
+
+        Only works for CalculatedChart objects (not Comparison).
+        """
+        # Skip if this is a Comparison object
+        if _is_comparison(chart):
+            return
+
+        # Get house cusps from default house system
+        if not chart.default_house_system:
+            return
+
+        houses = chart.get_houses(chart.default_house_system)
+        if not houses:
+            return
+
+        # Build table
+        x_start = self.x_offset
+        y_start = self.y_offset
+
+        # Header row
+        headers = ["House", "Sign", "Degree"]
+
+        # Render headers
+        for i, header in enumerate(headers):
+            x = x_start + (i * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    header,
+                    insert=(x, y_start),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["header_size"],
+                    fill=self.style["header_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["header_weight"],
+                )
+            )
+
+        # Render data rows for all 12 houses
+        for house_num in range(1, 13):
+            y = y_start + (house_num * self.style["line_height"])
+
+            # Get cusp longitude
+            cusp_longitude = houses.cusps[house_num - 1]
+
+            # Calculate sign and degree
+            sign_index = int(cusp_longitude / 30)
+            sign_names = [
+                "Aries",
+                "Taurus",
+                "Gemini",
+                "Cancer",
+                "Leo",
+                "Virgo",
+                "Libra",
+                "Scorpio",
+                "Sagittarius",
+                "Capricorn",
+                "Aquarius",
+                "Pisces",
+            ]
+            sign_name = sign_names[sign_index % 12]
+            degree_in_sign = cusp_longitude % 30
+
+            # Column 0: House number
+            house_text = f"{house_num}"
+            dwg.add(
+                dwg.text(
+                    house_text,
+                    insert=(x_start, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 1: Sign
+            x_sign = x_start + self.style["col_spacing"]
+            dwg.add(
+                dwg.text(
+                    sign_name,
+                    insert=(x_sign, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 2: Degree
+            degrees = int(degree_in_sign)
+            minutes = int((degree_in_sign % 1) * 60)
+            degree_text = f"{degrees}°{minutes:02d}'"
+            x_degree = x_start + (2 * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    degree_text,
+                    insert=(x_degree, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+
 class AspectarianLayer:
     """
     Renders an aspectarian grid (triangle aspect table).
@@ -322,24 +509,14 @@ class AspectarianLayer:
         is_comparison = _is_comparison(chart)
 
         if is_comparison:
-            # For comparisons: get all celestial objects + Asc and MC from BOTH charts
+            # For comparisons: get all celestial objects using filter function
             # Chart1 objects (rows - inner wheel)
-            chart1_objects = [
-                p
-                for p in chart.chart1.positions
-                if (p.object_type == ObjectType.PLANET and p.name != "Earth")
-                or p.name in ("ASC", "MC")
-            ]
+            chart1_objects = _filter_objects_for_tables(chart.chart1.positions)
 
             # Chart2 objects (columns - outer wheel)
-            chart2_objects = [
-                p
-                for p in chart.chart2.positions
-                if (p.object_type == ObjectType.PLANET and p.name != "Earth")
-                or p.name in ("ASC", "MC")
-            ]
+            chart2_objects = _filter_objects_for_tables(chart.chart2.positions)
 
-            # Sort by traditional order (planets first, then angles)
+            # Sort by traditional order (planets first, nodes, points, then angles)
             object_order = [
                 "Sun",
                 "Moon",
@@ -351,8 +528,14 @@ class AspectarianLayer:
                 "Uranus",
                 "Neptune",
                 "Pluto",
+                "North Node",
+                "True Node",
+                "Mean Node",
                 "ASC",
+                "AC",
+                "Ascendant",
                 "MC",
+                "Midheaven",
             ]
 
             chart1_objects.sort(
@@ -378,14 +561,10 @@ class AspectarianLayer:
             col_objects = chart2_objects
 
         else:
-            # Standard CalculatedChart - planets only
-            planets = [
-                p
-                for p in chart.positions
-                if p.object_type == ObjectType.PLANET and p.name != "Earth"
-            ]
+            # Standard CalculatedChart - use filter function to include angles and nodes
+            planets = _filter_objects_for_tables(chart.positions)
 
-            # Sort by traditional order
+            # Sort by traditional order (planets, nodes, points, angles)
             planet_order = [
                 "Sun",
                 "Moon",
@@ -397,6 +576,14 @@ class AspectarianLayer:
                 "Uranus",
                 "Neptune",
                 "Pluto",
+                "North Node",
+                "True Node",
+                "Mean Node",
+                "ASC",
+                "AC",
+                "Ascendant",
+                "MC",
+                "Midheaven",
             ]
             planets.sort(
                 key=lambda p: planet_order.index(p.name)

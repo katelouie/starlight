@@ -3,7 +3,7 @@
 from .builder import ChartDrawBuilder
 from .core import ChartRenderer
 from .drawing import draw_chart, draw_comparison_chart
-from .extended_canvas import AspectarianLayer, PositionTableLayer
+from .extended_canvas import AspectarianLayer, HouseCuspTableLayer, PositionTableLayer
 from .layers import (
     AngleLayer,
     AspectCountsLayer,
@@ -68,6 +68,7 @@ __all__ = [
     "ElementModalityTableLayer",
     "MoonPhaseLayer",
     "PositionTableLayer",
+    "HouseCuspTableLayer",
     # Palettes
     "ZodiacPalette",
     "AspectPalette",

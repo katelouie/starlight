@@ -9,7 +9,7 @@ to assemble and render chart drawings.
 from starlight.core.models import CalculatedChart, ObjectType
 
 from .core import ChartRenderer, IRenderLayer
-from .extended_canvas import AspectarianLayer, PositionTableLayer
+from .extended_canvas import AspectarianLayer, HouseCuspTableLayer, PositionTableLayer
 from .layers import (
     AngleLayer,
     AspectCountsLayer,
@@ -47,6 +47,7 @@ def draw_chart(
     extended_canvas: str | None = None,
     show_position_table: bool = True,
     show_aspectarian: bool = True,
+    show_house_cusps: bool = False,
     theme: ChartTheme | str | None = None,
     zodiac_palette: ZodiacPalette | str | None = None,
     aspect_palette: str | None = None,
@@ -90,6 +91,7 @@ def draw_chart(
             When enabled, expands canvas to include tabular data alongside chart.
         show_position_table: Whether to show position table in extended canvas.
         show_aspectarian: Whether to show aspectarian grid in extended canvas.
+        show_house_cusps: Whether to show house cusp table in extended canvas (natal charts only).
         theme: Visual theme (classic, dark, midnight, neon, sepia, pastel, celestial,
                viridis, plasma, inferno, magma, cividis, turbo).
                If not specified, uses classic theme.
@@ -370,25 +372,31 @@ def draw_chart(
         layer.render(renderer, dwg, chart)
 
     # Add extended canvas layers if requested
-    if extended_canvas and (show_position_table or show_aspectarian):
+    if extended_canvas and (show_position_table or show_aspectarian or show_house_cusps):
         # Calculate positions for extended layers based on mode
         if extended_canvas == "right":
             table_x = size + 30  # 30px margin from chart
             table_y = 30
             aspectarian_x = size + 30
             aspectarian_y = 300  # Below position table
+            house_cusp_x = size + 230  # To the right of position table
+            house_cusp_y = 30
         elif extended_canvas == "left":
             table_x = 30
             table_y = 30
             aspectarian_x = 30
             aspectarian_y = 300
+            house_cusp_x = 230  # To the right of position table
+            house_cusp_y = 30
         elif extended_canvas == "below":
             table_x = 30
             table_y = size + 30
             aspectarian_x = 350  # To the right of position table
             aspectarian_y = size + 30
+            house_cusp_x = 580  # To the right of aspectarian
+            house_cusp_y = size + 30
         else:
-            table_x = table_y = aspectarian_x = aspectarian_y = 0
+            table_x = table_y = aspectarian_x = aspectarian_y = house_cusp_x = house_cusp_y = 0
 
         # Adapt extended layer colors to theme
         extended_style = {
@@ -405,6 +413,15 @@ def draw_chart(
                 style_override=extended_style,
             )
             position_table.render(renderer, dwg, chart)
+
+        # Add house cusp table
+        if show_house_cusps:
+            house_cusp_table = HouseCuspTableLayer(
+                x_offset=house_cusp_x,
+                y_offset=house_cusp_y,
+                style_override=extended_style,
+            )
+            house_cusp_table.render(renderer, dwg, chart)
 
         # Add aspectarian
         if show_aspectarian:
