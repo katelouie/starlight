@@ -15,6 +15,11 @@ from starlight.core.registry import get_aspect_info
 from .core import ChartRenderer, get_glyph
 
 
+def _is_comparison(obj):
+    """Check if object is a Comparison (avoid circular import)."""
+    return hasattr(obj, "comparison_type") and hasattr(obj, "chart1") and hasattr(obj, "chart2")
+
+
 class PositionTableLayer:
     """
     Renders a table of planetary positions.
@@ -55,24 +60,66 @@ class PositionTableLayer:
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
 
     def render(
-        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
     ) -> None:
-        """Render position table."""
-        # Get planets to display (planets, nodes, major points)
-        positions = [
-            p
-            for p in chart.positions
-            if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT)
-            and p.name != "Earth"
-        ]
+        """Render position table.
 
-        # Sort by object type priority, then name
-        type_priority = {
-            ObjectType.PLANET: 0,
-            ObjectType.NODE: 1,
-            ObjectType.POINT: 2,
-        }
-        positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+        Handles both CalculatedChart and Comparison objects.
+        For Comparison, displays interleaved positions from both charts.
+        """
+        # Check if this is a Comparison object
+        is_comparison = _is_comparison(chart)
+
+        if is_comparison:
+            # Get positions from both charts
+            chart1_positions = [
+                p
+                for p in chart.chart1.positions
+                if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT, ObjectType.ANGLE)
+                and p.name != "Earth"
+            ]
+            chart2_positions = [
+                p
+                for p in chart.chart2.positions
+                if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT, ObjectType.ANGLE)
+                and p.name != "Earth"
+            ]
+
+            # Sort both lists
+            type_priority = {
+                ObjectType.PLANET: 0,
+                ObjectType.NODE: 1,
+                ObjectType.POINT: 2,
+                ObjectType.ANGLE: 3,
+            }
+            chart1_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+            chart2_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+
+            # Interleave the positions
+            positions = []
+            max_len = max(len(chart1_positions), len(chart2_positions))
+            for i in range(max_len):
+                if i < len(chart1_positions):
+                    positions.append(("chart1", chart1_positions[i]))
+                if i < len(chart2_positions):
+                    positions.append(("chart2", chart2_positions[i]))
+        else:
+            # Standard CalculatedChart
+            chart_positions = [
+                p
+                for p in chart.positions
+                if p.object_type in (ObjectType.PLANET, ObjectType.NODE, ObjectType.POINT)
+                and p.name != "Earth"
+            ]
+
+            # Sort by object type priority, then name
+            type_priority = {
+                ObjectType.PLANET: 0,
+                ObjectType.NODE: 1,
+                ObjectType.POINT: 2,
+            }
+            chart_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+            positions = [(None, p) for p in chart_positions]  # Wrap in tuples for consistency
 
         # Build table
         x_start = self.x_offset
@@ -102,15 +149,21 @@ class PositionTableLayer:
             )
 
         # Render data rows
-        for row_idx, pos in enumerate(positions):
+        for row_idx, (owner, pos) in enumerate(positions):
             y = y_start + ((row_idx + 1) * self.style["line_height"])
 
-            # Column 0: Planet name + glyph
+            # Column 0: Planet name + glyph (with chart indicator for comparisons)
             glyph_info = get_glyph(pos.name)
             if glyph_info["type"] == "unicode":
                 planet_text = f"{glyph_info['value']} {pos.name}"
             else:
                 planet_text = pos.name
+
+            # Add chart indicator for comparisons
+            if owner == "chart1":
+                planet_text += " ①"
+            elif owner == "chart2":
+                planet_text += " ②"
 
             # Add retrograde symbol if applicable
             if pos.is_retrograde:
@@ -165,7 +218,17 @@ class PositionTableLayer:
             # Column 3: House (if enabled)
             col_offset = 3
             if self.style["show_house"]:
-                house = self._get_house_placement(chart, pos)
+                if is_comparison:
+                    # For comparisons, show house in respective chart
+                    if owner == "chart1":
+                        house = self._get_house_placement(chart.chart1, pos)
+                    elif owner == "chart2":
+                        house = self._get_house_placement(chart.chart2, pos)
+                    else:
+                        house = None
+                else:
+                    house = self._get_house_placement(chart, pos)
+
                 x_house = x_start + (col_offset * self.style["col_spacing"])
                 dwg.add(
                     dwg.text(
@@ -248,137 +311,311 @@ class AspectarianLayer:
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
 
     def render(
-        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
     ) -> None:
-        """Render aspectarian grid."""
-        # Get planets only (not angles or points)
-        planets = [
-            p
-            for p in chart.positions
-            if p.object_type == ObjectType.PLANET and p.name != "Earth"
-        ]
+        """Render aspectarian grid.
 
-        # Sort by traditional order
-        planet_order = [
-            "Sun",
-            "Moon",
-            "Mercury",
-            "Venus",
-            "Mars",
-            "Jupiter",
-            "Saturn",
-            "Uranus",
-            "Neptune",
-            "Pluto",
-        ]
-        planets.sort(key=lambda p: planet_order.index(p.name) if p.name in planet_order else 99)
+        Handles both CalculatedChart and Comparison objects.
+        For Comparison, displays cross-chart aspects including Asc and MC from both charts.
+        """
+        # Check if this is a Comparison object
+        is_comparison = _is_comparison(chart)
 
-        # Build aspect lookup
-        aspect_lookup = {}
-        for aspect in chart.aspects:
-            key1 = (aspect.object1.name, aspect.object2.name)
-            key2 = (aspect.object2.name, aspect.object1.name)
-            aspect_lookup[key1] = aspect
-            aspect_lookup[key2] = aspect
+        if is_comparison:
+            # For comparisons: get all celestial objects + Asc and MC from BOTH charts
+            # Chart1 objects (rows - inner wheel)
+            chart1_objects = [
+                p
+                for p in chart.chart1.positions
+                if (p.object_type == ObjectType.PLANET and p.name != "Earth")
+                or p.name in ("ASC", "MC")
+            ]
+
+            # Chart2 objects (columns - outer wheel)
+            chart2_objects = [
+                p
+                for p in chart.chart2.positions
+                if (p.object_type == ObjectType.PLANET and p.name != "Earth")
+                or p.name in ("ASC", "MC")
+            ]
+
+            # Sort by traditional order (planets first, then angles)
+            object_order = [
+                "Sun",
+                "Moon",
+                "Mercury",
+                "Venus",
+                "Mars",
+                "Jupiter",
+                "Saturn",
+                "Uranus",
+                "Neptune",
+                "Pluto",
+                "ASC",
+                "MC",
+            ]
+
+            chart1_objects.sort(
+                key=lambda p: object_order.index(p.name)
+                if p.name in object_order
+                else 99
+            )
+            chart2_objects.sort(
+                key=lambda p: object_order.index(p.name)
+                if p.name in object_order
+                else 99
+            )
+
+            # Build aspect lookup from cross_aspects
+            aspect_lookup = {}
+            for aspect in chart.cross_aspects:
+                # Key format: (chart1_obj_name, chart2_obj_name)
+                key = (aspect.object1.name, aspect.object2.name)
+                aspect_lookup[key] = aspect
+
+            # Use chart1_objects for rows, chart2_objects for columns
+            row_objects = chart1_objects
+            col_objects = chart2_objects
+
+        else:
+            # Standard CalculatedChart - planets only
+            planets = [
+                p
+                for p in chart.positions
+                if p.object_type == ObjectType.PLANET and p.name != "Earth"
+            ]
+
+            # Sort by traditional order
+            planet_order = [
+                "Sun",
+                "Moon",
+                "Mercury",
+                "Venus",
+                "Mars",
+                "Jupiter",
+                "Saturn",
+                "Uranus",
+                "Neptune",
+                "Pluto",
+            ]
+            planets.sort(
+                key=lambda p: planet_order.index(p.name)
+                if p.name in planet_order
+                else 99
+            )
+
+            # Build aspect lookup
+            aspect_lookup = {}
+            for aspect in chart.aspects:
+                key1 = (aspect.object1.name, aspect.object2.name)
+                key2 = (aspect.object2.name, aspect.object1.name)
+                aspect_lookup[key1] = aspect
+                aspect_lookup[key2] = aspect
+
+            # Use planets for both rows and columns (traditional triangle grid)
+            row_objects = planets
+            col_objects = planets
 
         # Render grid
         cell_size = self.style["cell_size"]
         x_start = self.x_offset
         y_start = self.y_offset
 
-        # Column headers (top)
-        for col_idx in range(len(planets) - 1):
-            planet = planets[col_idx]
-            glyph_info = get_glyph(planet.name)
-            glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else planet.name[:2]
+        if is_comparison:
+            # For comparisons: full rectangular grid (chart1 rows × chart2 columns)
+            # Column headers (chart2 objects - outer wheel)
+            for col_idx, obj in enumerate(col_objects):
+                glyph_info = get_glyph(obj.name)
+                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj.name[:2]
 
-            x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
-            y = y_start
+                # Add ② indicator for chart2
+                glyph = f"{glyph}②"
 
-            dwg.add(
-                dwg.text(
-                    glyph,
-                    insert=(x, y),
-                    text_anchor="middle",
-                    dominant_baseline="hanging",
-                    font_size=self.style["header_size"],
-                    fill=self.style["header_color"],
-                    font_family=renderer.style["font_family_glyphs"],
-                    font_weight=self.style["header_weight"],
-                )
-            )
+                x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                y = y_start
 
-        # Row headers (left) and grid cells
-        for row_idx in range(1, len(planets)):
-            planet_row = planets[row_idx]
-            glyph_info = get_glyph(planet_row.name)
-            glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else planet_row.name[:2]
-
-            y_row = y_start + (row_idx * cell_size) + (cell_size / 2)
-
-            # Row header
-            dwg.add(
-                dwg.text(
-                    glyph,
-                    insert=(x_start, y_row),
-                    text_anchor="start",
-                    dominant_baseline="middle",
-                    font_size=self.style["header_size"],
-                    fill=self.style["header_color"],
-                    font_family=renderer.style["font_family_glyphs"],
-                    font_weight=self.style["header_weight"],
-                )
-            )
-
-            # Grid cells (only lower triangle)
-            for col_idx in range(row_idx):
-                planet_col = planets[col_idx]
-
-                x_cell = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
-                y_cell = y_row
-
-                # Draw grid lines if enabled
-                if self.style["show_grid"]:
-                    # Cell border
-                    cell_x = x_start + ((col_idx + 1) * cell_size)
-                    cell_y = y_start + (row_idx * cell_size)
-
-                    dwg.add(
-                        dwg.rect(
-                            insert=(cell_x, cell_y),
-                            size=(cell_size, cell_size),
-                            fill="none",
-                            stroke=self.style["grid_color"],
-                            stroke_width=0.5,
-                        )
+                dwg.add(
+                    dwg.text(
+                        glyph,
+                        insert=(x, y),
+                        text_anchor="middle",
+                        dominant_baseline="hanging",
+                        font_size=self.style["header_size"],
+                        fill=self.style["header_color"],
+                        font_family=renderer.style["font_family_glyphs"],
+                        font_weight=self.style["header_weight"],
                     )
+                )
 
-                # Check for aspect
-                aspect_key = (planet_row.name, planet_col.name)
-                if aspect_key in aspect_lookup:
-                    aspect = aspect_lookup[aspect_key]
-                    aspect_info = get_aspect_info(aspect.aspect_name)
+            # Row headers (chart1 objects - inner wheel) and grid cells
+            for row_idx, obj_row in enumerate(row_objects):
+                glyph_info = get_glyph(obj_row.name)
+                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj_row.name[:2]
 
-                    if aspect_info and aspect_info.glyph:
-                        aspect_glyph = aspect_info.glyph
-                    else:
-                        aspect_glyph = aspect.aspect_name[:1]
+                # Add ① indicator for chart1
+                glyph = f"{glyph}①"
 
-                    # Use aspect color if available
-                    if aspect_info and aspect_info.color:
-                        text_color = aspect_info.color
-                    else:
-                        text_color = self.style["text_color"]
+                y_row = y_start + ((row_idx + 1) * cell_size) + (cell_size / 2)
 
-                    dwg.add(
-                        dwg.text(
-                            aspect_glyph,
-                            insert=(x_cell, y_cell),
-                            text_anchor="middle",
-                            dominant_baseline="middle",
-                            font_size=self.style["text_size"],
-                            fill=text_color,
-                            font_family=renderer.style["font_family_glyphs"],
-                            font_weight=self.style["font_weight"],
-                        )
+                # Row header
+                dwg.add(
+                    dwg.text(
+                        glyph,
+                        insert=(x_start, y_row),
+                        text_anchor="start",
+                        dominant_baseline="middle",
+                        font_size=self.style["header_size"],
+                        fill=self.style["header_color"],
+                        font_family=renderer.style["font_family_glyphs"],
+                        font_weight=self.style["header_weight"],
                     )
+                )
+
+                # Grid cells (all columns for rectangular grid)
+                for col_idx, obj_col in enumerate(col_objects):
+                    x_cell = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                    y_cell = y_row
+
+                    # Draw grid lines if enabled
+                    if self.style["show_grid"]:
+                        cell_x = x_start + ((col_idx + 1) * cell_size)
+                        cell_y = y_start + ((row_idx + 1) * cell_size)
+
+                        dwg.add(
+                            dwg.rect(
+                                insert=(cell_x, cell_y),
+                                size=(cell_size, cell_size),
+                                fill="none",
+                                stroke=self.style["grid_color"],
+                                stroke_width=0.5,
+                            )
+                        )
+
+                    # Check for cross-chart aspect (chart1_obj → chart2_obj)
+                    aspect_key = (obj_row.name, obj_col.name)
+                    if aspect_key in aspect_lookup:
+                        aspect = aspect_lookup[aspect_key]
+                        aspect_info = get_aspect_info(aspect.aspect_name)
+
+                        if aspect_info and aspect_info.glyph:
+                            aspect_glyph = aspect_info.glyph
+                        else:
+                            aspect_glyph = aspect.aspect_name[:1]
+
+                        # Use aspect color if available
+                        if aspect_info and aspect_info.color:
+                            text_color = aspect_info.color
+                        else:
+                            text_color = self.style["text_color"]
+
+                        dwg.add(
+                            dwg.text(
+                                aspect_glyph,
+                                insert=(x_cell, y_cell),
+                                text_anchor="middle",
+                                dominant_baseline="middle",
+                                font_size=self.style["text_size"],
+                                fill=text_color,
+                                font_family=renderer.style["font_family_glyphs"],
+                                font_weight=self.style["font_weight"],
+                            )
+                        )
+
+        else:
+            # Standard CalculatedChart: triangle grid
+            # Column headers (top)
+            for col_idx in range(len(row_objects) - 1):
+                obj = row_objects[col_idx]
+                glyph_info = get_glyph(obj.name)
+                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj.name[:2]
+
+                x = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                y = y_start
+
+                dwg.add(
+                    dwg.text(
+                        glyph,
+                        insert=(x, y),
+                        text_anchor="middle",
+                        dominant_baseline="hanging",
+                        font_size=self.style["header_size"],
+                        fill=self.style["header_color"],
+                        font_family=renderer.style["font_family_glyphs"],
+                        font_weight=self.style["header_weight"],
+                    )
+                )
+
+            # Row headers (left) and grid cells (lower triangle only)
+            for row_idx in range(1, len(row_objects)):
+                obj_row = row_objects[row_idx]
+                glyph_info = get_glyph(obj_row.name)
+                glyph = glyph_info["value"] if glyph_info["type"] == "unicode" else obj_row.name[:2]
+
+                y_row = y_start + (row_idx * cell_size) + (cell_size / 2)
+
+                # Row header
+                dwg.add(
+                    dwg.text(
+                        glyph,
+                        insert=(x_start, y_row),
+                        text_anchor="start",
+                        dominant_baseline="middle",
+                        font_size=self.style["header_size"],
+                        fill=self.style["header_color"],
+                        font_family=renderer.style["font_family_glyphs"],
+                        font_weight=self.style["header_weight"],
+                    )
+                )
+
+                # Grid cells (only lower triangle)
+                for col_idx in range(row_idx):
+                    obj_col = row_objects[col_idx]
+
+                    x_cell = x_start + ((col_idx + 1) * cell_size) + (cell_size / 2)
+                    y_cell = y_row
+
+                    # Draw grid lines if enabled
+                    if self.style["show_grid"]:
+                        # Cell border
+                        cell_x = x_start + ((col_idx + 1) * cell_size)
+                        cell_y = y_start + (row_idx * cell_size)
+
+                        dwg.add(
+                            dwg.rect(
+                                insert=(cell_x, cell_y),
+                                size=(cell_size, cell_size),
+                                fill="none",
+                                stroke=self.style["grid_color"],
+                                stroke_width=0.5,
+                            )
+                        )
+
+                    # Check for aspect
+                    aspect_key = (obj_row.name, obj_col.name)
+                    if aspect_key in aspect_lookup:
+                        aspect = aspect_lookup[aspect_key]
+                        aspect_info = get_aspect_info(aspect.aspect_name)
+
+                        if aspect_info and aspect_info.glyph:
+                            aspect_glyph = aspect_info.glyph
+                        else:
+                            aspect_glyph = aspect.aspect_name[:1]
+
+                        # Use aspect color if available
+                        if aspect_info and aspect_info.color:
+                            text_color = aspect_info.color
+                        else:
+                            text_color = self.style["text_color"]
+
+                        dwg.add(
+                            dwg.text(
+                                aspect_glyph,
+                                insert=(x_cell, y_cell),
+                                text_anchor="middle",
+                                dominant_baseline="middle",
+                                font_size=self.style["text_size"],
+                                fill=text_color,
+                                font_family=renderer.style["font_family_glyphs"],
+                                font_weight=self.style["font_weight"],
+                            )
+                        )

@@ -18,6 +18,7 @@ from .layers import (
     ChartShapeLayer,
     ElementModalityTableLayer,
     HouseCuspLayer,
+    OuterHouseCuspLayer,
     PlanetLayer,
     ZodiacLayer,
 )
@@ -510,6 +511,365 @@ def draw_chart_with_multiple_houses(
 
     for layer in layers:
         layer.render(renderer, dwg, chart)
+
+    dwg.save()
+    return filename
+
+
+def draw_comparison_chart(
+    comparison,  # Comparison object from ComparisonBuilder
+    filename: str = "comparison.svg",
+    size: int = 700,  # Larger default for bi-wheel
+    moon_phase: bool | str = "chart1",  # True/"both", False, or "chart1"
+    moon_phase_position: str | None = None,
+    moon_phase_label: bool = True,
+    chart_info: bool = True,
+    chart_info_position: str = "top-left",
+    chart_info_fields: list[str] | None = None,
+    aspect_counts: bool = False,
+    aspect_counts_position: str = "top-right",
+    auto_padding: bool = True,
+    extended_canvas: str | None = "right",  # Default to right for comparisons
+    show_position_table: bool = True,
+    show_aspectarian: bool = True,
+    aspectarian_mode: str = "cross_chart",  # "cross_chart", "all", "chart1", "chart2"
+    theme: ChartTheme | str | None = None,
+    zodiac_palette: ZodiacPalette | str | None = None,
+    aspect_palette: str | None = None,
+    planet_glyph_palette: str | None = None,
+    color_sign_info: bool = False,
+    style_config: dict | None = None,
+) -> str:
+    """
+    Draws a bi-wheel comparison chart (synastry, transits, progressions).
+
+    This function creates a bi-wheel layout where:
+    - Inner wheel: chart1 (native/person1) planets
+    - Outer wheel: chart2 (transit/person2/progressed) planets
+    - Cross-chart aspects drawn in the central aspect ring
+
+    Args:
+        comparison: Comparison object from ComparisonBuilder.calculate()
+        filename: Output filename (e.g., "synastry.svg")
+        size: Pixel dimensions (chart will be larger to accommodate outer wheel)
+        moon_phase: Moon phase display:
+            - "chart1": Show only chart1's moon phase (default)
+            - "both" or True: Show both moons (small rendering)
+            - False: Don't show moon phase
+        moon_phase_position: Position of moon phase symbol
+        moon_phase_label: Whether to show the phase name
+        chart_info: Whether to show chart metadata
+        chart_info_position: Position of chart info block
+        chart_info_fields: List of fields to display
+        aspect_counts: Whether to show aspect counts summary
+        aspect_counts_position: Position of aspect counts
+        auto_padding: Auto-pad when >2 corners occupied
+        extended_canvas: Extended canvas mode ("right", "left", "below", or None)
+        show_position_table: Show position table in extended canvas
+        show_aspectarian: Show aspectarian in extended canvas
+        aspectarian_mode: Which aspects to show in aspectarian:
+            - "cross_chart": Only cross-chart aspects (default)
+            - "all": All three grids (chart1 internal, chart2 internal, cross-chart)
+            - "chart1": Only chart1 internal aspects
+            - "chart2": Only chart2 internal aspects
+        theme: Visual theme
+        zodiac_palette: Color palette for zodiac wheel
+        aspect_palette: Color palette for aspect lines
+        planet_glyph_palette: Color palette for planet glyphs
+        color_sign_info: Color sign glyphs adaptively
+        style_config: Optional style overrides
+
+    Returns:
+        The filename of the saved chart
+    """
+    from starlight.core.comparison import Comparison
+
+    # Import here to avoid circular dependency
+    if not isinstance(comparison, Comparison):
+        raise TypeError("comparison must be a Comparison object")
+
+    # Find rotation angle from chart1's ASC
+    asc_object = comparison.chart1.get_object("ASC")
+    rotation_angle = asc_object.longitude if asc_object else 0.0
+
+    # Determine theme and palette
+    if theme:
+        theme_enum = ChartTheme(theme) if isinstance(theme, str) else theme
+        if zodiac_palette is None:
+            zodiac_palette = get_theme_default_palette(theme_enum)
+        if aspect_palette is None:
+            from .themes import get_theme_default_aspect_palette
+
+            aspect_palette = get_theme_default_aspect_palette(theme_enum).value
+        if planet_glyph_palette is None:
+            from .themes import get_theme_default_planet_palette
+
+            planet_glyph_palette = get_theme_default_planet_palette(theme_enum).value
+    else:
+        if zodiac_palette is None:
+            zodiac_palette = ZodiacPalette.GREY
+
+    # Convert zodiac_palette to string if it's an enum
+    if hasattr(zodiac_palette, "value"):
+        zodiac_palette_str = zodiac_palette.value
+    else:
+        zodiac_palette_str = zodiac_palette
+
+    # Calculate canvas dimensions for extended canvas
+    canvas_width = size
+    canvas_height = size
+    chart_x_offset = 0
+    chart_y_offset = 0
+
+    if extended_canvas:
+        if extended_canvas == "right":
+            canvas_width = size + 500  # More space for interleaved tables
+        elif extended_canvas == "left":
+            canvas_width = size + 500
+            chart_x_offset = 500
+        elif extended_canvas == "below":
+            canvas_height = size + 500
+        else:
+            raise ValueError(
+                f"Invalid extended_canvas: {extended_canvas}. Must be 'right', 'left', or 'below'"
+            )
+
+    # Create renderer with bi-wheel radii adjustments
+    renderer = ChartRenderer(
+        size=size,
+        rotation=rotation_angle,
+        theme=theme,
+        style_config=style_config,
+        zodiac_palette=zodiac_palette_str,
+        aspect_palette=aspect_palette,
+        planet_glyph_palette=planet_glyph_palette,
+        color_sign_info=color_sign_info,
+    )
+
+    # Adjust radii for bi-wheel layout
+    # Inner planets: slightly smaller radius
+    # Outer planets: outside the zodiac ring
+    inner_planet_radius = renderer.radii["planet_ring"] - 15
+    outer_planet_radius = renderer.radii["zodiac_ring_outer"] + 50
+
+    # Add custom radii to renderer
+    renderer.radii["inner_planet_ring"] = inner_planet_radius
+    renderer.radii["outer_planet_ring"] = outer_planet_radius
+
+    # Count corner layers for auto-padding
+    corner_layers_count = 0
+    if chart_info:
+        corner_layers_count += 1
+    if aspect_counts:
+        corner_layers_count += 1
+
+    # Apply padding if needed
+    if auto_padding and corner_layers_count > 2:
+        padding_factor = 0.95
+        for key in renderer.radii:
+            renderer.radii[key] *= padding_factor
+
+    # Create SVG drawing
+    if extended_canvas:
+        import svgwrite
+
+        dwg = svgwrite.Drawing(
+            filename=filename,
+            size=(f"{canvas_width}px", f"{canvas_height}px"),
+            viewBox=f"0 0 {canvas_width} {canvas_height}",
+            profile="full",
+        )
+
+        # Add background
+        dwg.add(
+            dwg.rect(
+                insert=(0, 0),
+                size=(f"{canvas_width}px", f"{canvas_height}px"),
+                fill=renderer.style["background_color"],
+            )
+        )
+
+        # Add chart borders at offset position
+        dwg.add(
+            dwg.circle(
+                center=(
+                    chart_x_offset + renderer.center,
+                    chart_y_offset + renderer.center,
+                ),
+                r=renderer.radii["outer_border"],
+                fill="none",
+                stroke=renderer.style["border_color"],
+                stroke_width=renderer.style["border_width"],
+            )
+        )
+        dwg.add(
+            dwg.circle(
+                center=(
+                    chart_x_offset + renderer.center,
+                    chart_y_offset + renderer.center,
+                ),
+                r=renderer.radii["aspect_ring_inner"],
+                fill="none",
+                stroke=renderer.style["border_color"],
+                stroke_width=renderer.style["border_width"],
+            )
+        )
+
+        # Store offset
+        renderer.x_offset = chart_x_offset
+        renderer.y_offset = chart_y_offset
+    else:
+        dwg = renderer.create_svg_drawing(filename)
+        renderer.x_offset = 0
+        renderer.y_offset = 0
+
+    # Get planets to draw from both charts
+    chart1_planets = [
+        p
+        for p in comparison.chart1.positions
+        if p.object_type
+        in (ObjectType.PLANET, ObjectType.ASTEROID, ObjectType.NODE, ObjectType.POINT)
+    ]
+    chart2_planets = [
+        p
+        for p in comparison.chart2.positions
+        if p.object_type
+        in (ObjectType.PLANET, ObjectType.ASTEROID, ObjectType.NODE, ObjectType.POINT)
+    ]
+
+    # Assemble layers for bi-wheel
+    layers: list[IRenderLayer] = [
+        ZodiacLayer(palette=zodiac_palette),
+        # Chart1 (inner) house cusps - more prominent
+        HouseCuspLayer(house_system_name=comparison.chart1.default_house_system),
+        # Chart2 (outer) house cusps - dashed, outside zodiac
+        OuterHouseCuspLayer(
+            house_system_name=comparison.chart2.default_house_system,
+            style_override={
+                "line_color": renderer.style.get("planets", {}).get(
+                    "outer_wheel_planet_color", "#4A90E2"
+                ),
+                "line_dash": "3,3",
+                "number_color": renderer.style.get("planets", {}).get(
+                    "outer_wheel_planet_color", "#4A90E2"
+                ),
+            },
+        ),
+        # Cross-chart aspects only (in central ring)
+        AspectLayer(),  # Will draw comparison.cross_aspects
+        # Inner wheel planets (chart1)
+        PlanetLayer(
+            planet_set=chart1_planets,
+            radius_key="inner_planet_ring",
+            use_outer_wheel_color=False,
+        ),
+        # Outer wheel planets (chart2) - with outer wheel color
+        PlanetLayer(
+            planet_set=chart2_planets,
+            radius_key="outer_planet_ring",
+            use_outer_wheel_color=True,
+        ),
+        # Angles from chart1
+        AngleLayer(),
+    ]
+
+    # Add moon phase layer(s)
+    if moon_phase:
+        if moon_phase == "both" or moon_phase is True:
+            # TODO: Implement dual moon phase rendering
+            # For now, just show chart1's moon
+            moon_layer = MoonPhaseLayer(
+                position=moon_phase_position,
+                show_label=moon_phase_label,
+            )
+            layers.insert(3, moon_layer)
+        else:  # "chart1" or any other truthy value
+            moon_layer = MoonPhaseLayer(
+                position=moon_phase_position,
+                show_label=moon_phase_label,
+            )
+            layers.insert(3, moon_layer)
+
+    # Add corner layers
+    if chart_info:
+        # Custom fields for comparison charts
+        if chart_info_fields is None:
+            chart_info_fields = ["name", "location", "datetime", "timezone"]
+
+        info_layer = ChartInfoLayer(
+            position=chart_info_position,
+            fields=chart_info_fields,
+        )
+        layers.append(info_layer)
+
+    if aspect_counts:
+        counts_layer = AspectCountsLayer(position=aspect_counts_position)
+        layers.append(counts_layer)
+
+    # Render all layers
+    # Note: AspectLayer will need to be modified to handle Comparison objects
+    # For now, we'll render using comparison.chart1 but with cross_aspects
+    for layer in layers:
+        if isinstance(layer, AspectLayer):
+            # Create a temporary chart-like object with cross_aspects
+            # This is a workaround - ideally AspectLayer should handle Comparison
+            from dataclasses import replace
+
+            temp_chart = replace(comparison.chart1, aspects=comparison.cross_aspects)
+            layer.render(renderer, dwg, temp_chart)
+        else:
+            # Most layers use chart1 as reference
+            layer.render(renderer, dwg, comparison.chart1)
+
+    # Add extended canvas layers if requested
+    if extended_canvas and (show_position_table or show_aspectarian):
+        # Calculate positions for extended layers
+        if extended_canvas == "right":
+            table_x = size + 30
+            table_y = 30
+            aspectarian_x = size + 30
+            aspectarian_y = 350  # Below position table
+        elif extended_canvas == "left":
+            table_x = 30
+            table_y = 30
+            aspectarian_x = 30
+            aspectarian_y = 350
+        elif extended_canvas == "below":
+            table_x = 30
+            table_y = size + 30
+            aspectarian_x = 400
+            aspectarian_y = size + 30
+        else:
+            table_x = table_y = aspectarian_x = aspectarian_y = 0
+
+        # Adapt colors to theme
+        extended_style = {
+            "text_color": renderer.style.get("planets", {}).get("info_color", "#333333"),
+            "header_color": renderer.style.get("planets", {}).get(
+                "glyph_color", "#222222"
+            ),
+            "grid_color": renderer.style.get("zodiac", {}).get("line_color", "#CCCCCC"),
+        }
+
+        # Position table - will need to be modified for Comparison objects
+        if show_position_table:
+            position_table = PositionTableLayer(
+                x_offset=table_x,
+                y_offset=table_y,
+                style_override=extended_style,
+            )
+            # TODO: Modify PositionTableLayer to handle Comparison objects
+            position_table.render(renderer, dwg, comparison)  # Pass comparison directly
+
+        # Aspectarian - will need to be modified for Comparison objects
+        if show_aspectarian:
+            aspectarian = AspectarianLayer(
+                x_offset=aspectarian_x,
+                y_offset=aspectarian_y,
+                style_override=extended_style,
+            )
+            # TODO: Modify AspectarianLayer to handle Comparison objects
+            aspectarian.render(renderer, dwg, comparison)  # Pass comparison directly
 
     dwg.save()
     return filename

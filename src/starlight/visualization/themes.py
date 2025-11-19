@@ -212,6 +212,7 @@ def _get_classic_theme() -> dict[str, Any]:
             "info_color": "#444444",
             "info_size": "10px",
             "retro_color": "#E74C3C",
+            "outer_wheel_planet_color": "#4A90E2",  # Softer blue for outer wheel
         },
         "aspects": {
             **{
@@ -265,6 +266,7 @@ def _get_dark_theme() -> dict[str, Any]:
             "info_color": "#BBBBBB",
             "info_size": "10px",
             "retro_color": "#FF6B6B",
+            "outer_wheel_planet_color": "#95E1D3",  # Cyan for outer wheel
         },
         "aspects": {
             "Conjunction": {"color": "#FFD700", "width": 2.0, "dash": "1,0"},
@@ -314,6 +316,7 @@ def _get_midnight_theme() -> dict[str, Any]:
             "info_color": "#E8E8E8",
             "info_size": "10px",
             "retro_color": "#FFA07A",
+            "outer_wheel_planet_color": "#87CEEB",  # Sky blue for outer wheel
         },
         "aspects": {
             "Conjunction": {"color": "#FFD700", "width": 2.0, "dash": "1,0"},
@@ -363,6 +366,7 @@ def _get_neon_theme() -> dict[str, Any]:
             "info_color": "#FF00FF",
             "info_size": "10px",
             "retro_color": "#FF1493",
+            "outer_wheel_planet_color": "#39FF14",  # Neon green for outer wheel
         },
         "aspects": {
             "Conjunction": {"color": "#FFFF00", "width": 2.5, "dash": "1,0"},
@@ -412,6 +416,7 @@ def _get_sepia_theme() -> dict[str, Any]:
             "info_color": "#6B5744",
             "info_size": "10px",
             "retro_color": "#A0522D",
+            "outer_wheel_planet_color": "#8B7355",  # Lighter brown for outer wheel
         },
         "aspects": {
             "Conjunction": {"color": "#8B4513", "width": 2.0, "dash": "1,0"},
@@ -461,6 +466,7 @@ def _get_pastel_theme() -> dict[str, Any]:
             "info_color": "#777777",
             "info_size": "10px",
             "retro_color": "#FF9999",
+            "outer_wheel_planet_color": "#B4A7D6",  # Soft lavender for outer wheel
         },
         "aspects": {
             "Conjunction": {"color": "#FFD4A3", "width": 2.0, "dash": "1,0"},
@@ -510,6 +516,7 @@ def _get_celestial_theme() -> dict[str, Any]:
             "info_color": "#E8D4FF",
             "info_size": "10px",
             "retro_color": "#FF69B4",
+            "outer_wheel_planet_color": "#DA70D6",  # Orchid for outer wheel
         },
         "aspects": {
             "Conjunction": {"color": "#FFD700", "width": 2.0, "dash": "1,0"},
@@ -565,6 +572,7 @@ def _get_viridis_theme() -> dict[str, Any]:
             "info_color": "#7AD151",
             "info_size": "10px",
             "retro_color": "#BBDF27",
+            "outer_wheel_planet_color": "#414487",  # Purple for outer wheel (viridis low end)
         },
         "aspects": {
             **{
@@ -614,6 +622,7 @@ def _get_plasma_theme() -> dict[str, Any]:
             "info_color": "#FCA636",
             "info_size": "10px",
             "retro_color": "#F1844B",
+            "outer_wheel_planet_color": "#B12A90",  # Deep magenta for outer wheel
         },
         "aspects": {
             **{
@@ -663,6 +672,7 @@ def _get_inferno_theme() -> dict[str, Any]:
             "info_color": "#FB9A06",
             "info_size": "10px",
             "retro_color": "#F7D03C",
+            "outer_wheel_planet_color": "#A52C60",  # Deep red for outer wheel
         },
         "aspects": {
             **{
@@ -712,6 +722,7 @@ def _get_magma_theme() -> dict[str, Any]:
             "info_color": "#EB5760",
             "info_size": "10px",
             "retro_color": "#F8765C",
+            "outer_wheel_planet_color": "#7B2382",  # Deep purple for outer wheel
         },
         "aspects": {
             **{
@@ -761,6 +772,7 @@ def _get_cividis_theme() -> dict[str, Any]:
             "info_color": "#C5AC83",
             "info_size": "10px",
             "retro_color": "#E5C482",
+            "outer_wheel_planet_color": "#4E6B7C",  # Blue-grey for outer wheel
         },
         "aspects": {
             **{
@@ -810,6 +822,7 @@ def _get_turbo_theme() -> dict[str, Any]:
             "info_color": "#C8EF34",
             "info_size": "10px",
             "retro_color": "#F66B19",
+            "outer_wheel_planet_color": "#1AE4B6",  # Turquoise for outer wheel
         },
         "aspects": {
             **{
