@@ -30,10 +30,29 @@ from .themes import ChartTheme, get_theme_default_palette, get_theme_style
 # Configurable radii adjustments for bi-wheel comparison charts
 # These values are offsets from the base chart radii
 # Adjust these values to fine-tune the bi-wheel layout during QA
+# Positive values expand outward, negative values contract inward
 COMPARISON_RADII_ADJUSTMENTS = {
-    "inner_planet_ring_offset": -15,  # Inner wheel planets (chart1) - how much smaller than default
-    "outer_planet_ring_offset": 50,  # Outer wheel planets (chart2) - how much beyond zodiac ring
+    # Chart size
     "chart_size_multiplier": 1.1,  # How much to expand the overall chart (1.0 = no expansion)
+
+    # Main chart rings (from outer to inner)
+    "outer_border_offset": 0,  # Outermost border circle
+    "zodiac_ring_outer_offset": 0,  # Outer edge of zodiac ring
+    "zodiac_glyph_offset": 0,  # Where zodiac sign glyphs are placed
+    "zodiac_ring_inner_offset": 0,  # Inner edge of zodiac ring
+
+    # Planet rings
+    "planet_ring_offset": 0,  # Standard planet ring (single wheel charts)
+    "inner_planet_ring_offset": -15,  # Inner wheel planets (chart1 in biwheel)
+    "outer_planet_ring_offset": 50,  # Outer wheel planets (chart2 in biwheel)
+
+    # House and aspect rings
+    "house_number_ring_offset": 0,  # Where house numbers are placed
+    "aspect_ring_inner_offset": 0,  # Inner edge of aspect ring
+
+    # Synastry-specific rings (legacy, kept for compatibility)
+    "synastry_planet_ring_inner_offset": 0,
+    "synastry_planet_ring_outer_offset": 0,
 }
 
 
@@ -730,12 +749,18 @@ def draw_comparison_chart(
     )
 
     # Adjust radii for bi-wheel layout using configurable offsets
-    # Inner planets: chart1 planets (slightly smaller than default)
-    # Outer planets: chart2 planets (outside the zodiac ring)
+    # Apply all configured offsets to base radii
+    for radius_key, base_value in list(renderer.radii.items()):
+        offset_key = f"{radius_key}_offset"
+        if offset_key in COMPARISON_RADII_ADJUSTMENTS:
+            renderer.radii[radius_key] = base_value + COMPARISON_RADII_ADJUSTMENTS[offset_key]
+
+    # Add custom biwheel-specific radii
+    # Inner planets: chart1 planets (calculated from planet_ring with offset)
+    # Outer planets: chart2 planets (calculated from zodiac_ring_outer with offset)
     inner_planet_radius = renderer.radii["planet_ring"] + COMPARISON_RADII_ADJUSTMENTS["inner_planet_ring_offset"]
     outer_planet_radius = renderer.radii["zodiac_ring_outer"] + COMPARISON_RADII_ADJUSTMENTS["outer_planet_ring_offset"]
 
-    # Add custom radii to renderer
     renderer.radii["inner_planet_ring"] = inner_planet_radius
     renderer.radii["outer_planet_ring"] = outer_planet_radius
 
