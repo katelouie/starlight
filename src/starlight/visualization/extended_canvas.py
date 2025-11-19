@@ -163,55 +163,37 @@ class PositionTableLayer:
         """Render position table.
 
         Handles both CalculatedChart and Comparison objects.
-        For Comparison, displays interleaved positions from both charts.
+        For Comparison, displays two separate side-by-side tables.
         """
         # Check if this is a Comparison object
         is_comparison = _is_comparison(chart)
 
         if is_comparison:
-            # Get positions from both charts using filter function
-            chart1_positions = _filter_objects_for_tables(chart.chart1.positions, self.object_types)
-            chart2_positions = _filter_objects_for_tables(chart.chart2.positions, self.object_types)
-
-            # Sort both lists
-            type_priority = {
-                ObjectType.PLANET: 0,
-                ObjectType.ASTEROID: 1,
-                ObjectType.NODE: 2,
-                ObjectType.POINT: 3,
-                ObjectType.ANGLE: 4,
-                ObjectType.MIDPOINT: 5,
-                ObjectType.ARABIC_PART: 6,
-                ObjectType.FIXED_STAR: 7,
-            }
-            chart1_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
-            chart2_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
-
-            # Interleave the positions
-            positions = []
-            max_len = max(len(chart1_positions), len(chart2_positions))
-            for i in range(max_len):
-                if i < len(chart1_positions):
-                    positions.append(("chart1", chart1_positions[i]))
-                if i < len(chart2_positions):
-                    positions.append(("chart2", chart2_positions[i]))
+            # Render two separate tables side by side
+            self._render_comparison_tables(renderer, dwg, chart)
         else:
-            # Standard CalculatedChart - use filter function to include angles
-            chart_positions = _filter_objects_for_tables(chart.positions, self.object_types)
+            # Render standard single table
+            self._render_single_table(renderer, dwg, chart)
 
-            # Sort by object type priority, then name
-            type_priority = {
-                ObjectType.PLANET: 0,
-                ObjectType.ASTEROID: 1,
-                ObjectType.NODE: 2,
-                ObjectType.POINT: 3,
-                ObjectType.ANGLE: 4,
-                ObjectType.MIDPOINT: 5,
-                ObjectType.ARABIC_PART: 6,
-                ObjectType.FIXED_STAR: 7,
-            }
-            chart_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
-            positions = [(None, p) for p in chart_positions]  # Wrap in tuples for consistency
+    def _render_single_table(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
+    ) -> None:
+        """Render a single position table for a standard chart."""
+        # Standard CalculatedChart - use filter function to include angles
+        chart_positions = _filter_objects_for_tables(chart.positions, self.object_types)
+
+        # Sort by object type priority, then name
+        type_priority = {
+            ObjectType.PLANET: 0,
+            ObjectType.ASTEROID: 1,
+            ObjectType.NODE: 2,
+            ObjectType.POINT: 3,
+            ObjectType.ANGLE: 4,
+            ObjectType.MIDPOINT: 5,
+            ObjectType.ARABIC_PART: 6,
+            ObjectType.FIXED_STAR: 7,
+        }
+        chart_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
 
         # Build table
         x_start = self.x_offset
@@ -241,21 +223,15 @@ class PositionTableLayer:
             )
 
         # Render data rows
-        for row_idx, (owner, pos) in enumerate(positions):
+        for row_idx, pos in enumerate(chart_positions):
             y = y_start + ((row_idx + 1) * self.style["line_height"])
 
-            # Column 0: Planet name + glyph (with chart indicator for comparisons)
+            # Column 0: Planet name + glyph
             glyph_info = get_glyph(pos.name)
             if glyph_info["type"] == "unicode":
                 planet_text = f"{glyph_info['value']} {pos.name}"
             else:
                 planet_text = pos.name
-
-            # Add chart indicator for comparisons
-            if owner == "chart1":
-                planet_text += " ①"
-            elif owner == "chart2":
-                planet_text += " ②"
 
             # Add retrograde symbol if applicable
             if pos.is_retrograde:
@@ -310,17 +286,211 @@ class PositionTableLayer:
             # Column 3: House (if enabled)
             col_offset = 3
             if self.style["show_house"]:
-                if is_comparison:
-                    # For comparisons, show house in respective chart
-                    if owner == "chart1":
-                        house = self._get_house_placement(chart.chart1, pos)
-                    elif owner == "chart2":
-                        house = self._get_house_placement(chart.chart2, pos)
-                    else:
-                        house = None
-                else:
-                    house = self._get_house_placement(chart, pos)
+                house = self._get_house_placement(chart, pos)
+                x_house = x_start + (col_offset * self.style["col_spacing"])
+                dwg.add(
+                    dwg.text(
+                        str(house) if house else "-",
+                        insert=(x_house, y),
+                        text_anchor="start",
+                        dominant_baseline="hanging",
+                        font_size=self.style["text_size"],
+                        fill=self.style["text_color"],
+                        font_family=renderer.style["font_family_text"],
+                        font_weight=self.style["font_weight"],
+                    )
+                )
+                col_offset += 1
 
+            # Column 4: Speed (if enabled)
+            if self.style["show_speed"]:
+                speed_text = f"{pos.speed_longitude:.2f}"
+                x_speed = x_start + (col_offset * self.style["col_spacing"])
+                dwg.add(
+                    dwg.text(
+                        speed_text,
+                        insert=(x_speed, y),
+                        text_anchor="start",
+                        dominant_baseline="hanging",
+                        font_size=self.style["text_size"],
+                        fill=self.style["text_color"],
+                        font_family=renderer.style["font_family_text"],
+                        font_weight=self.style["font_weight"],
+                    )
+                )
+
+    def _render_comparison_tables(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, comparison
+    ) -> None:
+        """Render two separate side-by-side tables for comparison charts."""
+        # Get positions from both charts
+        chart1_positions = _filter_objects_for_tables(comparison.chart1.positions, self.object_types)
+        chart2_positions = _filter_objects_for_tables(comparison.chart2.positions, self.object_types)
+
+        # Sort both lists
+        type_priority = {
+            ObjectType.PLANET: 0,
+            ObjectType.ASTEROID: 1,
+            ObjectType.NODE: 2,
+            ObjectType.POINT: 3,
+            ObjectType.ANGLE: 4,
+            ObjectType.MIDPOINT: 5,
+            ObjectType.ARABIC_PART: 6,
+            ObjectType.FIXED_STAR: 7,
+        }
+        chart1_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+        chart2_positions.sort(key=lambda p: (type_priority.get(p.object_type, 99), p.name))
+
+        # Calculate table width
+        num_cols = 3  # Planet, Sign, Degree
+        if self.style["show_house"]:
+            num_cols += 1
+        if self.style["show_speed"]:
+            num_cols += 1
+        table_width = num_cols * self.style["col_spacing"]
+
+        # Render Chart 1 table (left)
+        x_chart1 = self.x_offset
+        y_start = self.y_offset
+
+        # Chart 1 title
+        title_text = f"{comparison.chart1_label or 'Chart 1'} (Inner Wheel)"
+        dwg.add(
+            dwg.text(
+                title_text,
+                insert=(x_chart1, y_start),
+                text_anchor="start",
+                dominant_baseline="hanging",
+                font_size="12px",
+                fill=self.style["header_color"],
+                font_family=renderer.style["font_family_text"],
+                font_weight="bold",
+            )
+        )
+
+        # Render chart 1 table (offset by title height)
+        self._render_table_for_chart(
+            renderer, dwg, comparison.chart1, chart1_positions, x_chart1, y_start + 20
+        )
+
+        # Render Chart 2 table (right, with spacing)
+        x_chart2 = x_chart1 + table_width + 20  # 20px gap between tables
+
+        # Chart 2 title
+        title_text = f"{comparison.chart2_label or 'Chart 2'} (Outer Wheel)"
+        dwg.add(
+            dwg.text(
+                title_text,
+                insert=(x_chart2, y_start),
+                text_anchor="start",
+                dominant_baseline="hanging",
+                font_size="12px",
+                fill=self.style["header_color"],
+                font_family=renderer.style["font_family_text"],
+                font_weight="bold",
+            )
+        )
+
+        # Render chart 2 table (offset by title height)
+        self._render_table_for_chart(
+            renderer, dwg, comparison.chart2, chart2_positions, x_chart2, y_start + 20
+        )
+
+    def _render_table_for_chart(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart, positions, x_offset, y_offset
+    ) -> None:
+        """Render a table for a specific chart."""
+        x_start = x_offset
+        y_start = y_offset
+
+        # Header row
+        headers = ["Planet", "Sign", "Degree"]
+        if self.style["show_house"]:
+            headers.append("House")
+        if self.style["show_speed"]:
+            headers.append("Speed")
+
+        # Render headers
+        for i, header in enumerate(headers):
+            x = x_start + (i * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    header,
+                    insert=(x, y_start),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["header_size"],
+                    fill=self.style["header_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["header_weight"],
+                )
+            )
+
+        # Render data rows
+        for row_idx, pos in enumerate(positions):
+            y = y_start + ((row_idx + 1) * self.style["line_height"])
+
+            # Column 0: Planet name + glyph
+            glyph_info = get_glyph(pos.name)
+            if glyph_info["type"] == "unicode":
+                planet_text = f"{glyph_info['value']} {pos.name}"
+            else:
+                planet_text = pos.name
+
+            # Add retrograde symbol if applicable
+            if pos.is_retrograde:
+                planet_text += " ℞"
+
+            dwg.add(
+                dwg.text(
+                    planet_text,
+                    insert=(x_start, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 1: Sign
+            x_sign = x_start + self.style["col_spacing"]
+            dwg.add(
+                dwg.text(
+                    pos.sign,
+                    insert=(x_sign, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 2: Degree
+            degrees = int(pos.sign_degree)
+            minutes = int((pos.sign_degree % 1) * 60)
+            degree_text = f"{degrees}°{minutes:02d}'"
+            x_degree = x_start + (2 * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    degree_text,
+                    insert=(x_degree, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 3: House (if enabled)
+            col_offset = 3
+            if self.style["show_house"]:
+                house = self._get_house_placement(chart, pos)
                 x_house = x_start + (col_offset * self.style["col_spacing"])
                 dwg.add(
                     dwg.text(
@@ -400,16 +570,27 @@ class HouseCuspTableLayer:
         self.style = {**self.DEFAULT_STYLE, **(style_override or {})}
 
     def render(
-        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart: CalculatedChart
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
     ) -> None:
         """Render house cusp table.
 
-        Only works for CalculatedChart objects (not Comparison).
+        Handles both CalculatedChart and Comparison objects.
+        For Comparison, displays two separate side-by-side tables.
         """
-        # Skip if this is a Comparison object
-        if _is_comparison(chart):
-            return
+        # Check if this is a Comparison object
+        is_comparison = _is_comparison(chart)
 
+        if is_comparison:
+            # Render two separate house cusp tables side by side
+            self._render_comparison_house_tables(renderer, dwg, chart)
+        else:
+            # Render standard single table
+            self._render_single_house_table(renderer, dwg, chart)
+
+    def _render_single_house_table(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, chart
+    ) -> None:
+        """Render a single house cusp table for a standard chart."""
         # Get house cusps from default house system
         if not chart.default_house_system:
             return
@@ -421,6 +602,174 @@ class HouseCuspTableLayer:
         # Build table
         x_start = self.x_offset
         y_start = self.y_offset
+
+        # Header row
+        headers = ["House", "Sign", "Degree"]
+
+        # Render headers
+        for i, header in enumerate(headers):
+            x = x_start + (i * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    header,
+                    insert=(x, y_start),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["header_size"],
+                    fill=self.style["header_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["header_weight"],
+                )
+            )
+
+        # Render data rows for all 12 houses
+        for house_num in range(1, 13):
+            y = y_start + (house_num * self.style["line_height"])
+
+            # Get cusp longitude
+            cusp_longitude = houses.cusps[house_num - 1]
+
+            # Calculate sign and degree
+            sign_index = int(cusp_longitude / 30)
+            sign_names = [
+                "Aries",
+                "Taurus",
+                "Gemini",
+                "Cancer",
+                "Leo",
+                "Virgo",
+                "Libra",
+                "Scorpio",
+                "Sagittarius",
+                "Capricorn",
+                "Aquarius",
+                "Pisces",
+            ]
+            sign_name = sign_names[sign_index % 12]
+            degree_in_sign = cusp_longitude % 30
+
+            # Column 0: House number
+            house_text = f"{house_num}"
+            dwg.add(
+                dwg.text(
+                    house_text,
+                    insert=(x_start, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 1: Sign
+            x_sign = x_start + self.style["col_spacing"]
+            dwg.add(
+                dwg.text(
+                    sign_name,
+                    insert=(x_sign, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+            # Column 2: Degree
+            degrees = int(degree_in_sign)
+            minutes = int((degree_in_sign % 1) * 60)
+            degree_text = f"{degrees}°{minutes:02d}'"
+            x_degree = x_start + (2 * self.style["col_spacing"])
+            dwg.add(
+                dwg.text(
+                    degree_text,
+                    insert=(x_degree, y),
+                    text_anchor="start",
+                    dominant_baseline="hanging",
+                    font_size=self.style["text_size"],
+                    fill=self.style["text_color"],
+                    font_family=renderer.style["font_family_text"],
+                    font_weight=self.style["font_weight"],
+                )
+            )
+
+    def _render_comparison_house_tables(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, comparison
+    ) -> None:
+        """Render two separate side-by-side house cusp tables for comparison charts."""
+        # Get house cusps from both charts
+        if not comparison.chart1.default_house_system:
+            return
+        if not comparison.chart2.default_house_system:
+            return
+
+        houses1 = comparison.chart1.get_houses(comparison.chart1.default_house_system)
+        houses2 = comparison.chart2.get_houses(comparison.chart2.default_house_system)
+
+        if not houses1 or not houses2:
+            return
+
+        # Calculate table width (3 columns: House, Sign, Degree)
+        table_width = 3 * self.style["col_spacing"]
+
+        # Render Chart 1 house table (left)
+        x_chart1 = self.x_offset
+        y_start = self.y_offset
+
+        # Chart 1 title
+        title_text = f"{comparison.chart1_label or 'Chart 1'} Houses"
+        dwg.add(
+            dwg.text(
+                title_text,
+                insert=(x_chart1, y_start),
+                text_anchor="start",
+                dominant_baseline="hanging",
+                font_size="12px",
+                fill=self.style["header_color"],
+                font_family=renderer.style["font_family_text"],
+                font_weight="bold",
+            )
+        )
+
+        # Render chart 1 house table (offset by title height)
+        self._render_house_table_for_chart(
+            renderer, dwg, houses1, x_chart1, y_start + 20
+        )
+
+        # Render Chart 2 house table (right, with spacing)
+        # Use tighter spacing (15px for "below" layout, 20px otherwise)
+        # Note: The calling code will determine which gap to use based on layout
+        x_chart2 = x_chart1 + table_width + 20  # 20px gap between tables (default)
+
+        # Chart 2 title
+        title_text = f"{comparison.chart2_label or 'Chart 2'} Houses"
+        dwg.add(
+            dwg.text(
+                title_text,
+                insert=(x_chart2, y_start),
+                text_anchor="start",
+                dominant_baseline="hanging",
+                font_size="12px",
+                fill=self.style["header_color"],
+                font_family=renderer.style["font_family_text"],
+                font_weight="bold",
+            )
+        )
+
+        # Render chart 2 house table (offset by title height)
+        self._render_house_table_for_chart(
+            renderer, dwg, houses2, x_chart2, y_start + 20
+        )
+
+    def _render_house_table_for_chart(
+        self, renderer: ChartRenderer, dwg: svgwrite.Drawing, houses, x_offset, y_offset
+    ) -> None:
+        """Render a house cusp table for a specific chart."""
+        x_start = x_offset
+        y_start = y_offset
 
         # Header row
         headers = ["House", "Sign", "Degree"]

@@ -27,6 +27,34 @@ from .moon_phase import MoonPhaseLayer
 from .palettes import ZodiacPalette
 from .themes import ChartTheme, get_theme_default_palette, get_theme_style
 
+# Configurable radii adjustments for bi-wheel comparison charts
+# These values are offsets from the base chart radii
+# Adjust these values to fine-tune the bi-wheel layout during QA
+# Positive values expand outward, negative values contract inward
+COMPARISON_RADII_ADJUSTMENTS = {
+    # Chart size
+    "chart_size_multiplier": 1.1,  # How much to expand the overall chart (1.0 = no expansion)
+
+    # Main chart rings (from outer to inner)
+    "outer_border_offset": 0,  # Outermost border circle
+    "zodiac_ring_outer_offset": 0,  # Outer edge of zodiac ring
+    "zodiac_glyph_offset": 0,  # Where zodiac sign glyphs are placed
+    "zodiac_ring_inner_offset": 0,  # Inner edge of zodiac ring
+
+    # Planet rings
+    "planet_ring_offset": 0,  # Standard planet ring (single wheel charts)
+    "inner_planet_ring_offset": -15,  # Inner wheel planets (chart1 in biwheel)
+    "outer_planet_ring_offset": 50,  # Outer wheel planets (chart2 in biwheel)
+
+    # House and aspect rings
+    "house_number_ring_offset": 0,  # Where house numbers are placed
+    "aspect_ring_inner_offset": 0,  # Inner edge of aspect ring
+
+    # Synastry-specific rings (legacy, kept for compatibility)
+    "synastry_planet_ring_inner_offset": 0,
+    "synastry_planet_ring_outer_offset": 0,
+}
+
 
 def draw_chart(
     chart: CalculatedChart,
@@ -253,7 +281,9 @@ def draw_chart(
             )
         )
 
-        # Add chart borders at offset position
+        # Add outer chart border at offset position
+        # NOTE: We only draw the outer border here. The aspect_ring_inner circle
+        # will be drawn by the ZodiacLayer with proper offset handling.
         dwg.add(
             dwg.circle(
                 center=(
@@ -266,20 +296,9 @@ def draw_chart(
                 stroke_width=renderer.style["border_width"],
             )
         )
-        dwg.add(
-            dwg.circle(
-                center=(
-                    chart_x_offset + renderer.center,
-                    chart_y_offset + renderer.center,
-                ),
-                r=renderer.radii["aspect_ring_inner"],
-                fill="none",
-                stroke=renderer.style["border_color"],
-                stroke_width=renderer.style["border_width"],
-            )
-        )
 
-        # Store offset in renderer for layers to use
+        # Store offset in renderer BEFORE rendering layers
+        # This ensures all layers use the correct offset for positioning
         renderer.x_offset = chart_x_offset
         renderer.y_offset = chart_y_offset
     else:
@@ -596,6 +615,7 @@ def draw_comparison_chart(
     extended_canvas: str | None = "right",  # Default to right for comparisons
     show_position_table: bool = True,
     show_aspectarian: bool = True,
+    show_house_cusps: bool = True,  # Show house cusp tables for biwheel charts
     aspectarian_mode: str = "cross_chart",  # "cross_chart", "all", "chart1", "chart2"
     table_object_types: list[str] | None = None,
     theme: ChartTheme | str | None = None,
@@ -630,8 +650,9 @@ def draw_comparison_chart(
         aspect_counts_position: Position of aspect counts
         auto_padding: Auto-pad when >2 corners occupied
         extended_canvas: Extended canvas mode ("right", "left", "below", or None)
-        show_position_table: Show position table in extended canvas
+        show_position_table: Show position table in extended canvas (displays two separate tables)
         show_aspectarian: Show aspectarian in extended canvas
+        show_house_cusps: Show house cusp tables in extended canvas (displays two separate tables)
         aspectarian_mode: Which aspects to show in aspectarian:
             - "cross_chart": Only cross-chart aspects (default)
             - "all": All three grids (chart1 internal, chart2 internal, cross-chart)
@@ -685,19 +706,31 @@ def draw_comparison_chart(
         zodiac_palette_str = zodiac_palette
 
     # Calculate canvas dimensions for extended canvas
-    canvas_width = size
-    canvas_height = size
+    # Base chart size - expand based on configurable multiplier for biwheel
+    chart_size = int(size * COMPARISON_RADII_ADJUSTMENTS["chart_size_multiplier"]) if extended_canvas else size
+    canvas_width = chart_size
+    canvas_height = chart_size
     chart_x_offset = 0
     chart_y_offset = 0
 
     if extended_canvas:
+        # Calculate space needed for tables
+        # Position tables: 2 tables side-by-side (each ~5 cols × 55px = 275px per table)
+        # 40px gap between tables = 275 + 40 + 275 = 590px
+        # House cusp tables: 2 tables side-by-side (each 3 cols × 55px = 165px per table)
+        # = 165 + 40 + 165 = 370px
+        # Aspectarian: ~300px wide
+        # Use the max width + margins
+        extended_width = 650  # Enough for two position tables side-by-side
+
         if extended_canvas == "right":
-            canvas_width = size + 500  # More space for interleaved tables
+            canvas_width = chart_size + extended_width
         elif extended_canvas == "left":
-            canvas_width = size + 500
-            chart_x_offset = 500
+            canvas_width = chart_size + extended_width
+            chart_x_offset = extended_width
         elif extended_canvas == "below":
-            canvas_height = size + 500
+            # For below mode, need height for position tables + house tables + aspectarian
+            canvas_height = chart_size + 550  # Increased height for stacked layout
         else:
             raise ValueError(
                 f"Invalid extended_canvas: {extended_canvas}. Must be 'right', 'left', or 'below'"
@@ -705,7 +738,7 @@ def draw_comparison_chart(
 
     # Create renderer with bi-wheel radii adjustments
     renderer = ChartRenderer(
-        size=size,
+        size=chart_size,  # Use expanded chart size
         rotation=rotation_angle,
         theme=theme,
         style_config=style_config,
@@ -715,13 +748,19 @@ def draw_comparison_chart(
         color_sign_info=color_sign_info,
     )
 
-    # Adjust radii for bi-wheel layout
-    # Inner planets: slightly smaller radius
-    # Outer planets: outside the zodiac ring
-    inner_planet_radius = renderer.radii["planet_ring"] - 15
-    outer_planet_radius = renderer.radii["zodiac_ring_outer"] + 50
+    # Adjust radii for bi-wheel layout using configurable offsets
+    # Apply all configured offsets to base radii
+    for radius_key, base_value in list(renderer.radii.items()):
+        offset_key = f"{radius_key}_offset"
+        if offset_key in COMPARISON_RADII_ADJUSTMENTS:
+            renderer.radii[radius_key] = base_value + COMPARISON_RADII_ADJUSTMENTS[offset_key]
 
-    # Add custom radii to renderer
+    # Add custom biwheel-specific radii
+    # Inner planets: chart1 planets (calculated from planet_ring with offset)
+    # Outer planets: chart2 planets (calculated from zodiac_ring_outer with offset)
+    inner_planet_radius = renderer.radii["planet_ring"] + COMPARISON_RADII_ADJUSTMENTS["inner_planet_ring_offset"]
+    outer_planet_radius = renderer.radii["zodiac_ring_outer"] + COMPARISON_RADII_ADJUSTMENTS["outer_planet_ring_offset"]
+
     renderer.radii["inner_planet_ring"] = inner_planet_radius
     renderer.radii["outer_planet_ring"] = outer_planet_radius
 
@@ -758,7 +797,9 @@ def draw_comparison_chart(
             )
         )
 
-        # Add chart borders at offset position
+        # Add outer chart border at offset position
+        # NOTE: We only draw the outer border here. The aspect_ring_inner circle
+        # will be drawn by the ZodiacLayer with proper offset handling.
         dwg.add(
             dwg.circle(
                 center=(
@@ -771,20 +812,9 @@ def draw_comparison_chart(
                 stroke_width=renderer.style["border_width"],
             )
         )
-        dwg.add(
-            dwg.circle(
-                center=(
-                    chart_x_offset + renderer.center,
-                    chart_y_offset + renderer.center,
-                ),
-                r=renderer.radii["aspect_ring_inner"],
-                fill="none",
-                stroke=renderer.style["border_color"],
-                stroke_width=renderer.style["border_width"],
-            )
-        )
 
-        # Store offset
+        # Store offset in renderer BEFORE rendering layers
+        # This ensures all layers use the correct offset for positioning
         renderer.x_offset = chart_x_offset
         renderer.y_offset = chart_y_offset
     else:
@@ -891,25 +921,204 @@ def draw_comparison_chart(
             layer.render(renderer, dwg, comparison.chart1)
 
     # Add extended canvas layers if requested
-    if extended_canvas and (show_position_table or show_aspectarian):
-        # Calculate positions for extended layers
-        if extended_canvas == "right":
-            table_x = size + 30
-            table_y = 30
-            aspectarian_x = size + 30
-            aspectarian_y = 350  # Below position table
-        elif extended_canvas == "left":
-            table_x = 30
-            table_y = 30
-            aspectarian_x = 30
-            aspectarian_y = 350
-        elif extended_canvas == "below":
-            table_x = 30
-            table_y = size + 30
-            aspectarian_x = 400
-            aspectarian_y = size + 30
+    if extended_canvas and (show_position_table or show_aspectarian or show_house_cusps):
+        # Calculate dynamic dimensions for tables
+        # Position table dimensions
+        if show_position_table:
+            # Get filtered positions to calculate actual table height
+            from starlight.visualization.extended_canvas import _filter_objects_for_tables
+            chart1_positions = _filter_objects_for_tables(comparison.chart1.positions, table_object_types)
+            chart2_positions = _filter_objects_for_tables(comparison.chart2.positions, table_object_types)
+            max_positions = max(len(chart1_positions), len(chart2_positions))
+
+            # Calculate position table height: title (20px) + header (18px) + rows
+            line_height = 18  # DEFAULT_STYLE line_height from PositionTableLayer
+            position_table_height = 20 + line_height + (max_positions * line_height)
+
+            # Calculate position table width
+            num_cols = 3  # Planet, Sign, Degree (base columns)
+            # Note: show_house and show_speed would add columns, but we use default for now
+            col_spacing = 55  # DEFAULT_STYLE col_spacing
+            single_table_width = num_cols * col_spacing
+            table_gap = 20  # Reduced from 40px for closer spacing
+            total_position_width = (single_table_width * 2) + table_gap
         else:
-            table_x = table_y = aspectarian_x = aspectarian_y = 0
+            position_table_height = 0
+            total_position_width = 0
+
+        # House cusp table dimensions
+        if show_house_cusps:
+            # Always 12 houses + header + title
+            house_line_height = 18
+            house_table_height = 20 + house_line_height + (12 * house_line_height)
+
+            # House cusp tables: 3 columns (House, Sign, Degree)
+            house_col_spacing = 55
+            single_house_width = 3 * house_col_spacing
+
+            # For "below" layout, use tighter spacing
+            house_gap = 15 if extended_canvas == "below" else 20
+            total_house_width = (single_house_width * 2) + house_gap
+        else:
+            house_table_height = 0
+            total_house_width = 0
+
+        # Aspectarian dimensions
+        if show_aspectarian:
+            # Aspectarian uses positions to build grid
+            if show_position_table:
+                num_objects = max(len(chart1_positions), len(chart2_positions))
+            else:
+                # Fallback: count planets from comparison
+                num_objects = len([p for p in comparison.chart1.positions
+                                 if p.object_type in [ObjectType.PLANET, ObjectType.ASTEROID, ObjectType.NODE, ObjectType.POINT]])
+
+            # Aspectarian grid size calculation
+            cell_size = 20  # DEFAULT_STYLE from AspectarianLayer
+            margin = 30
+            aspectarian_size = (num_objects * cell_size) + (margin * 2)
+        else:
+            aspectarian_size = 0
+
+        # Calculate positions for extended layers with auto-placement
+        padding = 30
+        vertical_gap = 20  # Gap between vertically stacked elements
+
+        if extended_canvas == "right":
+            # Position table at top
+            table_x = chart_size + padding
+            table_y = padding
+
+            # House cusp tables below position tables
+            house_cusp_x = chart_size + padding
+            house_cusp_y = table_y + position_table_height + vertical_gap
+
+            # Aspectarian below house cusp tables
+            aspectarian_x = chart_size + padding
+            aspectarian_y = house_cusp_y + house_table_height + vertical_gap
+
+            # Calculate required extended width and height
+            extended_width = max(total_position_width, total_house_width, aspectarian_size) + (padding * 2)
+            required_height = aspectarian_y + aspectarian_size + padding
+
+            # Update canvas dimensions if needed
+            if required_height > canvas_height:
+                canvas_height = required_height
+                # Need to recreate the SVG with new dimensions
+                dwg = svgwrite.Drawing(
+                    filename=filename,
+                    size=(f"{canvas_width}px", f"{canvas_height}px"),
+                    viewBox=f"0 0 {canvas_width} {canvas_height}",
+                    profile="full",
+                )
+                # Redraw background
+                dwg.add(dwg.rect(insert=(0, 0), size=(f"{canvas_width}px", f"{canvas_height}px"),
+                               fill=renderer.style["background_color"]))
+                # Redraw outer border
+                dwg.add(dwg.circle(center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                                  r=renderer.radii["outer_border"], fill="none",
+                                  stroke=renderer.style["border_color"], stroke_width=renderer.style["border_width"]))
+                # Re-render all layers
+                for layer in layers:
+                    if isinstance(layer, AspectLayer):
+                        temp_chart = replace(comparison.chart1, aspects=comparison.cross_aspects)
+                        layer.render(renderer, dwg, temp_chart)
+                    else:
+                        layer.render(renderer, dwg, comparison.chart1)
+
+        elif extended_canvas == "left":
+            # Position table at top
+            table_x = padding
+            table_y = padding
+
+            # House cusp tables below position tables
+            house_cusp_x = padding
+            house_cusp_y = table_y + position_table_height + vertical_gap
+
+            # Aspectarian below house cusp tables
+            aspectarian_x = padding
+            aspectarian_y = house_cusp_y + house_table_height + vertical_gap
+
+            # Calculate required extended width and height
+            extended_width = max(total_position_width, total_house_width, aspectarian_size) + (padding * 2)
+            required_height = aspectarian_y + aspectarian_size + padding
+
+            # Update canvas dimensions if needed
+            if required_height > canvas_height:
+                canvas_height = required_height
+                # Recreate SVG with new dimensions
+                dwg = svgwrite.Drawing(
+                    filename=filename,
+                    size=(f"{canvas_width}px", f"{canvas_height}px"),
+                    viewBox=f"0 0 {canvas_width} {canvas_height}",
+                    profile="full",
+                )
+                dwg.add(dwg.rect(insert=(0, 0), size=(f"{canvas_width}px", f"{canvas_height}px"),
+                               fill=renderer.style["background_color"]))
+                dwg.add(dwg.circle(center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                                  r=renderer.radii["outer_border"], fill="none",
+                                  stroke=renderer.style["border_color"], stroke_width=renderer.style["border_width"]))
+                for layer in layers:
+                    if isinstance(layer, AspectLayer):
+                        temp_chart = replace(comparison.chart1, aspects=comparison.cross_aspects)
+                        layer.render(renderer, dwg, temp_chart)
+                    else:
+                        layer.render(renderer, dwg, comparison.chart1)
+
+        elif extended_canvas == "below":
+            # Position table at top left
+            table_x = padding
+            table_y = chart_size + padding
+
+            # House cusp tables below position tables
+            house_cusp_x = padding
+            house_cusp_y = table_y + position_table_height + vertical_gap
+
+            # Aspectarian to the right of house cusp tables
+            aspectarian_x = padding + total_house_width + 40  # Extra gap for aspectarian
+            aspectarian_y = table_y + position_table_height + vertical_gap  # Align with house cusp tables
+
+            # Calculate required width and height
+            required_width = max(
+                total_position_width,
+                total_house_width + aspectarian_size + 40
+            ) + (padding * 2)
+
+            required_height = chart_size + max(
+                house_cusp_y + house_table_height,
+                aspectarian_y + aspectarian_size
+            ) - chart_size + padding
+
+            # Check if resize needed before updating dimensions
+            needs_resize = required_width > canvas_width or required_height > canvas_height
+
+            # Update canvas dimensions if needed
+            if required_width > canvas_width:
+                canvas_width = required_width
+            if required_height > canvas_height:
+                canvas_height = required_height
+
+            # Recreate SVG with new dimensions if needed
+            if needs_resize:
+                dwg = svgwrite.Drawing(
+                    filename=filename,
+                    size=(f"{canvas_width}px", f"{canvas_height}px"),
+                    viewBox=f"0 0 {canvas_width} {canvas_height}",
+                    profile="full",
+                )
+                dwg.add(dwg.rect(insert=(0, 0), size=(f"{canvas_width}px", f"{canvas_height}px"),
+                               fill=renderer.style["background_color"]))
+                dwg.add(dwg.circle(center=(chart_x_offset + renderer.center, chart_y_offset + renderer.center),
+                                  r=renderer.radii["outer_border"], fill="none",
+                                  stroke=renderer.style["border_color"], stroke_width=renderer.style["border_width"]))
+                for layer in layers:
+                    if isinstance(layer, AspectLayer):
+                        temp_chart = replace(comparison.chart1, aspects=comparison.cross_aspects)
+                        layer.render(renderer, dwg, temp_chart)
+                    else:
+                        layer.render(renderer, dwg, comparison.chart1)
+        else:
+            table_x = table_y = house_cusp_x = house_cusp_y = aspectarian_x = aspectarian_y = 0
 
         # Adapt colors to theme
         extended_style = {
@@ -929,6 +1138,15 @@ def draw_comparison_chart(
                 object_types=table_object_types,
             )
             position_table.render(renderer, dwg, comparison)  # Pass comparison directly
+
+        # House cusp tables
+        if show_house_cusps:
+            house_cusp_table = HouseCuspTableLayer(
+                x_offset=house_cusp_x,
+                y_offset=house_cusp_y,
+                style_override=extended_style,
+            )
+            house_cusp_table.render(renderer, dwg, comparison)  # Pass comparison directly
 
         # Aspectarian
         if show_aspectarian:
