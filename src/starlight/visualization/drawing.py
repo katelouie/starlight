@@ -27,6 +27,15 @@ from .moon_phase import MoonPhaseLayer
 from .palettes import ZodiacPalette
 from .themes import ChartTheme, get_theme_default_palette, get_theme_style
 
+# Configurable radii adjustments for bi-wheel comparison charts
+# These values are offsets from the base chart radii
+# Adjust these values to fine-tune the bi-wheel layout during QA
+COMPARISON_RADII_ADJUSTMENTS = {
+    "inner_planet_ring_offset": -15,  # Inner wheel planets (chart1) - how much smaller than default
+    "outer_planet_ring_offset": 50,  # Outer wheel planets (chart2) - how much beyond zodiac ring
+    "chart_size_multiplier": 1.1,  # How much to expand the overall chart (1.0 = no expansion)
+}
+
 
 def draw_chart(
     chart: CalculatedChart,
@@ -253,7 +262,9 @@ def draw_chart(
             )
         )
 
-        # Add chart borders at offset position
+        # Add outer chart border at offset position
+        # NOTE: We only draw the outer border here. The aspect_ring_inner circle
+        # will be drawn by the ZodiacLayer with proper offset handling.
         dwg.add(
             dwg.circle(
                 center=(
@@ -266,20 +277,9 @@ def draw_chart(
                 stroke_width=renderer.style["border_width"],
             )
         )
-        dwg.add(
-            dwg.circle(
-                center=(
-                    chart_x_offset + renderer.center,
-                    chart_y_offset + renderer.center,
-                ),
-                r=renderer.radii["aspect_ring_inner"],
-                fill="none",
-                stroke=renderer.style["border_color"],
-                stroke_width=renderer.style["border_width"],
-            )
-        )
 
-        # Store offset in renderer for layers to use
+        # Store offset in renderer BEFORE rendering layers
+        # This ensures all layers use the correct offset for positioning
         renderer.x_offset = chart_x_offset
         renderer.y_offset = chart_y_offset
     else:
@@ -687,8 +687,8 @@ def draw_comparison_chart(
         zodiac_palette_str = zodiac_palette
 
     # Calculate canvas dimensions for extended canvas
-    # Base chart size - expand slightly for biwheel
-    chart_size = int(size * 1.1) if extended_canvas else size
+    # Base chart size - expand based on configurable multiplier for biwheel
+    chart_size = int(size * COMPARISON_RADII_ADJUSTMENTS["chart_size_multiplier"]) if extended_canvas else size
     canvas_width = chart_size
     canvas_height = chart_size
     chart_x_offset = 0
@@ -729,11 +729,11 @@ def draw_comparison_chart(
         color_sign_info=color_sign_info,
     )
 
-    # Adjust radii for bi-wheel layout
-    # Inner planets: slightly smaller radius
-    # Outer planets: outside the zodiac ring
-    inner_planet_radius = renderer.radii["planet_ring"] - 15
-    outer_planet_radius = renderer.radii["zodiac_ring_outer"] + 50
+    # Adjust radii for bi-wheel layout using configurable offsets
+    # Inner planets: chart1 planets (slightly smaller than default)
+    # Outer planets: chart2 planets (outside the zodiac ring)
+    inner_planet_radius = renderer.radii["planet_ring"] + COMPARISON_RADII_ADJUSTMENTS["inner_planet_ring_offset"]
+    outer_planet_radius = renderer.radii["zodiac_ring_outer"] + COMPARISON_RADII_ADJUSTMENTS["outer_planet_ring_offset"]
 
     # Add custom radii to renderer
     renderer.radii["inner_planet_ring"] = inner_planet_radius
@@ -772,7 +772,9 @@ def draw_comparison_chart(
             )
         )
 
-        # Add chart borders at offset position
+        # Add outer chart border at offset position
+        # NOTE: We only draw the outer border here. The aspect_ring_inner circle
+        # will be drawn by the ZodiacLayer with proper offset handling.
         dwg.add(
             dwg.circle(
                 center=(
@@ -785,20 +787,9 @@ def draw_comparison_chart(
                 stroke_width=renderer.style["border_width"],
             )
         )
-        dwg.add(
-            dwg.circle(
-                center=(
-                    chart_x_offset + renderer.center,
-                    chart_y_offset + renderer.center,
-                ),
-                r=renderer.radii["aspect_ring_inner"],
-                fill="none",
-                stroke=renderer.style["border_color"],
-                stroke_width=renderer.style["border_width"],
-            )
-        )
 
-        # Store offset
+        # Store offset in renderer BEFORE rendering layers
+        # This ensures all layers use the correct offset for positioning
         renderer.x_offset = chart_x_offset
         renderer.y_offset = chart_y_offset
     else:
