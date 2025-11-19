@@ -353,9 +353,7 @@ class PositionTableLayer:
                     )
                 )
 
-    def _get_house_placement(
-        self, chart: CalculatedChart, position
-    ) -> int | None:
+    def _get_house_placement(self, chart: CalculatedChart, position) -> int | None:
         """Get house placement for a position."""
         if not chart.default_house_system or not chart.house_placements:
             return None

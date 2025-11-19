@@ -76,19 +76,32 @@ SIGN_MODALITIES = {
 
 
 @lru_cache(maxsize=128)
-def get_palette_colors(palette: ZodiacPalette) -> list[str]:
+def get_palette_colors(palette: ZodiacPalette | str) -> list[str]:
     """
     Get the color list for a zodiac wheel palette.
 
     Returns a list of 12 colors (one per sign, starting with Aries).
     Results are cached in memory for performance.
 
+    Special case: If palette is a string starting with "single_color:",
+    extracts the hex color and returns 12 copies of it for a monochrome wheel.
+
     Args:
-        palette: The palette to use
+        palette: The palette to use (ZodiacPalette enum or "single_color:#RRGGBB" string)
 
     Returns:
         List of 12 hex color strings
     """
+    # Handle dynamic single-color palettes
+    if isinstance(palette, str) and palette.startswith("single_color:"):
+        # Extract hex color from "single_color:#RRGGBB"
+        color = palette.split(":", 1)[1]
+        return [color] * 12
+
+    # Convert string to enum if needed (for backwards compatibility)
+    if isinstance(palette, str):
+        palette = ZodiacPalette(palette)
+
     if palette == ZodiacPalette.GREY:
         # All signs same color (classic grey)
         return ["#EEEEEE"] * 12

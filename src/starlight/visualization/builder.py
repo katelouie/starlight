@@ -10,6 +10,9 @@ from typing import Any
 from starlight.core.comparison import Comparison
 from starlight.core.models import CalculatedChart
 
+# Sentinel value to indicate "use theme's default colorful palette"
+_USE_THEME_DEFAULT_PALETTE = object()
+
 
 class ChartDrawBuilder:
     """
@@ -126,17 +129,28 @@ class ChartDrawBuilder:
         self._theme = theme
         return self
 
-    def with_zodiac_palette(self, palette: str) -> "ChartDrawBuilder":
+    def with_zodiac_palette(self, palette: str | None = None) -> "ChartDrawBuilder":
         """
         Set the zodiac ring color palette.
 
         Args:
-            palette: Palette name (e.g., "grey", "rainbow", "viridis", "elemental")
+            palette: Palette name (e.g., "grey", "rainbow", "viridis", "elemental").
+                     If not provided (empty call), uses the theme's default colorful palette.
+                     If theme is set, calling without args gives you the colorful version.
 
         Returns:
             Self for chaining
+
+        Usage:
+            .with_zodiac_palette()           # Use theme's colorful default palette
+            .with_zodiac_palette("rainbow")  # Use specific rainbow palette
         """
-        self._zodiac_palette = palette
+        if palette is None:
+            # Empty call: signal to use theme's default colorful palette
+            self._zodiac_palette = _USE_THEME_DEFAULT_PALETTE
+        else:
+            # Specific palette provided
+            self._zodiac_palette = palette
         return self
 
     def with_aspect_palette(self, palette: str) -> "ChartDrawBuilder":
